@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Lavertia\Panels\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class PanelsCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'panels';
 
     public $description = 'My command';
 
