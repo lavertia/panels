@@ -2,9 +2,9 @@
 
 namespace Lavertia\Panels;
 
+use Lavertia\Panels\Commands\PanelsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Lavertia\Panels\Commands\PanelsCommand;
 
 class PanelsServiceProvider extends PackageServiceProvider
 {
