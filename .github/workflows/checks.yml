@@ -3,6 +3,7 @@ on:
   push:
     branches: [main, "feat/**"]
   pull_request:
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -20,3 +21,17 @@ jobs:
           test -f resources/stubs/vue/renderer.vue
           test -f resources/stubs/svelte/renderer.svelte
           test -f resources/stubs/shared/types.ts
+
+  adapters:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [react, vue, svelte]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund --no-package-lock
+      - run: npm run test:adapters -- ${{ matrix.stack }}
