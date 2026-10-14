@@ -72,7 +72,7 @@ function TablePreview({ node }: { node: ComponentNode }) {
         else setPage(1);
     }
 
-    function filter(key: string, value: string) {
+    function applyFilter(key: string, value: string) {
         setSelectedFilters((old) => ({ ...old, [key]: value }));
         if (mode === 'eloquent') navigate({ ['filter_' + key]: value || null });
         else setPage(1);
@@ -159,13 +159,13 @@ function TablePreview({ node }: { node: ComponentNode }) {
                         {filters.map((filter) => (
                             <label key={filter.key} className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
                                 {filter.label}
-                                <select value={selectedFilters[filter.key] ?? ''} onChange={(event) => filter(filter.key, event.target.value)}
+                                <select value={selectedFilters[filter.key] ?? ''} onChange={(event) => applyFilter(filter.key, event.target.value)}
                                     className="min-w-32 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-white/20 dark:bg-gray-950 dark:text-white">
                                     <option value="">{tx('filters')}: {filter.label}</option>
                                     {Object.entries(filter.options).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
                                 </select>
                             </label>
-                        )}
+                        ))}
                         <button type="button" onClick={reset} className="rounded-md border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50 dark:border-white/20 dark:hover:bg-white/5">{tx('reset')}</button>
                     </div>
                 )}
