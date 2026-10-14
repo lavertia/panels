@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Pages;
 
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Str;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -34,10 +34,14 @@ abstract class Page
 
     final public function __invoke(): Response
     {
+        $locale = app()->getLocale();
+
         return Inertia::render('lavertia/page', [
             'lavertia' => [
                 'version' => ComponentProtocol::VERSION,
                 'title' => static::title(),
+                'locale' => $locale,
+                'direction' => in_array($locale, ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
                 'tree' => $this->tree(),
             ],
         ]);

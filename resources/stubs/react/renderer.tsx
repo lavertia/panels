@@ -156,6 +156,7 @@ function ActionLink({ node }: { node: ComponentNode }) {
 
 export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
     const [input, setInput] = useState(String(node.props.value ?? ''));
+    const [checked, setChecked] = useState(node.props.checked === true);
 
     useEffect(() => {
         setInput(String(node.props.value ?? ''));
@@ -229,6 +230,38 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
                     <dd className="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{String(node.props.value ?? '—')}</dd>
                 </div>
             );
+
+
+        case 'form':
+            return <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+                <h3 className="text-sm font-semibold">{String(node.props.label ?? node.props.name ?? '')}</h3>
+                <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+                <p role="status" className="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
+                <button type="button" disabled className="cursor-not-allowed rounded-md bg-gray-200 px-4 py-2 text-sm opacity-60 dark:bg-gray-800">Save (unavailable)</button>
+            </section>;
+
+        case 'select':
+            return <label className="flex flex-col gap-1.5 text-sm font-semibold">
+                {String(node.props.label ?? node.props.name ?? '')}
+                <select value={input} required={node.props.required === true} onChange={(event) => setInput(event.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+                    <option value="">—</option>
+                    {Object.entries(node.props.options && typeof node.props.options === 'object' ? node.props.options as Record<string, string> : {}).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+            </label>;
+
+        case 'textarea':
+            return <label className="flex flex-col gap-1.5 text-sm font-semibold">
+                {String(node.props.label ?? node.props.name ?? '')}
+                <textarea rows={Number(node.props.rows ?? 3)} value={input} onChange={(event) => setInput(event.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
+            </label>;
+
+        case 'checkbox':
+            return <label className="flex items-center gap-2 text-sm font-semibold">
+                <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+                {String(node.props.label ?? node.props.name ?? '')}
+            </label>;
 
         case 'text-input':
             return (

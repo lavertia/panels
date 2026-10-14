@@ -14,6 +14,7 @@
 
     let { node }: { node: ComponentNode } = $props();
     let input = $state('');
+    let checked = $state(false);
     let search = $state('');
     let sortKey = $state<string | null>(null);
     let direction = $state<'asc' | 'desc'>('asc');
@@ -48,6 +49,7 @@
 
     $effect(() => {
         input = String(node.props.value ?? '');
+        checked = node.props.checked === true;
     });
 </script>
 
@@ -132,6 +134,37 @@
         <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</dt>
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{String(node.props.value ?? '—')}</dd>
     </div>
+
+{:else if node.type === 'form'}
+    <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+        <h3 class="text-sm font-semibold">{label}</h3>
+        <div class="grid gap-4 sm:grid-cols-2">
+            {#each node.components as child (child.key)}
+                <Self node={child} />
+            {/each}
+        </div>
+        <p role="status" class="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
+        <button type="button" disabled class="cursor-not-allowed rounded-md bg-gray-200 px-4 py-2 text-sm opacity-60 dark:bg-gray-800">Save (unavailable)</button>
+    </section>
+{:else if node.type === 'select'}
+    <label class="flex flex-col gap-1.5 text-sm font-semibold">
+        {label}
+        <select bind:value={input} required={node.props.required === true} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+            <option value="">—</option>
+            {#each Object.entries((node.props.options as Record<string, string>) ?? {}) as [value, option] (value)}
+                <option {value}>{option}</option>
+            {/each}
+        </select>
+    </label>
+{:else if node.type === 'textarea'}
+    <label class="flex flex-col gap-1.5 text-sm font-semibold">
+        {label}
+        <textarea bind:value={input} rows={Number(node.props.rows ?? 3)} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950"></textarea>
+    </label>
+{:else if node.type === 'checkbox'}
+    <label class="flex items-center gap-2 text-sm font-semibold">
+        <input type="checkbox" bind:checked />{label}
+    </label>
 {:else if node.type === 'text-input'}
     <div class="flex min-w-0 flex-col gap-1.5">
         <label for={node.key} class="text-sm font-semibold text-gray-800 dark:text-gray-200">{label}</label>

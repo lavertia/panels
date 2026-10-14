@@ -35,7 +35,7 @@ final class PanelsServiceProvider extends ServiceProvider
 
             Panel::make($id)
                 ->path((string) ($options['path'] ?? $id))
-                ->middleware($options['middleware'] ?? ['web', 'auth'])
+                ->middleware($options['middleware'] ?? ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class])
                 ->pages($options['pages'] ?? [])
                 ->registerRoutes();
         }

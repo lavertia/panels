@@ -18,6 +18,7 @@ const props = defineProps<{ node: ComponentNode }>();
 const label = computed(() => String(props.node.props.label ?? props.node.props.name ?? ''));
 const title = computed(() => String(props.node.props.title ?? ''));
 const input = ref(String(props.node.props.value ?? ''));
+const checked = ref(props.node.props.checked === true);
 const href = computed(() => safeHref(props.node.props.href));
 const columns = computed(() => tableColumns(props.node));
 const rows = computed(() => tableRows(props.node));
@@ -122,6 +123,28 @@ watch(() => props.node.props.value, (next) => {
         <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ label }}</dt>
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{{ String(node.props.value ?? '—') }}</dd>
     </div>
+
+
+    <section v-else-if="node.type === 'form'" class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+        <h3 class="text-sm font-semibold">{{ label }}</h3>
+        <div class="grid gap-4 sm:grid-cols-2"><LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" /></div>
+        <p role="status" class="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
+        <button type="button" disabled class="cursor-not-allowed rounded-md bg-gray-200 px-4 py-2 text-sm opacity-60 dark:bg-gray-800">Save (unavailable)</button>
+    </section>
+    <label v-else-if="node.type === 'select'" class="flex flex-col gap-1.5 text-sm font-semibold">
+        {{ label }}
+        <select v-model="input" :required="node.props.required === true" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+            <option value="">—</option>
+            <option v-for="(text, value) in (node.props.options as Record<string, string> ?? {})" :key="value" :value="value">{{ text }}</option>
+        </select>
+    </label>
+    <label v-else-if="node.type === 'textarea'" class="flex flex-col gap-1.5 text-sm font-semibold">
+        {{ label }}
+        <textarea v-model="input" :rows="Number(node.props.rows ?? 3)" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
+    </label>
+    <label v-else-if="node.type === 'checkbox'" class="flex items-center gap-2 text-sm font-semibold">
+        <input v-model="checked" type="checkbox" />{{ label }}
+    </label>
 
     <div v-else-if="node.type === 'text-input'" class="flex min-w-0 flex-col gap-1.5">
         <label :for="node.key" class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ label }}</label>

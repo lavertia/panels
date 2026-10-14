@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Components;
 
+use Closure;
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Lavertia\Support\Components\AbstractComponent;
 use Lavertia\Support\Contracts\Component;
@@ -15,13 +20,22 @@ final class Table extends AbstractComponent implements TableComponent
     /** @var list<TableColumnComponent> */
     private array $columns = [];
 
+    /** @var list<SelectFilter> */
+    private array $filters = [];
+
+    private ?Builder $query = null;
+
+    private ?Closure $authorize = null;
+
+    private int $perPage = 15;
+
     private function __construct(private readonly string $name)
     {
     }
 
     public static function make(string $name): self
     {
-        if (preg_match('/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/D', $name) !== 1) {
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,50}$/D', $name) !== 1) {
             throw new InvalidArgumentException('Invalid table name.');
         }
 
@@ -48,13 +62,19 @@ final class Table extends AbstractComponent implements TableComponent
         return $this->withProp('description', $description);
     }
 
-    /**
-     * Search is limited to the already-serialized snapshot.
-     * Server-side filters and pagination are not implemented.
-     */
-    public function searchable(bool $searchable = true): static
+    public function searchable(bool $enabled = true): static
     {
-        return $this->withProp('searchable', $searchable);
+        return $this->withProp('searchable', $enabled);
+    }
+
+    public function reorderableColumns(bool $enabled = true): static
+    {
+        return $this->withProp('reorderableColumns', $enabled);
+    }
+
+    public function columnManager(bool $enabled = true): static
+    {
+        return $this->withProp('columnManager', $enabled);
     }
 
     /** @param list<TableColumnComponent> $columns */
@@ -72,7 +92,7 @@ final class Table extends AbstractComponent implements TableComponent
             }
 
             if (isset($names[$column->getColumnName()])) {
-                throw new InvalidArgumentException('Duplicate table column name.');
+                throw new InvalidArgumentException('Duplicate table column.');
             }
 
             $names[$column->getColumnName()] = true;
@@ -84,14 +104,57 @@ final class Table extends AbstractComponent implements TableComponent
         return $copy;
     }
 
-    /** @return list<Component> */
-    public function getComponents(): array
+    /** @param list<SelectFilter> $filters */
+    public function filters(array $filters): static
     {
-        return $this->columns;
+        if (! array_is_list($filters)) {
+            throw new InvalidArgumentException('Filters must be a list.');
+        }
+
+        $names = [];
+
+        foreach ($filters as $filter) {
+            if (! $filter instanceof SelectFilter || isset($names[$filter->getFilterName()])) {
+                throw new InvalidArgumentException('Duplicate or invalid table filter.');
+            }
+
+            $names[$filter->getFilterName()] = true;
+        }
+
+        $copy = clone $this;
+        $copy->filters = $filters;
+
+        return $copy;
     }
 
     /**
-     * Temporary bounded snapshot only. Server-driven pagination is not implemented yet.
+     * The caller MUST supply a tenant/permission-scoped Eloquent Builder and an explicit
+     * authorization callback. Do not pass unscoped Model::query() in a multi-tenant app.
+     *
+     * The Builder and callback never cross the Inertia JSON boundary.
+     */
+    public function eloquent(Builder $query, Closure $authorize, int $perPage = 15): static
+    {
+        if ($perPage < 1 || $perPage > 100) {
+            throw new InvalidArgumentException('Rows per page must be between 1 and 100.');
+        }
+
+        $copy = clone $this;
+        $copy->query = clone $query;
+        $copy->authorize = $authorize;
+        $copy->perPage = $perPage;
+
+        return $copy;
+    }
+
+    /** @return list<Component> */
+    public function getComponents(): array
+    {
+        return [...$this->columns, ...$this->filters];
+    }
+
+    /**
+     * Snapshot mode is for small, non-sensitive datasets and has a strict upper bound.
      *
      * @param list<array<string, scalar|null>> $rows
      */
@@ -102,8 +165,8 @@ final class Table extends AbstractComponent implements TableComponent
         }
 
         foreach ($rows as $row) {
-            if (! is_array($row)) {
-                throw new InvalidArgumentException('Each table row must be an associative array.');
+            if (! is_array($row) || ! array_is_list(array_values($row))) {
+                throw new InvalidArgumentException('Invalid table row.');
             }
 
             foreach ($row as $value) {
@@ -119,6 +182,126 @@ final class Table extends AbstractComponent implements TableComponent
     /** @return array<string, mixed> */
     public function getProps(): array
     {
-        return ['name' => $this->name, 'rows' => [], ...parent::getProps()];
+        $base = [
+            'name' => $this->name,
+            'rows' => [],
+            'mode' => 'snapshot',
+            'locale' => app()->getLocale(),
+            ...parent::getProps(),
+        ];
+
+        if ($this->query === null) {
+            return $base;
+        }
+
+        // Client-side column hiding does not affect authorization or data projections.
+        if (($this->authorize) === null || ($this->authorize)() !== true) {
+            abort(403);
+        }
+
+        $query = clone $this->query;
+        $columns = [];
+        $sortable = [];
+        $searchable = [];
+
+        foreach ($this->columns as $column) {
+            $name = $column->getColumnName();
+            $columns[] = $name;
+
+            if ($column->getProps()['sortable'] ?? false) {
+                $sortable[] = $name;
+            }
+
+            if ($column->getProps()['searchable'] ?? false) {
+                $searchable[] = $name;
+            }
+        }
+
+        // Only simple, predeclared model attributes may participate in SQL operations.
+        foreach ([...$sortable, ...$searchable] as $name) {
+            if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/D', $name) !== 1) {
+                throw new InvalidArgumentException('Server-side columns must use direct attributes.');
+            }
+        }
+
+        $prefix = 'lvt_'.$this->name.'_';
+        $search = request()->query($prefix.'search', '');
+        $search = is_string($search) ? mb_substr(trim($search), 0, 100) : '';
+
+        if ($search !== '' && $searchable !== [] && ($base['searchable'] ?? false)) {
+            $query->where(function (Builder $nested) use ($searchable, $search): void {
+                foreach ($searchable as $attribute) {
+                    $nested->orWhere($attribute, 'like', '%'.$search.'%');
+                }
+            });
+        }
+
+        $appliedFilters = [];
+
+        foreach ($this->filters as $filter) {
+            $name = $filter->getFilterName();
+            $options = $filter->getProps()['options'] ?? [];
+            $value = request()->query($prefix.'filter_'.$name);
+
+            if (is_string($value) && array_key_exists($value, $options)) {
+                $query->where($name, '=', $value);
+                $appliedFilters[$name] = $value;
+            }
+        }
+
+        $sort = request()->query($prefix.'sort');
+        $sort = is_string($sort) && in_array($sort, $sortable, true) ? $sort : null;
+        $direction = request()->query($prefix.'direction') === 'desc' ? 'desc' : 'asc';
+
+        if ($sort !== null) {
+            $query->orderBy($sort, $direction);
+        }
+
+        $pageParam = $prefix.'page';
+        $page = filter_var(request()->query($pageParam, 1), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 1000000],
+        ]);
+        $page = $page === false ? 1 : $page;
+
+        $paginator = $query->paginate($this->perPage, ['*'], $pageParam, $page)->withQueryString();
+
+        $rows = $paginator->getCollection()->map(function (Model $model) use ($columns): array {
+            $result = [];
+
+            foreach ($columns as $name) {
+                $value = $model->getAttribute($name);
+
+                if ($value instanceof DateTimeInterface) {
+                    $value = $value->format(DATE_ATOM);
+                }
+
+                if ($value !== null && ! is_scalar($value)) {
+                    throw new InvalidArgumentException('Table data must be projected to scalar values.');
+                }
+
+                $result[$name] = $value;
+            }
+
+            return $result;
+        })->values()->all();
+
+        return [
+            ...$base,
+            'rows' => $rows,
+            'mode' => 'eloquent',
+            'statePrefix' => $prefix,
+            'appliedSearch' => $search,
+            'appliedSort' => $sort,
+            'appliedDirection' => $direction,
+            'appliedFilters' => $appliedFilters,
+            'pagination' => [
+                'page' => $paginator->currentPage(),
+                'lastPage' => $paginator->lastPage(),
+                'perPage' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'nextUrl' => $paginator->nextPageUrl(),
+                'previousUrl' => $paginator->previousPageUrl(),
+            ],
+        ];
     }
 }
