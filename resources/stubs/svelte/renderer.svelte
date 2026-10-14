@@ -5,7 +5,7 @@
     import { safeHref, tableColumns, tableRows } from './types';
 
     let { node }: { node: ComponentNode } = $props();
-    let input = $state(String(node.props.value ?? ''));
+    let input = $state('');
     let label = $derived(String(node.props.label ?? node.props.name ?? ''));
     let href = $derived(safeHref(node.props.href));
     let columns = $derived(tableColumns(node));
