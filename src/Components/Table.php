@@ -8,7 +8,6 @@ use Closure;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Lavertia\Support\Components\AbstractComponent;
 use Lavertia\Support\Contracts\Component;
@@ -165,7 +164,7 @@ final class Table extends AbstractComponent implements TableComponent
         }
 
         foreach ($rows as $row) {
-            if (! is_array($row) || ! array_is_list(array_values($row))) {
+            if (! is_array($row)) {
                 throw new InvalidArgumentException('Invalid table row.');
             }
 
@@ -186,7 +185,7 @@ final class Table extends AbstractComponent implements TableComponent
             'name' => $this->name,
             'rows' => [],
             'mode' => 'snapshot',
-            'locale' => app()->getLocale(),
+            'locale' => app() instanceof \Illuminate\Foundation\Application ? app()->getLocale() : 'en',
             ...parent::getProps(),
         ];
 
