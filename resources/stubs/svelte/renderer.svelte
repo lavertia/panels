@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
     import Self from './renderer.svelte';
     import type { ComponentNode, TableColumn } from './types';
     import {
@@ -10,6 +10,11 @@
         tableColumns,
         tableRows,
         visibleTableRows,
+        tableFilters,
+        tableColumnsInOrder,
+        defaultHiddenColumns,
+        tableStateUrl,
+        translate,
     } from './types';
 
     let { node }: { node: ComponentNode } = $props();
@@ -22,8 +27,65 @@
     let title = $derived(String(node.props.title ?? ''));
     let href = $derived(safeHref(node.props.href));
     let columns = $derived(tableColumns(node));
+
     let rows = $derived(tableRows(node));
-    let visible = $derived(visibleTableRows(rows, columns, search, sortKey, direction));
+    let filters = $derived(tableFilters(node));
+    let mode = $derived(node.props.mode === 'eloquent' ? 'eloquent' : 'snapshot');
+    const tx = (key: Parameters<typeof translate>[1]): string => translate(node.props.locale, key);
+    let selectedFilters = $state<Record<string, string>>({});
+    let hidden = $state<string[]>(defaultHiddenColumns(tableColumns(node)));
+    let order = $state<string[]>(tableColumns(node).map(column => column.key));
+    let pageNumber = $state(1);
+    let visibleColumns = $derived(tableColumnsInOrder(columns, order, hidden));
+    let filtered = $derived(mode === 'eloquent' ? rows : visibleTableRows(rows, columns, search, sortKey, direction, selectedFilters));
+    let lastPage = $derived(mode === 'eloquent'
+        ? Number((node.props.pagination as { lastPage?: number } | undefined)?.lastPage ?? 1)
+        : Math.max(1, Math.ceil(filtered.length / 5)));
+    let currentPage = $derived(mode === 'eloquent'
+        ? Number((node.props.pagination as { page?: number } | undefined)?.page ?? 1)
+        : Math.min(pageNumber, lastPage));
+    let visible = $derived(mode === 'eloquent' ? filtered : filtered.slice((currentPage - 1) * 5, currentPage * 5));
+    let pagination = $derived(node.props.pagination as { total?: number; nextUrl?: string | null; previousUrl?: string | null } | undefined);
+
+    function navigate(changes: Record<string, string | null>): void {
+        router.get(tableStateUrl(node, changes), {}, { preserveScroll: true, preserveState: true, replace: true });
+    }
+
+    function setFilter(key: string, value: string): void {
+        selectedFilters = { ...selectedFilters, [key]: value };
+        if (mode === 'eloquent') navigate({ ['filter_' + key]: value || null });
+        else pageNumber = 1;
+    }
+
+    function submitSearch(event: SubmitEvent): void {
+        event.preventDefault();
+        if (mode === 'eloquent') navigate({ search });
+        else pageNumber = 1;
+    }
+
+    function moveColumn(key: string, step: number): void {
+        const next = [...order];
+        const index = next.indexOf(key);
+        if (index < 0 || index + step < 0 || index + step >= next.length) return;
+        [next[index], next[index + step]] = [next[index + step], next[index]];
+        order = next;
+    }
+
+    function resetTable(): void {
+        search = '';
+        selectedFilters = {};
+        sortKey = null;
+        direction = 'asc';
+        pageNumber = 1;
+        order = columns.map(c => c.key);
+        hidden = defaultHiddenColumns(columns);
+        if (mode === 'eloquent') {
+            const changes: Record<string, string | null> = { search: null, sort: null, direction: null };
+            filters.forEach(f => { changes['filter_' + f.key] = null; });
+            navigate(changes);
+        }
+    }
+
     let actionClass = $derived.by(() => {
         const base = 'inline-flex min-h-9 items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500';
         const appearance = node.props.appearance;
@@ -36,15 +98,14 @@
         return base + ' ' + variant;
     });
 
+
     function toggleSort(column: TableColumn): void {
         if (!column.sortable) return;
-
-        if (sortKey === column.key) {
-            direction = direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            sortKey = column.key;
-            direction = 'asc';
-        }
+        const next = sortKey === column.key && direction === 'asc' ? 'desc' : 'asc';
+        sortKey = column.key;
+        direction = next;
+        if (mode === 'eloquent') navigate({ sort: column.key, direction: next });
+        else pageNumber = 1;
     }
 
     $effect(() => {
@@ -134,7 +195,6 @@
         <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</dt>
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{String(node.props.value ?? '—')}</dd>
     </div>
-
 {:else if node.type === 'form'}
     <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
         <h3 class="text-sm font-semibold">{label}</h3>
@@ -181,50 +241,78 @@
             <p id={node.key + '-help'} class="text-xs text-gray-500 dark:text-gray-400">{String(node.props.helperText)}</p>
         {/if}
     </div>
+
 {:else if node.type === 'table'}
     <section class="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/70" aria-label={label}>
-        <header class="flex flex-col gap-4 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
-            <div>
-                <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{label}</h3>
-                {#if node.props.description}
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>
-                {/if}
+        <header class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-white/10">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{label}</h3>
+                    {#if node.props.description}
+                        <p class="mt-1 text-xs text-gray-500">{String(node.props.description)}</p>
+                    {/if}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    {#if node.props.columnManager !== false}
+                        <details class="relative">
+                            <summary class="cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-amber-500 dark:border-white/20">{tx('columns')}</summary>
+                            <div class="absolute end-0 z-20 mt-2 w-64 space-y-2 rounded-lg border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                                {#each columns.filter(c => !c.hidden) as column (column.key)}
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <label class="flex min-w-0 flex-1 items-center gap-2">
+                                            <input type="checkbox" checked={!hidden.includes(column.key)}
+                                                disabled={!column.toggleable || (!hidden.includes(column.key) && visibleColumns.length <= 1)}
+                                                onchange={(event) => hidden = event.currentTarget.checked ? hidden.filter(key => key !== column.key) : [...hidden, column.key]} />
+                                            <span class="truncate">{column.label}</span>
+                                        </label>
+                                        {#if node.props.reorderableColumns === true}
+                                            <button type="button" aria-label={tx('moveLeft') + ': ' + column.label} disabled={order.indexOf(column.key) === 0} onclick={() => moveColumn(column.key, -1)} class="rounded p-1 disabled:opacity-30">↑</button>
+                                            <button type="button" aria-label={tx('moveRight') + ': ' + column.label} disabled={order.indexOf(column.key) === order.length - 1} onclick={() => moveColumn(column.key, 1)} class="rounded p-1 disabled:opacity-30">↓</button>
+                                        {/if}
+                                    </div>
+                                {/each}
+                                <button type="button" onclick={resetTable} class="w-full rounded bg-gray-100 px-2 py-1.5 text-xs dark:bg-gray-800">{tx('reset')}</button>
+                            </div>
+                        </details>
+                    {/if}
+                    {#if node.props.searchable === true}
+                        <form onsubmit={submitSearch} class="flex gap-1">
+                            <input bind:value={search} type="search" aria-label={tx('search')} placeholder={tx('search')}
+                                class="w-44 rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-amber-500 dark:border-white/20" />
+                            {#if mode === 'eloquent'}
+                                <button type="submit" class="rounded-lg bg-amber-500 px-3 text-xs font-semibold text-black">{tx('search')}</button>
+                            {/if}
+                        </form>
+                    {/if}
+                </div>
             </div>
-            {#if node.props.searchable === true}
-                <label class="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 sm:max-w-xs dark:border-white/15 dark:bg-gray-950">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" class="size-4 shrink-0 text-gray-400" stroke="currentColor" stroke-width="1.8">
-                        <circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" />
-                    </svg>
-                    <span class="sr-only">Search {label}</span>
-                    <input
-                        bind:value={search}
-                        aria-label={'Search ' + label}
-                        type="search"
-                        placeholder="Search records..."
-                        class="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
-                    />
-                </label>
+            {#if filters.length}
+                <div class="flex flex-wrap items-end gap-2">
+                    {#each filters as filter (filter.key)}
+                        <label class="flex flex-col gap-1 text-xs text-gray-500">
+                            {filter.label}
+                            <select value={selectedFilters[filter.key] ?? ''} onchange={(event) => setFilter(filter.key, event.currentTarget.value)}
+                                class="min-w-32 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+                                <option value="">{tx('filters')}: {filter.label}</option>
+                                {#each Object.entries(filter.options) as [value, option] (value)}
+                                    <option {value}>{option}</option>
+                                {/each}
+                            </select>
+                        </label>
+                    {/each}
+                    <button type="button" onclick={resetTable} class="rounded-md border border-gray-300 px-3 py-2 text-xs dark:border-white/20">{tx('reset')}</button>
+                </div>
             {/if}
         </header>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-start text-sm dark:divide-white/10">
+            <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-white/10">
                 <thead class="bg-gray-50/80 dark:bg-white/[0.03]">
                     <tr>
-                        {#each columns as column (column.key)}
-                            <th
-                                scope="col"
-                                aria-sort={column.sortable ? (sortKey === column.key ? (direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
-                                class="whitespace-nowrap px-5 py-3 text-start text-xs font-semibold text-gray-600 dark:text-gray-300"
-                            >
+                        {#each visibleColumns as column (column.key)}
+                            <th scope="col" aria-sort={column.sortable ? (sortKey === column.key ? (direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
+                                class="whitespace-nowrap px-5 py-3 text-start text-xs font-semibold text-gray-600 dark:text-gray-300">
                                 {#if column.sortable}
-                                    <button
-                                        type="button"
-                                        onclick={() => toggleSort(column)}
-                                        class="inline-flex min-h-6 items-center gap-1.5 rounded text-start transition-colors hover:text-amber-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:hover:text-amber-400"
-                                    >
-                                        {column.label}
-                                        <span aria-hidden="true" class="text-gray-400">{sortKey === column.key ? (direction === 'asc' ? '↑' : '↓') : '↕'}</span>
-                                    </button>
+                                    <button type="button" onclick={() => toggleSort(column)} class="rounded focus-visible:outline-2 focus-visible:outline-amber-500">{column.label} ↕</button>
                                 {:else}
                                     {column.label}
                                 {/if}
@@ -232,17 +320,15 @@
                         {/each}
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 bg-white dark:divide-white/[0.07] dark:bg-transparent">
+                <tbody class="divide-y divide-gray-100 dark:divide-white/[0.07]">
                     {#each visible as row, index (String(row.id ?? index))}
-                        <tr class="transition-colors hover:bg-gray-50/70 dark:hover:bg-white/[0.035]">
-                            {#each columns as column (column.key)}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.035]">
+                            {#each visibleColumns as column (column.key)}
                                 <td class="whitespace-nowrap px-5 py-3.5">
                                     {#if column.badge}
-                                        <span class={'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' + badgeClass(columnBadgeTone(column, row[column.key]))}>
-                                            {String(row[column.key] ?? '—')}
-                                        </span>
+                                        <span class={'inline-flex rounded-md px-2 py-1 text-xs ring-1 ring-inset ' + badgeClass(columnBadgeTone(column, row[column.key]))}>{String(row[column.key] ?? '—')}</span>
                                     {:else}
-                                        <span class="text-gray-800 dark:text-gray-200">{String(row[column.key] ?? '—')}</span>
+                                        <span>{String(row[column.key] ?? '—')}</span>
                                     {/if}
                                 </td>
                             {/each}
@@ -251,22 +337,30 @@
                 </tbody>
             </table>
             {#if visible.length === 0}
-                <div class="flex flex-col items-center gap-2 px-6 py-12 text-center">
-                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">No matching records</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{search ? 'Try another search term.' : 'No records have been added yet.'}</p>
-                    {#if search}
-                        <button
-                            type="button"
-                            onclick={() => search = ''}
-                            class="mt-1 rounded-md px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-amber-500 dark:text-amber-400 dark:hover:bg-amber-500/10"
-                        >Clear search</button>
-                    {/if}
-                </div>
+                <p class="px-5 py-12 text-center text-sm text-gray-500">{tx('noResults')}</p>
             {/if}
         </div>
-        <footer class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400">
-            <span aria-live="polite">Showing {visible.length} of {rows.length} records</span>
-            <span>Local preview · up to 100 records</span>
+        <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-5 py-3 text-xs dark:border-white/10">
+            <span aria-live="polite">{tx('show')} {mode === 'eloquent' ? pagination?.total ?? 0 : filtered.length} {tx('records')}</span>
+            <nav aria-label={tx('page')} class="flex items-center gap-2">
+                {#if mode === 'eloquent'}
+                    {#if pagination?.previousUrl}
+                        <Link href={pagination.previousUrl} preserveScroll class="rounded border px-2 py-1.5">{tx('previous')}</Link>
+                    {:else}
+                        <span class="opacity-40">{tx('previous')}</span>
+                    {/if}
+                    <span>{tx('page')} {currentPage} {tx('of')} {lastPage}</span>
+                    {#if pagination?.nextUrl}
+                        <Link href={pagination.nextUrl} preserveScroll class="rounded border px-2 py-1.5">{tx('next')}</Link>
+                    {:else}
+                        <span class="opacity-40">{tx('next')}</span>
+                    {/if}
+                {:else}
+                    <button type="button" disabled={currentPage <= 1} onclick={() => pageNumber = currentPage - 1} class="rounded border px-2 py-1.5 disabled:opacity-40">{tx('previous')}</button>
+                    <span>{tx('page')} {currentPage} {tx('of')} {lastPage}</span>
+                    <button type="button" disabled={currentPage >= lastPage} onclick={() => pageNumber = currentPage + 1} class="rounded border px-2 py-1.5 disabled:opacity-40">{tx('next')}</button>
+                {/if}
+            </nav>
         </footer>
     </section>
 {:else if node.type === 'action' && href?.startsWith('/')}

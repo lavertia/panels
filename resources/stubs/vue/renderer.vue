@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import type { ComponentNode, TableColumn } from './types';
 import {
     badgeClass,
@@ -10,6 +10,11 @@ import {
     tableColumns,
     tableRows,
     visibleTableRows,
+    tableFilters,
+    tableColumnsInOrder,
+    defaultHiddenColumns,
+    tableStateUrl,
+    translate,
 } from './types';
 
 defineOptions({ name: 'LavertiaRenderer' });
@@ -21,11 +26,68 @@ const input = ref(String(props.node.props.value ?? ''));
 const checked = ref(props.node.props.checked === true);
 const href = computed(() => safeHref(props.node.props.href));
 const columns = computed(() => tableColumns(props.node));
+
 const rows = computed(() => tableRows(props.node));
-const search = ref('');
-const sortKey = ref<string | null>(null);
-const direction = ref<'asc' | 'desc'>('asc');
-const visible = computed(() => visibleTableRows(rows.value, columns.value, search.value, sortKey.value, direction.value));
+const filters = computed(() => tableFilters(props.node));
+const mode = computed(() => props.node.props.mode === 'eloquent' ? 'eloquent' : 'snapshot');
+const tx = (key: Parameters<typeof translate>[1]): string => translate(props.node.props.locale, key);
+const search = ref(String(props.node.props.appliedSearch ?? ''));
+const sortKey = ref<string | null>(typeof props.node.props.appliedSort === 'string' ? props.node.props.appliedSort : null);
+const direction = ref<'asc' | 'desc'>(props.node.props.appliedDirection === 'desc' ? 'desc' : 'asc');
+const selectedFilters = ref<Record<string, string>>((props.node.props.appliedFilters as Record<string, string>) ?? {});
+const hidden = ref<string[]>(defaultHiddenColumns(tableColumns(props.node)));
+const order = ref<string[]>(tableColumns(props.node).map(column => column.key));
+const page = ref(1);
+const visibleColumns = computed(() => tableColumnsInOrder(columns.value, order.value, hidden.value));
+const filtered = computed(() => mode.value === 'eloquent' ? rows.value : visibleTableRows(rows.value, columns.value, search.value, sortKey.value, direction.value, selectedFilters.value));
+const lastPage = computed(() => mode.value === 'eloquent'
+    ? Number((props.node.props.pagination as { lastPage?: number } | undefined)?.lastPage ?? 1)
+    : Math.max(1, Math.ceil(filtered.value.length / 5)));
+const currentPage = computed(() => mode.value === 'eloquent'
+    ? Number((props.node.props.pagination as { page?: number } | undefined)?.page ?? 1)
+    : Math.min(page.value, lastPage.value));
+const visible = computed(() => mode.value === 'eloquent' ? filtered.value : filtered.value.slice((currentPage.value - 1) * 5, currentPage.value * 5));
+const pagination = computed(() => props.node.props.pagination as { total?: number; nextUrl?: string | null; previousUrl?: string | null } | undefined);
+const tableLabel = computed(() => String(props.node.props.label ?? props.node.props.name ?? 'Records'));
+function navigate(changes: Record<string, string | null>) {
+    router.get(tableStateUrl(props.node, changes), {}, { preserveScroll: true, preserveState: true, replace: true });
+}
+function setFilter(key: string, value: string) {
+    selectedFilters.value = { ...selectedFilters.value, [key]: value };
+    if (mode.value === 'eloquent') navigate({ ['filter_' + key]: value || null });
+    else page.value = 1;
+}
+function submitSearch() {
+    if (mode.value === 'eloquent') navigate({ search: search.value });
+    else page.value = 1;
+}
+function moveColumn(key: string, step: number) {
+    const next = [...order.value];
+    const index = next.indexOf(key);
+    if (index < 0 || index + step < 0 || index + step >= next.length) return;
+    [next[index], next[index + step]] = [next[index + step], next[index]];
+    order.value = next;
+}
+function resetTable() {
+    search.value = '';
+    selectedFilters.value = {};
+    sortKey.value = null;
+    direction.value = 'asc';
+    page.value = 1;
+    order.value = columns.value.map(c => c.key);
+    hidden.value = defaultHiddenColumns(columns.value);
+    if (mode.value === 'eloquent') {
+        const changes: Record<string, string | null> = { search: null, sort: null, direction: null };
+        filters.value.forEach(f => { changes['filter_' + f.key] = null; });
+        navigate(changes);
+    }
+}
+watch(() => props.node.props.appliedSearch, (next) => {
+    if (mode.value === 'eloquent') search.value = String(next ?? '');
+});
+watch(() => props.node.props.appliedFilters, (next) => {
+    if (mode.value === 'eloquent') selectedFilters.value = (next as Record<string, string>) ?? {};
+});
 const actionClass = computed(() => {
     const base = 'inline-flex min-h-9 items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500';
     const appearance = props.node.props.appearance;
@@ -38,15 +100,14 @@ const actionClass = computed(() => {
     return base + ' ' + variant;
 });
 
+
 function toggleSort(column: TableColumn): void {
     if (!column.sortable) return;
-
-    if (sortKey.value === column.key) {
-        direction.value = direction.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortKey.value = column.key;
-        direction.value = 'asc';
-    }
+    const next = sortKey.value === column.key && direction.value === 'asc' ? 'desc' : 'asc';
+    sortKey.value = column.key;
+    direction.value = next;
+    if (mode.value === 'eloquent') navigate({ sort: column.key, direction: next });
+    else page.value = 1;
 }
 
 watch(() => props.node.props.value, (next) => {
@@ -124,8 +185,7 @@ watch(() => props.node.props.value, (next) => {
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{{ String(node.props.value ?? '—') }}</dd>
     </div>
 
-
-    <section v-else-if="node.type === 'form'" class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+<section v-else-if="node.type === 'form'" class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
         <h3 class="text-sm font-semibold">{{ label }}</h3>
         <div class="grid gap-4 sm:grid-cols-2"><LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" /></div>
         <p role="status" class="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
@@ -146,7 +206,7 @@ watch(() => props.node.props.value, (next) => {
         <input v-model="checked" type="checkbox" />{{ label }}
     </label>
 
-    <div v-else-if="node.type === 'text-input'" class="flex min-w-0 flex-col gap-1.5">
+        <div v-else-if="node.type === 'text-input'" class="flex min-w-0 flex-col gap-1.5">
         <label :for="node.key" class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ label }}</label>
         <input
             :id="node.key"
@@ -162,76 +222,90 @@ watch(() => props.node.props.value, (next) => {
         </p>
     </div>
 
-    <section v-else-if="node.type === 'table'" class="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/70" :aria-label="label">
-        <header class="flex flex-col gap-4 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
-            <div>
-                <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{{ label }}</h3>
-                <p v-if="node.props.description" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {{ String(node.props.description) }}
-                </p>
+
+    <section v-else-if="node.type === 'table'" class="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/70" :aria-label="tableLabel">
+        <header class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-white/10">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{{ tableLabel }}</h3>
+                    <p v-if="node.props.description" class="mt-1 text-xs text-gray-500">{{ String(node.props.description) }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <details v-if="node.props.columnManager !== false" class="relative">
+                        <summary class="cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-amber-500 dark:border-white/20">{{ tx('columns') }}</summary>
+                        <div class="absolute end-0 z-20 mt-2 w-64 space-y-2 rounded-lg border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                            <div v-for="column in columns.filter(c => !c.hidden)" :key="column.key" class="flex items-center gap-2 text-xs">
+                                <label class="flex min-w-0 flex-1 items-center gap-2">
+                                    <input type="checkbox" :checked="!hidden.includes(column.key)" :disabled="!column.toggleable || (!hidden.includes(column.key) && visibleColumns.length <= 1)"
+                                        @change="(event) => { hidden = (event.target as HTMLInputElement).checked ? hidden.filter(key => key !== column.key) : [...hidden, column.key] }" />
+                                    <span class="truncate">{{ column.label }}</span>
+                                </label>
+                                <template v-if="node.props.reorderableColumns === true">
+                                    <button type="button" :aria-label="tx('moveLeft') + ': ' + column.label" :disabled="order.indexOf(column.key) === 0" @click="moveColumn(column.key, -1)" class="rounded p-1 disabled:opacity-30">↑</button>
+                                    <button type="button" :aria-label="tx('moveRight') + ': ' + column.label" :disabled="order.indexOf(column.key) === order.length - 1" @click="moveColumn(column.key, 1)" class="rounded p-1 disabled:opacity-30">↓</button>
+                                </template>
+                            </div>
+                            <button type="button" @click="resetTable" class="w-full rounded bg-gray-100 px-2 py-1.5 text-xs dark:bg-gray-800">{{ tx('reset') }}</button>
+                        </div>
+                    </details>
+                    <form v-if="node.props.searchable === true" @submit.prevent="submitSearch" class="flex gap-1">
+                        <input v-model="search" type="search" :aria-label="tx('search')" :placeholder="tx('search')"
+                            class="w-44 rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-amber-500 dark:border-white/20" />
+                        <button v-if="mode === 'eloquent'" type="submit" class="rounded-lg bg-amber-500 px-3 text-xs font-semibold text-black">{{ tx('search') }}</button>
+                    </form>
+                </div>
             </div>
-            <label v-if="node.props.searchable === true" class="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 sm:max-w-xs dark:border-white/15 dark:bg-gray-950">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" class="size-4 shrink-0 text-gray-400" stroke="currentColor" stroke-width="1.8">
-                    <circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" />
-                </svg>
-                <span class="sr-only">Search {{ label }}</span>
-                <input
-                    v-model="search"
-                    :aria-label="'Search ' + label"
-                    type="search"
-                    placeholder="Search records..."
-                    class="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
-                />
-            </label>
+            <div v-if="filters.length" class="flex flex-wrap items-end gap-2">
+                <label v-for="filter in filters" :key="filter.key" class="flex flex-col gap-1 text-xs text-gray-500">
+                    {{ filter.label }}
+                    <select :value="selectedFilters[filter.key] ?? ''" @change="setFilter(filter.key, ($event.target as HTMLSelectElement).value)"
+                        class="min-w-32 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+                        <option value="">{{ tx('filters') }}: {{ filter.label }}</option>
+                        <option v-for="(text, value) in filter.options" :key="value" :value="value">{{ text }}</option>
+                    </select>
+                </label>
+                <button type="button" @click="resetTable" class="rounded-md border border-gray-300 px-3 py-2 text-xs dark:border-white/20">{{ tx('reset') }}</button>
+            </div>
         </header>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-start text-sm dark:divide-white/10">
+            <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-white/10">
                 <thead class="bg-gray-50/80 dark:bg-white/[0.03]">
                     <tr>
-                        <th
-                            v-for="column in columns"
-                            :key="column.key"
-                            scope="col"
+                        <th v-for="column in visibleColumns" :key="column.key" scope="col"
                             :aria-sort="column.sortable ? (sortKey === column.key ? (direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined"
-                            class="whitespace-nowrap px-5 py-3 text-start text-xs font-semibold text-gray-600 dark:text-gray-300"
-                        >
-                            <button
-                                v-if="column.sortable"
-                                type="button"
-                                @click="toggleSort(column)"
-                                class="inline-flex min-h-6 items-center gap-1.5 rounded text-start transition-colors hover:text-amber-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 dark:hover:text-amber-400"
-                            >
-                                {{ column.label }}
-                                <span aria-hidden="true" class="text-gray-400">
-                                    {{ sortKey === column.key ? (direction === 'asc' ? '↑' : '↓') : '↕' }}
-                                </span>
-                            </button>
+                            class="whitespace-nowrap px-5 py-3 text-start text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            <button v-if="column.sortable" type="button" @click="toggleSort(column)" class="rounded focus-visible:outline-2 focus-visible:outline-amber-500">{{ column.label }} ↕</button>
                             <template v-else>{{ column.label }}</template>
                         </th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 bg-white dark:divide-white/[0.07] dark:bg-transparent">
-                    <tr v-for="(row, index) in visible" :key="String(row.id ?? index)" class="transition-colors hover:bg-gray-50/70 dark:hover:bg-white/[0.035]">
-                        <td v-for="column in columns" :key="column.key" class="whitespace-nowrap px-5 py-3.5">
-                            <span
-                                v-if="column.badge"
-                                :class="badgeClass(columnBadgeTone(column, row[column.key]))"
-                                class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
-                            >{{ String(row[column.key] ?? '—') }}</span>
-                            <span v-else class="text-gray-800 dark:text-gray-200">{{ String(row[column.key] ?? '—') }}</span>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/[0.07]">
+                    <tr v-for="(row, index) in visible" :key="String(row.id ?? index)" class="hover:bg-gray-50 dark:hover:bg-white/[0.035]">
+                        <td v-for="column in visibleColumns" :key="column.key" class="whitespace-nowrap px-5 py-3.5">
+                            <span v-if="column.badge" :class="badgeClass(columnBadgeTone(column, row[column.key]))" class="inline-flex rounded-md px-2 py-1 text-xs ring-1 ring-inset">{{ String(row[column.key] ?? '—') }}</span>
+                            <span v-else>{{ String(row[column.key] ?? '—') }}</span>
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <div v-if="visible.length === 0" class="flex flex-col items-center gap-2 px-6 py-12 text-center">
-                <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">No matching records</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ search ? 'Try another search term.' : 'No records have been added yet.' }}</p>
-                <button v-if="search" type="button" @click="search = ''" class="mt-1 rounded-md px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-amber-500 dark:text-amber-400 dark:hover:bg-amber-500/10">Clear search</button>
-            </div>
+            <p v-if="visible.length === 0" class="px-5 py-12 text-center text-sm text-gray-500">{{ tx('noResults') }}</p>
         </div>
-        <footer class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400">
-            <span aria-live="polite">Showing {{ visible.length }} of {{ rows.length }} records</span>
-            <span>Local preview · up to 100 records</span>
+        <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-5 py-3 text-xs dark:border-white/10">
+            <span aria-live="polite">{{ tx('show') }} {{ mode === 'eloquent' ? pagination?.total ?? 0 : filtered.length }} {{ tx('records') }}</span>
+            <nav :aria-label="tx('page')" class="flex items-center gap-2">
+                <template v-if="mode === 'eloquent'">
+                    <Link v-if="pagination?.previousUrl" :href="pagination.previousUrl" preserve-scroll class="rounded border px-2 py-1.5">{{ tx('previous') }}</Link>
+                    <span v-else class="opacity-40">{{ tx('previous') }}</span>
+                    <span>{{ tx('page') }} {{ currentPage }} {{ tx('of') }} {{ lastPage }}</span>
+                    <Link v-if="pagination?.nextUrl" :href="pagination.nextUrl" preserve-scroll class="rounded border px-2 py-1.5">{{ tx('next') }}</Link>
+                    <span v-else class="opacity-40">{{ tx('next') }}</span>
+                </template>
+                <template v-else>
+                    <button type="button" :disabled="currentPage <= 1" @click="page = currentPage - 1" class="rounded border px-2 py-1.5 disabled:opacity-40">{{ tx('previous') }}</button>
+                    <span>{{ tx('page') }} {{ currentPage }} {{ tx('of') }} {{ lastPage }}</span>
+                    <button type="button" :disabled="currentPage >= lastPage" @click="page = currentPage + 1" class="rounded border px-2 py-1.5 disabled:opacity-40">{{ tx('next') }}</button>
+                </template>
+            </nav>
         </footer>
     </section>
 
