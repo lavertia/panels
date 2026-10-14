@@ -121,3 +121,54 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, keep the support and panels branches checked out to their paired feature branches.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
+
+
+## Admin UI components (Filament-inspired visual hierarchy)
+
+The latest development branch adds the PHP components `PageHeader`, `StatsGrid`, `Stat` and `Section` for a structured dashboard. This is a **visual inspiration**, not a Filament fork or a Filament-compatible API.
+
+```php
+use Lavertia\Panels\Components\{
+    Action, PageHeader, Section, Stat, StatsGrid,
+    Table, TextColumn
+};
+
+return [
+    PageHeader::make('Overview')
+        ->description('Manage your workspace')
+        ->components([
+            Action::make('source')
+                ->label('View source')
+                ->appearance('primary')
+                ->url('https://github.com/lavertia/playground'),
+        ]),
+
+    StatsGrid::make([
+        Stat::make('Members', 6)->tone('success'),
+        Stat::make('Pending', 2)->tone('warning'),
+    ]),
+
+    Section::make('Directory')->components([
+        Table::make('members')
+            ->label('Team members')
+            ->searchable()
+            ->columns([
+                TextColumn::make('name')->sortable(),
+                TextColumn::make('status')->badge([
+                    'Active' => 'success',
+                    'Pending' => 'warning',
+                ]),
+            ])
+            ->rows([
+                ['name' => 'Sara', 'status' => 'Active'],
+                ['name' => 'Omar', 'status' => 'Pending'],
+            ]),
+    ]),
+];
+```
+
+The same PHP schema renders through React, Vue, and Svelte with static Tailwind CSS 4 utilities, responsive layout, accessible labels and focus states, light/dark mode, readable badges, and descriptive empty states.
+
+**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. `TextInput` does not persist changes yet. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
+
+To update an existing Starter Kit app, review generated files and then run `php artisan lavertia:install --stack=react --force` (or `vue`/`svelte`). The `--force` flag overwrites generated renderer/page files. See [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component roles and limitations.
