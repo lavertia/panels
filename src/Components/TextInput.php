@@ -43,6 +43,11 @@ final class TextInput extends AbstractComponent implements FieldComponent
         return $this->withProp('placeholder', $placeholder);
     }
 
+    public function helperText(string $helperText): static
+    {
+        return $this->withProp('helperText', $helperText);
+    }
+
     public function value(string $value): static
     {
         return $this->withProp('value', $value);

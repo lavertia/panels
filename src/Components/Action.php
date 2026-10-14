@@ -38,6 +38,15 @@ final class Action extends AbstractComponent implements ActionComponent
         return $this->withProp('label', $label);
     }
 
+    public function appearance(string $appearance): static
+    {
+        if (! in_array($appearance, ['primary', 'secondary', 'outline'], true)) {
+            throw new InvalidArgumentException('Invalid action appearance.');
+        }
+
+        return $this->withProp('appearance', $appearance);
+    }
+
     public function url(string $url): static
     {
         $relative = str_starts_with($url, '/') && ! str_starts_with($url, '//') && ! str_contains($url, '\\');
@@ -54,6 +63,6 @@ final class Action extends AbstractComponent implements ActionComponent
     /** @return array<string, mixed> */
     public function getProps(): array
     {
-        return ['name' => $this->name, ...parent::getProps()];
+        return ['name' => $this->name, 'appearance' => 'secondary', ...parent::getProps()];
     }
 }

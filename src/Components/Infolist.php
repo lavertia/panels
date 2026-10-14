@@ -36,6 +36,11 @@ final class Infolist extends AbstractComponent implements InfolistComponent
         return $this->name;
     }
 
+    public function label(string $label): static
+    {
+        return $this->withProp('label', $label);
+    }
+
     /** @return array<string, mixed> */
     public function getProps(): array
     {

@@ -38,6 +38,30 @@ final class TextColumn extends AbstractComponent implements TableColumnComponent
         return $this->withProp('label', $label);
     }
 
+    public function sortable(bool $sortable = true): static
+    {
+        return $this->withProp('sortable', $sortable);
+    }
+
+    /**
+     * Display a compact status badge instead of plain text.
+     *
+     * @param array<string, 'success'|'warning'|'danger'|'info'|'neutral'> $tones
+     */
+    public function badge(array $tones = []): static
+    {
+        foreach ($tones as $value => $tone) {
+            if (! is_string($value) || ! is_string($tone)
+                || ! in_array($tone, ['success', 'warning', 'danger', 'info', 'neutral'], true)) {
+                throw new InvalidArgumentException('Invalid column badge tone.');
+            }
+        }
+
+        return $this
+            ->withProp('badge', true)
+            ->withProp('badgeTones', $tones);
+    }
+
     /** @return array<string, mixed> */
     public function getProps(): array
     {
