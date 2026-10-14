@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Lavertia\Panels\Tests;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Lavertia\Panels\Components\Checkbox;
+use Lavertia\Panels\Components\Form;
+use Lavertia\Panels\Components\Select;
+use Lavertia\Panels\Components\SelectFilter;
+use Lavertia\Panels\Components\Table;
+use Lavertia\Panels\Components\Textarea;
+use Lavertia\Panels\Components\TextColumn;
+use Orchestra\Testbench\TestCase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+final class AdvancedTableTest extends TestCase
+{
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app['config']->set('database.default', 'sqlite');
+        $app['config']->set('database.connections.sqlite.database', ':memory:');
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Schema::create('lavertia_test_records', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('tenant_id');
+            $table->string('name');
+            $table->string('status');
+            $table->string('private_secret');
+        });
+
+        TableTestRecord::query()->create(['tenant_id' => 1, 'name' => 'Alpha', 'status' => 'active', 'private_secret' => 'secret-a']);
+        TableTestRecord::query()->create(['tenant_id' => 1, 'name' => 'Beta', 'status' => 'pending', 'private_secret' => 'secret-b']);
+        TableTestRecord::query()->create(['tenant_id' => 2, 'name' => 'Hidden', 'status' => 'active', 'private_secret' => 'secret-c']);
+    }
+
+    public function test_scoped_eloquent_pagination_never_serializes_unlisted_fields(): void
+    {
+        $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_page=2'));
+
+        $props = $this->table()->getProps();
+
+        self::assertSame('eloquent', $props['mode']);
+        self::assertSame(2, $props['pagination']['total']);
+        self::assertSame(2, $props['pagination']['page']);
+        self::assertSame('Beta', $props['rows'][0]['name']);
+        self::assertArrayNotHasKey('private_secret', $props['rows'][0]);
+        self::assertCount(1, $props['rows']);
+    }
+
+    public function test_only_declared_filters_and_sorts_are_applied(): void
+    {
+        $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_filter_status=pending&lvt_records_sort=private_secret'));
+
+        $props = $this->table()->getProps();
+
+        self::assertSame('Beta', $props['rows'][0]['name']);
+        self::assertNull($props['appliedSort']);
+        self::assertSame(['status' => 'pending'], $props['appliedFilters']);
+    }
+
+    public function test_unauthorized_query_is_rejected(): void
+    {
+        $this->expectException(HttpException::class);
+
+        $this->table(false)->getProps();
+    }
+
+    public function test_non_matching_filter_option_is_ignored(): void
+    {
+        $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_filter_status=deleted'));
+
+        $props = $this->table()->getProps();
+
+        self::assertSame([], $props['appliedFilters']);
+        self::assertSame(2, $props['pagination']['total']);
+    }
+
+    public function test_forms_are_composable_with_field_descriptors(): void
+    {
+        $tree = Form::make('profile')->components([
+            Select::make('role')->options(['admin' => 'Administrator'])->required(),
+            Textarea::make('bio')->rows(3),
+            Checkbox::make('subscribe')->checked(),
+        ])->toArray();
+
+        self::assertSame('form', $tree['type']);
+        self::assertSame(['select', 'textarea', 'checkbox'], array_column($tree['components'], 'type'));
+    }
+
+    private function table(bool $authorized = true): Table
+    {
+        return Table::make('records')
+            ->columns([
+                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('status')->badge(),
+            ])
+            ->filters([
+                SelectFilter::make('status')->options([
+                    'active' => 'Active',
+                    'pending' => 'Pending',
+                ]),
+            ])
+            ->eloquent(
+                TableTestRecord::query()->where('tenant_id', 1),
+                static fn (): bool => $authorized,
+                1,
+            );
+    }
+}
+
+final class TableTestRecord extends Model
+{
+    protected $table = 'lavertia_test_records';
+
+    protected $guarded = [];
+
+    public $timestamps = false;
+}
