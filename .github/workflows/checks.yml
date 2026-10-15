@@ -54,6 +54,8 @@ jobs:
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::PHP integration tests not run. Set LAVERTIA_READ_TOKEN while Support is private."
+            echo "## PHPUnit / Testbench: BLOCKED" >> "$GITHUB_STEP_SUMMARY"
+            echo "Private lavertia/support access unavailable. Adapter runtime/build checks cannot substitute for PHP tests." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   php-tests:
