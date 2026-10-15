@@ -2,6 +2,7 @@ name: checks
 on:
   push:
     branches: [main, "feat/**"]
+    tags: ["v0.*"]
   pull_request:
 
 jobs:
@@ -93,3 +94,20 @@ jobs:
           composer test
       - name: PSR style
         run: composer lint
+
+  release-gate:
+    name: v0 release verification
+    needs: [lint, adapters, php-gate, php-tests]
+    if: always() && startsWith(github.ref, 'refs/tags/v0.')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all mandatory jobs ran successfully
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] \
+            || [ "${{ needs.adapters.result }}" != "success" ] \
+            || [ "${{ needs.php-gate.outputs.available }}" != "true" ] \
+            || [ "${{ needs.php-tests.result }}" != "success" ]; then
+            echo "::error::v0 release blocked: full adapter and PHP/Testbench checks must pass. Skipped jobs are not release successes."
+            exit 1
+          fi
+          echo "v0 release quality gate passed."
