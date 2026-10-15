@@ -25,6 +25,35 @@ const title = computed(() => String(props.node.props.title ?? ''));
 const input = ref(String(props.node.props.value ?? ''));
 const checked = ref(props.node.props.checked === true);
 const href = computed(() => safeHref(props.node.props.href));
+const formAction = computed(() => {
+    const value = props.node.props.action;
+    return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : null;
+});
+const formMethod = computed<'post' | 'put' | 'patch'>(() =>
+    props.node.props.method === 'put' || props.node.props.method === 'patch' ? props.node.props.method : 'post');
+const processing = ref(false);
+const formErrors = ref<Record<string, string>>({});
+const saved = ref(false);
+
+function submitForm(event: Event): void {
+    if (!formAction.value || processing.value) return;
+    const data: Record<string, string> = {};
+    for (const [name, value] of new FormData(event.currentTarget as HTMLFormElement).entries()) {
+        if (typeof value === 'string') data[name] = value;
+    }
+    formErrors.value = {};
+    saved.value = false;
+    processing.value = true;
+    router.visit(formAction.value, {
+        method: formMethod.value,
+        data,
+        preserveScroll: true,
+        onSuccess: () => { saved.value = true; },
+        onError: (errors) => { formErrors.value = errors; },
+        onFinish: () => { processing.value = false; },
+    });
+}
+
 const columns = computed(() => tableColumns(props.node));
 
 const rows = computed(() => tableRows(props.node));
@@ -185,25 +214,34 @@ watch(() => props.node.props.value, (next) => {
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{{ String(node.props.value ?? '—') }}</dd>
     </div>
 
-<section v-else-if="node.type === 'form'" class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+<form v-else-if="node.type === 'form'" :action="formAction ?? undefined" method="post" @submit.prevent="submitForm"
+        class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
         <h3 class="text-sm font-semibold">{{ label }}</h3>
         <div class="grid gap-4 sm:grid-cols-2"><LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" /></div>
-        <p role="status" class="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
-        <button type="button" disabled class="cursor-not-allowed rounded-md bg-gray-200 px-4 py-2 text-sm opacity-60 dark:bg-gray-800">Save (unavailable)</button>
-    </section>
+        <ul v-if="Object.keys(formErrors).length" role="alert" class="list-disc space-y-1 ps-5 text-sm text-rose-600">
+            <li v-for="(message, field) in formErrors" :key="field">{{ field }}: {{ message }}</li>
+        </ul>
+        <p v-if="saved" role="status" class="text-sm text-emerald-700">{{ tx('saved') }}</p>
+        <button v-if="formAction" type="submit" :disabled="processing"
+            class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-950 disabled:opacity-50">
+            {{ processing ? tx('saving') : String(node.props.submitLabel ?? tx('submit')) }}
+        </button>
+        <p v-else role="status" class="text-xs text-gray-500">{{ tx('draft') }}</p>
+    </form>
     <label v-else-if="node.type === 'select'" class="flex flex-col gap-1.5 text-sm font-semibold">
         {{ label }}
-        <select v-model="input" :required="node.props.required === true" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+        <select v-model="input" :name="String(node.props.name ?? '')" :required="node.props.required === true" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
             <option value="">—</option>
             <option v-for="(text, value) in (node.props.options as Record<string, string> ?? {})" :key="value" :value="value">{{ text }}</option>
         </select>
     </label>
     <label v-else-if="node.type === 'textarea'" class="flex flex-col gap-1.5 text-sm font-semibold">
         {{ label }}
-        <textarea v-model="input" :rows="Number(node.props.rows ?? 3)" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
+        <textarea v-model="input" :name="String(node.props.name ?? '')" :required="node.props.required === true" :rows="Number(node.props.rows ?? 3)" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
     </label>
     <label v-else-if="node.type === 'checkbox'" class="flex items-center gap-2 text-sm font-semibold">
-        <input v-model="checked" type="checkbox" />{{ label }}
+        <input type="hidden" :name="String(node.props.name ?? '')" value="0" />
+        <input v-model="checked" type="checkbox" :name="String(node.props.name ?? '')" value="1" />{{ label }}
     </label>
 
         <div v-else-if="node.type === 'text-input'" class="flex min-w-0 flex-col gap-1.5">
@@ -212,6 +250,7 @@ watch(() => props.node.props.value, (next) => {
             :id="node.key"
             v-model="input"
             type="text"
+            :required="node.props.required === true"
             :name="String(node.props.name ?? '')"
             :placeholder="String(node.props.placeholder ?? '')"
             :aria-describedby="node.props.helperText ? node.key + '-help' : undefined"

@@ -200,7 +200,7 @@ const translations = {
         empty: 'No records have been added yet.', clear: 'Clear search',
         show: 'Showing', records: 'records', moveLeft: 'Move column left',
         moveRight: 'Move column right', preview: 'Local preview',
-        submit: 'Save changes', draft: 'Form preview only — no save endpoint',
+        submit: 'Save changes', saving: 'Saving...', saved: 'Changes saved.', draft: 'Form preview only — no save endpoint',
     },
     ar: {
         search: 'ابحث في السجلات...', filters: 'الفلاتر', columns: 'الأعمدة', reset: 'إعادة ضبط',
@@ -209,7 +209,7 @@ const translations = {
         empty: 'لا توجد سجلات بعد.', clear: 'مسح البحث',
         show: 'عرض', records: 'سجلات', moveLeft: 'حرّك العمود للخلف',
         moveRight: 'حرّك العمود للأمام', preview: 'معاينة محلية',
-        submit: 'حفظ التغييرات', draft: 'معاينة النموذج فقط — الحفظ غير مفعّل',
+        submit: 'حفظ التغييرات', saving: 'جارٍ الحفظ...', saved: 'تم حفظ التغييرات.', draft: 'معاينة النموذج فقط — الحفظ غير مفعّل',
     },
     fr: {
         search: 'Rechercher...', filters: 'Filtres', columns: 'Colonnes', reset: 'Réinitialiser',
@@ -218,7 +218,7 @@ const translations = {
         empty: 'Aucun enregistrement.', clear: 'Effacer la recherche',
         show: 'Affichage', records: 'enregistrements', moveLeft: 'Déplacer à gauche',
         moveRight: 'Déplacer à droite', preview: 'Aperçu local',
-        submit: 'Enregistrer', draft: 'Aperçu du formulaire — aucun enregistrement',
+        submit: 'Enregistrer', saving: 'Enregistrement...', saved: 'Modifications enregistrées.', draft: 'Aperçu du formulaire — aucun enregistrement',
     },
 } as const;
 

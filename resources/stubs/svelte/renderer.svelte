@@ -20,6 +20,35 @@
     let { node }: { node: ComponentNode } = $props();
     let input = $state('');
     let checked = $state(false);
+    let processing = $state(false);
+    let formErrors = $state<Record<string, string>>({});
+    let saved = $state(false);
+    let formAction = $derived(typeof node.props.action === 'string'
+        && node.props.action.startsWith('/') && !node.props.action.startsWith('//') ? node.props.action : null);
+
+    function submitForm(event: SubmitEvent): void {
+        event.preventDefault();
+        if (!formAction || processing) return;
+
+        const data: Record<string, string> = {};
+        for (const [name, value] of new FormData(event.currentTarget as HTMLFormElement).entries()) {
+            if (typeof value === 'string') data[name] = value;
+        }
+        const method: 'post' | 'put' | 'patch' = node.props.method === 'put' || node.props.method === 'patch'
+            ? node.props.method : 'post';
+        formErrors = {};
+        saved = false;
+        processing = true;
+        router.visit(formAction, {
+            method,
+            data,
+            preserveScroll: true,
+            onSuccess: () => { saved = true; },
+            onError: (errors) => { formErrors = errors; },
+            onFinish: () => { processing = false; },
+        });
+    }
+
     let search = $state('');
     let sortKey = $state<string | null>(null);
     let direction = $state<'asc' | 'desc'>('asc');
@@ -196,20 +225,35 @@
         <dd class="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-gray-100">{String(node.props.value ?? '—')}</dd>
     </div>
 {:else if node.type === 'form'}
-    <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
+    <form action={formAction ?? undefined} method="post" onsubmit={submitForm}
+        class="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900/70">
         <h3 class="text-sm font-semibold">{label}</h3>
         <div class="grid gap-4 sm:grid-cols-2">
             {#each node.components as child (child.key)}
                 <Self node={child} />
             {/each}
         </div>
-        <p role="status" class="text-xs text-gray-500">Form preview only — no save endpoint configured.</p>
-        <button type="button" disabled class="cursor-not-allowed rounded-md bg-gray-200 px-4 py-2 text-sm opacity-60 dark:bg-gray-800">Save (unavailable)</button>
-    </section>
+        {#if Object.keys(formErrors).length > 0}
+            <ul role="alert" class="list-disc space-y-1 ps-5 text-sm text-rose-600">
+                {#each Object.entries(formErrors) as [field, message] (field)}
+                    <li>{field}: {message}</li>
+                {/each}
+            </ul>
+        {/if}
+        {#if saved}<p role="status" class="text-sm text-emerald-700">{tx('saved')}</p>{/if}
+        {#if formAction}
+            <button type="submit" disabled={processing}
+                class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-950 disabled:opacity-50">
+                {processing ? tx('saving') : String(node.props.submitLabel ?? tx('submit'))}
+            </button>
+        {:else}
+            <p role="status" class="text-xs text-gray-500">{tx('draft')}</p>
+        {/if}
+    </form>
 {:else if node.type === 'select'}
     <label class="flex flex-col gap-1.5 text-sm font-semibold">
         {label}
-        <select bind:value={input} required={node.props.required === true} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+        <select bind:value={input} name={String(node.props.name ?? '')} required={node.props.required === true} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
             <option value="">—</option>
             {#each Object.entries((node.props.options as Record<string, string>) ?? {}) as [value, option] (value)}
                 <option {value}>{option}</option>
@@ -219,11 +263,12 @@
 {:else if node.type === 'textarea'}
     <label class="flex flex-col gap-1.5 text-sm font-semibold">
         {label}
-        <textarea bind:value={input} rows={Number(node.props.rows ?? 3)} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950"></textarea>
+        <textarea bind:value={input} name={String(node.props.name ?? '')} required={node.props.required === true} rows={Number(node.props.rows ?? 3)} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950"></textarea>
     </label>
 {:else if node.type === 'checkbox'}
     <label class="flex items-center gap-2 text-sm font-semibold">
-        <input type="checkbox" bind:checked />{label}
+        <input type="hidden" name={String(node.props.name ?? '')} value="0" />
+        <input type="checkbox" name={String(node.props.name ?? '')} value="1" bind:checked />{label}
     </label>
 {:else if node.type === 'text-input'}
     <div class="flex min-w-0 flex-col gap-1.5">
@@ -232,6 +277,7 @@
             id={node.key}
             bind:value={input}
             type="text"
+            required={node.props.required === true}
             name={String(node.props.name ?? '')}
             placeholder={String(node.props.placeholder ?? '')}
             aria-describedby={node.props.helperText ? node.key + '-help' : undefined}
