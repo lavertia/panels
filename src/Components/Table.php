@@ -178,6 +178,24 @@ final class Table extends AbstractComponent implements TableComponent
         return $this->withProp('rows', $rows);
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $orders
+     */
+    private function hasPrimaryKeyOrder(array $orders, string $qualifiedKey, string $key): bool
+    {
+        foreach ($orders as $order) {
+            if (! isset($order['column']) || ! is_string($order['column'])) {
+                continue;
+            }
+
+            if ($order['column'] === $key || $order['column'] === $qualifiedKey) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @return array<string, mixed> */
     public function getProps(): array
     {
@@ -252,8 +270,23 @@ final class Table extends AbstractComponent implements TableComponent
         $sort = is_string($sort) && in_array($sort, $sortable, true) ? $sort : null;
         $direction = request()->query($prefix.'direction') === 'desc' ? 'desc' : 'asc';
 
+        // Offset pagination needs a deterministic total ordering. Preserve
+        // app-defined defaults, but let the explicit table sort take precedence.
+        // Qualified identifiers avoid ambiguity with joined queries.
+        $model = $query->getModel();
+        $key = $model->getQualifiedKeyName();
+        $orders = $query->getQuery()->orders ?? [];
+
         if ($sort !== null) {
-            $query->orderBy($sort, $direction);
+            $query->reorder()->orderBy($model->qualifyColumn($sort), $direction);
+
+            if ($model->qualifyColumn($sort) !== $key) {
+                $query->orderBy($key);
+            }
+        } elseif ($orders === [] || ! $this->hasPrimaryKeyOrder($orders, $key, $model->getKeyName())) {
+            // Keep predeclared builder ordering as the primary sort, adding a
+            // unique tie-breaker only where one is not already present.
+            $query->orderBy($key);
         }
 
         $pageParam = $prefix.'page';

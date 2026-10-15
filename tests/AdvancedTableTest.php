@@ -85,6 +85,60 @@ final class AdvancedTableTest extends TestCase
         self::assertSame(2, $props['pagination']['total']);
     }
 
+
+    public function test_server_pagination_uses_a_stable_primary_key_order_by_default(): void
+    {
+        $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_page=2'));
+
+        $firstPage = $this->table()->getProps();
+
+        self::assertSame('Beta', $firstPage['rows'][0]['name']);
+        self::assertSame(2, $firstPage['pagination']['total']);
+    }
+
+    public function test_client_sort_overrides_builder_default_and_uses_primary_key_tie_breaker(): void
+    {
+        TableTestRecord::query()->create([
+            'tenant_id' => 1,
+            'name' => 'Alpha',
+            'status' => 'active',
+            'private_secret' => 'secret-d',
+        ]);
+
+        $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_sort=name&lvt_records_direction=asc&lvt_records_page=2'));
+
+        $table = Table::make('records')
+            ->columns([
+                TextColumn::make('name')->sortable(),
+            ])
+            ->eloquent(
+                TableTestRecord::query()->where('tenant_id', 1)->orderBy('name', 'desc'),
+                static fn (): bool => true,
+                1,
+            );
+
+        $props = $table->getProps();
+
+        self::assertSame('Alpha', $props['rows'][0]['name']);
+        self::assertSame(3, $props['pagination']['total']);
+        self::assertSame('name', $props['appliedSort']);
+    }
+
+    public function test_developer_selected_order_is_preserved_when_no_client_sort_exists(): void
+    {
+        $this->app->instance('request', Request::create('/admin/model-demo'));
+
+        $table = Table::make('records')
+            ->columns([TextColumn::make('name')])
+            ->eloquent(
+                TableTestRecord::query()->where('tenant_id', 1)->orderBy('name', 'desc'),
+                static fn (): bool => true,
+                1,
+            );
+
+        self::assertSame('Beta', $table->getProps()['rows'][0]['name']);
+    }
+
     public function test_forms_are_composable_with_field_descriptors(): void
     {
         $tree = Form::make('profile')->components([
