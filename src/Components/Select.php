@@ -38,7 +38,7 @@ final class Select extends AbstractComponent implements FieldComponent
         return $this->withProp('label', $label);
     }
 
-    /** @param array<string, string> $options */
+    /** @param array<int|string, string> $options */
     public function options(array $options): static
     {
         if (count($options) > 250) {
@@ -46,7 +46,7 @@ final class Select extends AbstractComponent implements FieldComponent
         }
 
         foreach ($options as $key => $label) {
-            if (! is_string($key) || ! is_string($label)) {
+            if ((! is_string($key) && ! is_int($key)) || ! is_string($label)) {
                 throw new InvalidArgumentException('Select options must map strings to labels.');
             }
         }

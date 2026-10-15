@@ -155,7 +155,9 @@ export function tableFilters(node: ComponentNode): TableFilter[] {
         .map((component) => ({
             key: String(component.props.name ?? ''),
             label: String(component.props.label ?? component.props.name ?? ''),
-            options: isRecord(component.props.options) ? component.props.options as Record<string, string> : {},
+            options: (isRecord(component.props.options) || Array.isArray(component.props.options))
+                ? Object.fromEntries(Object.entries(component.props.options).filter(([, value]) => typeof value === 'string')) as Record<string, string>
+                : {},
         }));
 }
 

@@ -45,6 +45,13 @@ final class FormComponentTest extends TestCase
         self::assertArrayNotHasKey('action', (array) $tree['props']);
     }
 
+    public function test_select_options_accept_numeric_keys_that_php_coerces_to_integers(): void
+    {
+        $tree = Select::make('level')->options([0 => 'Zero', 1 => 'One'])->toArray();
+
+        self::assertSame(['Zero', 'One'], $tree['props']->options);
+    }
+
     public function test_form_rejects_external_action_urls(): void
     {
         $this->expectException(InvalidArgumentException::class);

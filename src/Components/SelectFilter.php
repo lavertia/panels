@@ -38,7 +38,7 @@ final class SelectFilter extends AbstractComponent
     }
 
     /**
-     * @param array<string, string> $options
+     * @param array<int|string, string> $options
      */
     public function options(array $options): static
     {
@@ -47,8 +47,8 @@ final class SelectFilter extends AbstractComponent
         }
 
         foreach ($options as $value => $label) {
-            if (! is_string($value) || ! is_string($label)
-                || $value === '' || mb_strlen($value) > 100) {
+            if ((! is_string($value) && ! is_int($value)) || ! is_string($label)
+                || (string) $value === '' || mb_strlen((string) $value) > 100) {
                 throw new InvalidArgumentException('Invalid filter option.');
             }
         }
