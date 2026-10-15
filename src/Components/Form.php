@@ -19,7 +19,7 @@ final class Form extends AbstractComponent implements ComposesComponents
 
     public static function make(string $name): self
     {
-        if (preg_match('/^[A-Za-z][A-Za-z0-9_]{0,63}$/D', $name) !== 1) {
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $name) !== 1) {
             throw new InvalidArgumentException('Invalid form name.');
         }
 
@@ -50,6 +50,21 @@ final class Form extends AbstractComponent implements ComposesComponents
         return $this->withProp('action', $url);
     }
 
+    /**
+     * Browser submissions use Inertia and Laravel's normal web middleware,
+     * including session-based CSRF protection and validation redirects.
+     */
+    public function method(string $method): static
+    {
+        $method = strtolower($method);
+
+        if (! in_array($method, ['post', 'put', 'patch'], true)) {
+            throw new InvalidArgumentException('Form method must be POST, PUT or PATCH.');
+        }
+
+        return $this->withProp('method', $method);
+    }
+
     public function submitLabel(string $label): static
     {
         return $this->withProp('submitLabel', $label);
@@ -58,6 +73,6 @@ final class Form extends AbstractComponent implements ComposesComponents
     /** @return array<string, mixed> */
     public function getProps(): array
     {
-        return ['name' => $this->name, ...parent::getProps()];
+        return ['name' => $this->name, 'method' => 'post', ...parent::getProps()];
     }
 }

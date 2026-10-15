@@ -43,6 +43,11 @@ final class Textarea extends AbstractComponent implements FieldComponent
         return $this->withProp('value', $value);
     }
 
+    public function required(bool $required = true): static
+    {
+        return $this->withProp('required', $required);
+    }
+
     public function rows(int $rows): static
     {
         if ($rows < 2 || $rows > 15) {

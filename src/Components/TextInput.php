@@ -48,6 +48,11 @@ final class TextInput extends AbstractComponent implements FieldComponent
         return $this->withProp('helperText', $helperText);
     }
 
+    public function required(bool $required = true): static
+    {
+        return $this->withProp('required', $required);
+    }
+
     public function value(string $value): static
     {
         return $this->withProp('value', $value);
