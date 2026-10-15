@@ -1,4 +1,4 @@
-# Lavertia v0.2 capability review (2026-10-14)
+# Lavertia v0.2 capability review (updated 2026-10-16)
 
 ## Official Filament 5 comparison
 
@@ -19,7 +19,7 @@ References (used to design behavior, **not** copied code):
 - `TextColumn::sortable()->searchable()`: local on snapshots, query-backed on Eloquent tables.
 - `Table::eloquent($scopedBuilder, fn () => auth()->user()->can('viewAny', Model::class), perPage: 15)`: database pagination, allowlisted sort/search/filter, explicit authorization gate, scalar-only projection from declared columns.
 - Query params are **namespaced per table** as `lvt_<table-name>_page/search/sort/direction/filter_<name>` so multiple instances on one page need not collide.
-- `Form::make()->components([...])`, `Select`, `Textarea`, `Checkbox` and `TextInput` are **UI previews only**. Saving, Form Requests and nested repeaters are **not** implemented yet.
+- `Form::make()->action('/local-route')->method('post'|'put'|'patch')` submits named `TextInput`, `Select`, `Textarea` and `Checkbox` values through Inertia, with processing state and Laravel validation feedback in all three adapters. Omit `action()` to keep preview-only behavior. Backend persistence and authorization remain application-owned. The Playground v0.2 branch demonstrates a user-owned Eloquent record and includes authentication, validation and mass-assignment negative tests.
 - `ResolveLocale` handles explicit `?lang=en|ar|fr`, stores in Laravel session, and uses the current locale for page metadata. The frontend controls have en/ar/fr text with a safe English fallback; `dir=rtl` is applied to the Lavertia content main area. Full Starter Kit shell RTL and localized validation strings require separate integration.
 
 ### Eloquent example
@@ -52,7 +52,7 @@ Existing `Table::rows()` can display up to 100 **already-sanitized** scalar reco
 
 1. No end-to-end browser/SSR test suite exercising interactions across React/Vue/Svelte.
 2. Playground cross-repo GitHub Actions require authorized read access to private `support` and `panels`.
-3. No real form persistence or Laravel Form Request integration.
+3. A real form persistence demo exists in Playground, but its PHP integration tests cannot run until private package read access is configured; framework-provided Form Request generation is not included.
 4. No Repeater, Wizard, relationship editor, upload or server-side Actions.
 5. No remote API pagination adapter or row reordering policy.
 6. i18n coverage currently en/ar/fr, with limited shell RTL integration and no accessibility audit across locales.
@@ -61,7 +61,7 @@ Existing `Table::rows()` can display up to 100 **already-sanitized** scalar reco
 
 ## Next milestones
 
-- v0.2.1: Forms + Laravel Form Requests, controlled submitted state, server validation, transaction, policy.
+- v0.2.1: Verify persisted forms and Laravel Form Requests end-to-end across three stacks, browser a11y and SSR, and review Policies/transaction boundaries.
 - v0.2.2: API TableSource contract with safe configurable endpoint and cursor/offset pagination.
 - v0.2.3: Nested Repeater and Wizard, accessible error/focus behavior.
 - v0.3: Plugin registry, remote/bulk actions, server record reorder, persistence of table preferences, full RTL.

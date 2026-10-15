@@ -169,6 +169,6 @@ return [
 
 The same PHP schema renders through React, Vue, and Svelte with static Tailwind CSS 4 utilities, responsive layout, accessible labels and focus states, light/dark mode, readable badges, and descriptive empty states.
 
-**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. `TextInput` does not persist changes yet. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
+**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. Forms with an explicit local `action()` can submit via Inertia (POST, PUT or PATCH), display validation errors and use application-owned Laravel controllers for persistence. Forms without `action()` remain previews. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
 
 To update an existing Starter Kit app, review generated files and then run `php artisan lavertia:install --stack=react --force` (or `vue`/`svelte`). The `--force` flag overwrites generated renderer/page files. See [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component roles and limitations.

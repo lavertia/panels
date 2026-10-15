@@ -35,3 +35,58 @@ jobs:
           node-version: "22"
       - run: npm install --no-audit --no-fund --no-package-lock
       - run: npm run test:adapters -- ${{ matrix.stack }}
+
+  php-gate:
+    name: PHP dependency access
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.inspect.outputs.available }}
+    steps:
+      - name: Detect accessible Support dependency
+        id: inspect
+        env:
+          LAVERTIA_READ_TOKEN: ${{ secrets.LAVERTIA_READ_TOKEN }}
+        run: |
+          if [ -n "$LAVERTIA_READ_TOKEN" ] \
+            || curl -fsS --max-time 10 -o /dev/null https://api.github.com/repos/lavertia/support; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::PHP integration tests not run. Set LAVERTIA_READ_TOKEN while Support is private."
+          fi
+
+  php-tests:
+    name: PHPUnit / Testbench
+    needs: [lint, php-gate]
+    if: needs.php-gate.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: panels
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: panels
+      - name: Checkout Support
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/support
+          ref: main
+          token: ${{ secrets.LAVERTIA_READ_TOKEN || github.token }}
+          path: support
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_sqlite, sqlite3
+          tools: composer:v2
+          coverage: none
+      - name: Resolve PHP dependencies from local protocol
+        run: |
+          composer config repositories.lavertia-support '{"type":"path","url":"../support","options":{"symlink":true,"versions":{"lavertia/support":"0.1.0"}}}'
+          composer install --no-interaction --prefer-dist --no-progress
+      - name: PHP smoke and PHPUnit
+        run: |
+          composer test:smoke
+          composer test
+      - name: PSR style
+        run: composer lint
