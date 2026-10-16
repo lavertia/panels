@@ -12,7 +12,7 @@ Define pages and nested PHP components once and render them with React 19, Vue 3
 
 ## Install into a Starter Kit
 
-These packages are currently experimental and private; until tagged/published, use local Composer path repositories for `lavertia/support` and `lavertia/panels`. Do not assume `composer require` resolves on public Packagist yet.
+Repositories are public, but this remains an experimental, untagged version. Use local Composer path repositories for Support and Panels until package releases are approved; a Packagist install is not yet promised.
 
 ```bash
 composer require lavertia/panels:^0.1
@@ -77,19 +77,19 @@ final class DashboardPage extends Page
 }
 ```
 
-**Security / functionality:** `Action::url()` permits only relative URLs and HTTPS. It is a navigation link, not a remote PHP method call. `Table::rows()` is limited to 100 scalar rows and is *not* Eloquent-backed yet. `TextInput` is local-only. Your application must use Laravel Policies, CSRF, validation and tenant-scoped queries for any writes or exposed data.
+**Security / functionality:** `Action::url()` permits only relative URLs and HTTPS. It is a navigation link, not a remote PHP method call. `Table::rows()` is limited to 100 scalar rows in snapshot mode; the v0.2 `eloquent()` mode accepts an explicitly authorized, user/tenant-scoped Eloquent query. `TextInput` is local-only. Your application must use Laravel Policies, CSRF, validation and tenant-scoped queries for any writes or exposed data.
 
 ### Architecture
 
 - `lavertia/support`: base Component contracts, immutable composition and versioned JSON serialization.
 - `lavertia/panels`: pages, route registration, Starter Kit installer and initial PHP/UI adapters.
-- Specialized Forms/Tables/Actions/Infolists will be extracted to their [dedicated Lavertia repositories](https://github.com/lavertia) after stable contracts; do not introduce duplicate package implementations.
+- Canonical [Forms](https://github.com/lavertia/forms) and [Tables](https://github.com/lavertia/tables) packages are public experimental modules; Panels keeps compatibility until PR #7 integrates their aliases.
 
 The adapters are currently copied as starter-kit assets rather than published under `@lavertia/ui`; the `lavertia/ui` repository can own distributable adapters after separate framework build and SSR tests are added.
 
 ## Status
 
-**0.1 experimental**. Composer integration, app-level end-to-end tests (React/Vue/Svelte), authorization tests and real Eloquent pagination remain outstanding. Do not deploy this package in production yet.
+**v0.2 development alpha**. PHPUnit/Testbench and React/Vue/Svelte Laravel integration, frontend type and production build suites now run. No supported stable Composer tag or production-readiness claim has been approved. Do not deploy this package in production yet.
 
 ## Local development before Packagist release
 
@@ -118,7 +118,7 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 }
 ```
 
-After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, keep the support and panels branches checked out to their paired feature branches.
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. For development, use `lavertia/support` on `main` and `lavertia/panels` at its tested development ref; upcoming canonical Forms/Tables aliases are tracked in PR #7.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
 
@@ -169,6 +169,10 @@ return [
 
 The same PHP schema renders through React, Vue, and Svelte with static Tailwind CSS 4 utilities, responsive layout, accessible labels and focus states, light/dark mode, readable badges, and descriptive empty states.
 
-**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. Forms with an explicit local `action()` can submit via Inertia (POST, PUT or PATCH), display validation errors and use application-owned Laravel controllers for persistence. Forms without `action()` remain previews. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
+**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). For Eloquent mode, explicitly authorized and allowlisted SQL search/filter/sort/pagination are available only through a scoped `Builder`. Forms with an explicit local `action()` can submit via Inertia (POST, PUT or PATCH), display validation errors and use application-owned Laravel controllers for persistence. Forms without `action()` remain previews. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
 
 To update an existing Starter Kit app, review generated files and then run `php artisan lavertia:install --stack=react --force` (or `vue`/`svelte`). The `--force` flag overwrites generated renderer/page files. See [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component roles and limitations.
+
+## Security and licensing
+
+MIT licensed for Lavertia-owned source ([LICENSE.md](LICENSE.md)). Report security issues privately via [SECURITY.md](SECURITY.md); verify pre-release status in [the release checklist](https://github.com/lavertia/lavertia/issues/3).
