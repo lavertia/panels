@@ -10,9 +10,7 @@ use Lavertia\Support\Contracts\TableColumnComponent;
 
 final class TextColumn extends AbstractComponent implements TableColumnComponent
 {
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {
@@ -46,7 +44,7 @@ final class TextColumn extends AbstractComponent implements TableColumnComponent
     /**
      * Display a compact status badge instead of plain text.
      *
-     * @param array<string, 'success'|'warning'|'danger'|'info'|'neutral'> $tones
+     * @param  array<string, 'success'|'warning'|'danger'|'info'|'neutral'>  $tones
      */
     public function badge(array $tones = []): static
     {

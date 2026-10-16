@@ -14,7 +14,7 @@ final class Section extends AbstractComponent implements ComposesComponents
 
     public static function make(string $title): self
     {
-        return (new self())->withProp('title', $title);
+        return (new self)->withProp('title', $title);
     }
 
     public function getType(): string

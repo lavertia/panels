@@ -20,7 +20,8 @@ final class PageCompositionTest extends TestCase
 {
     public function test_table_and_infolist_can_live_in_same_card(): void
     {
-        $page = new class extends Page {
+        $page = new class extends Page
+        {
             /** @return list<Component> */
             protected function components(): array
             {

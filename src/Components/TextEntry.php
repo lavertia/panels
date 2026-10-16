@@ -10,9 +10,7 @@ use Lavertia\Support\Contracts\InfolistEntryComponent;
 
 final class TextEntry extends AbstractComponent implements InfolistEntryComponent
 {
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {

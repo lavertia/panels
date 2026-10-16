@@ -10,9 +10,7 @@ use Lavertia\Support\Contracts\FieldComponent;
 
 final class TextInput extends AbstractComponent implements FieldComponent
 {
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {
