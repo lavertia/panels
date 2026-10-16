@@ -1,25 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Lavertia\Panels;
 
-use Lavertia\Panels\Commands\PanelsCommand;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Support\ServiceProvider;
+use Lavertia\Panels\Commands\InstallCommand;
 
-class PanelsServiceProvider extends PackageServiceProvider
+final class PanelsServiceProvider extends ServiceProvider
 {
-    public function configurePackage(Package $package): void
+    public function register(): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
-        $package
-            ->name('panels')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_panels_table')
-            ->hasCommand(PanelsCommand::class);
+        $this->mergeConfigFrom(__DIR__.'/../config/lavertia.php', 'lavertia');
+    }
+
+    public function boot(): void
+    {
+        $this->publishes([
+            __DIR__.'/../config/lavertia.php' => config_path('lavertia.php'),
+        ], 'lavertia-config');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([InstallCommand::class]);
+        }
+
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        foreach (config('lavertia.panels', []) as $id => $options) {
+            if (! is_string($id) || ! is_array($options)) {
+                continue;
+            }
+
+            Panel::make($id)
+                ->path((string) ($options['path'] ?? $id))
+                ->middleware($options['middleware'] ?? ['web', 'auth'])
+                ->pages($options['pages'] ?? [])
+                ->registerRoutes();
+        }
     }
 }

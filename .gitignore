@@ -1,11 +1,5 @@
-.idea
-.phpunit.cache
-build
-composer.lock
-coverage
-docs
-phpunit.xml
-phpstan.neon
-testbench.yaml
-vendor
-node_modules
+/node_modules/
+/.lavertia-smoke/
+/.lavertia-dist/
+/vendor/
+.phpunit.result.cache

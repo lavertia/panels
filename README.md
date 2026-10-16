@@ -1,32 +1,127 @@
 # Lavertia Panels
 
-PHP-first composable interfaces for Laravel and Inertia.js, with adapters for React, Vue and Svelte. Lavertia describes UI elements in PHP and serializes them using the [Support Component Protocol v1](https://github.com/lavertia/support).
+**PHP-first composable Inertia panels for Laravel 12 / 13.**
 
-> **Experimental / not yet released.** The default branch still contains an **older package scaffold**, not the v0.1 implementation. Do **not** follow the old scaffold's installation steps or deploy it as a stable package.
+Define pages and nested PHP components once and render them with React 19, Vue 3 or Svelte 5 using a single versioned JSON component protocol. Each adapter is designed for an **existing official Laravel Inertia Starter Kit**. Lavertia does not replace authentication, middleware, application layouts or Vite.
 
-## Active implementation
+## Requirements
 
-- [PR #4 — Panels, routes and Starter Kit adapters](https://github.com/lavertia/panels/pull/4)
-- [PR #5 — composable UI widgets](https://github.com/lavertia/panels/pull/5)
-- [PR #6 — Forms/Tables, locale and pagination](https://github.com/lavertia/panels/pull/6)
-- [PR #7 — canonical Forms/Tables package integration](https://github.com/lavertia/panels/pull/7)
+- PHP 8.3+, Laravel 12 or 13, `inertiajs/inertia-laravel:^3.0`
+- [lavertia/support](https://github.com/lavertia/support) 0.1 (the component protocol)
+- An existing official **React 19 / Vue 3 / Svelte 5** Inertia Starter Kit with TypeScript and Tailwind CSS 4
 
-The supported code will be merged into `main` only after PHP/Testbench, adapter, and Laravel Playground integration tests run successfully. These PRs are **not** production releases. Do not assume any Packagist version exists or that `composer require lavertia/panels` is ready.
+## Install into a Starter Kit
 
-## Architecture
+These packages have public source code but are **experimental and untagged**. Until approved Composer releases exist, use local Composer path repositories for `lavertia/support` and `lavertia/panels`; do not expect Packagist resolution without them.
 
-- [Support](https://github.com/lavertia/support) — typed PHP components and bounded, JSON-safe serialization
-- [Forms](https://github.com/lavertia/forms) — form/field descriptors (v0.2 in draft)
-- [Tables](https://github.com/lavertia/tables) — Eloquent-backed table descriptors (v0.2 in draft)
-- [Playground](https://github.com/lavertia/playground) — Laravel 13 React/Vue/Svelte integration applications
-- [Documentation](https://lavertia.github.io/lavertia-doc/) — concepts, roadmap and guides
+```bash
+composer require lavertia/panels:^0.1
+php artisan lavertia:install --stack=react
+# Or --stack=vue or --stack=svelte
+php artisan vendor:publish --tag=lavertia-config
+```
 
-Your Laravel app remains responsible for policies, authentication, CSRF, validated inputs and tenant-scoped queries.
+The command creates three files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
-## Security and contribution
+Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
-See [SECURITY.md](SECURITY.md) for private disclosure and the [release checklist](https://github.com/lavertia/lavertia/issues/3) before using a development branch. Never commit `.env`, application keys, live customer records or credentials.
+Add your Page class to `config/lavertia.php`:
 
-## License
+```php
+'panels' => [
+    'admin' => [
+        'path' => 'admin',
+        'middleware' => ['web', 'auth'],
+        'pages' => [App\Lavertia\Pages\DashboardPage::class],
+    ],
+],
+```
 
-MIT — see [LICENSE.md](LICENSE.md). Third-party code and assets retain their respective licenses.
+Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
+
+### Example: place a Table anywhere
+
+```php
+<?php
+
+namespace App\Lavertia\Pages;
+
+use Lavertia\Panels\Components\{Action, Infolist, Table, TextColumn, TextEntry};
+use Lavertia\Panels\Pages\Page;
+use Lavertia\Support\Components\{Card, Column, Text};
+use Lavertia\Support\Contracts\Component;
+
+final class DashboardPage extends Page
+{
+    /** @return list<Component> */
+    protected function components(): array
+    {
+        return [
+            Column::make([
+                Text::make('Dashboard'),
+                Card::make([
+                    Infolist::make('company')->components([
+                        TextEntry::make('name')->value('Fenix Software'),
+                    ]),
+                    Table::make('users')->columns([
+                        TextColumn::make('name'),
+                        TextColumn::make('email'),
+                    ])->rows([
+                        ['name' => 'Sara', 'email' => 'sara@example.com'],
+                    ]),
+                    Action::make('home')->label('Home')->url('/'),
+                ]),
+            ]),
+        ];
+    }
+}
+```
+
+**Security / functionality:** `Action::url()` permits only relative URLs and HTTPS. It is a navigation link, not a remote PHP method call. `Table::rows()` is limited to 100 scalar rows and is *not* Eloquent-backed yet. `TextInput` is local-only. Your application must use Laravel Policies, CSRF, validation and tenant-scoped queries for any writes or exposed data.
+
+### Architecture
+
+- `lavertia/support`: base Component contracts, immutable composition and versioned JSON serialization.
+- `lavertia/panels`: pages, route registration, Starter Kit installer and initial PHP/UI adapters.
+- Specialized Forms/Tables/Actions/Infolists will be extracted to their [dedicated Lavertia repositories](https://github.com/lavertia) after stable contracts; do not introduce duplicate package implementations.
+
+The adapters are currently copied as starter-kit assets rather than published under `@lavertia/ui`; the `lavertia/ui` repository can own distributable adapters after separate framework build and SSR tests are added.
+
+## Status
+
+**v0.1 experimental**. PHP/Testbench and adapter builds are CI-gated. React/Vue/Svelte application-level integration and production readiness remain separate approval gates; real Eloquent pagination belongs to v0.2 Tables. Do not deploy this package in production yet.
+
+## Local development before Packagist release
+
+Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel application and configure the application's Composer repositories:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../support",
+      "options": {
+        "symlink": true,
+        "versions": { "lavertia/support": "0.1.0" }
+      }
+    },
+    {
+      "type": "path",
+      "url": "../panels",
+      "options": {
+        "symlink": true,
+        "versions": { "lavertia/panels": "0.1.0" }
+      }
+    }
+  ]
+}
+```
+
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, use `lavertia/support` on `main` and check out the appropriate Panels development branch until its tested code is merged.
+
+Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
+
+## Reporting vulnerabilities and license
+
+See [SECURITY.md](SECURITY.md) for confidential security reporting and [LICENSE.md](LICENSE.md) for the MIT grant. Third-party dependencies retain their own licenses.
