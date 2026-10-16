@@ -1,4 +1,7 @@
-name: run-tests
+# The default branch still contains a legacy Laravel 10 scaffold. This matrix
+# verifies only that old scaffold; the v0.1 implementation has its own
+# PHP 8.3/8.4 + Laravel 12/13 integration gates in feature branches.
+name: legacy-scaffold-tests (Laravel 10)
 
 on:
   push:
@@ -12,10 +15,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        php: [8.2, 8.1]
+        os: [ubuntu-latest]
+        php: [8.2]
         laravel: [10.*]
-        stability: [prefer-lowest, prefer-stable]
+        stability: [prefer-stable]
         include:
           - laravel: 10.*
             testbench: 8.*
@@ -25,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
