@@ -36,6 +36,25 @@ final class Table extends AbstractComponent implements TableComponent
         return $this->name;
     }
 
+    public function label(string $label): static
+    {
+        return $this->withProp('label', $label);
+    }
+
+    public function description(string $description): static
+    {
+        return $this->withProp('description', $description);
+    }
+
+    /**
+     * Search is limited to the already-serialized snapshot.
+     * Server-side filters and pagination are not implemented.
+     */
+    public function searchable(bool $searchable = true): static
+    {
+        return $this->withProp('searchable', $searchable);
+    }
+
     /** @param list<TableColumnComponent> $columns */
     public function columns(array $columns): static
     {

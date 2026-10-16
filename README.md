@@ -12,7 +12,7 @@ Define pages and nested PHP components once and render them with React 19, Vue 3
 
 ## Install into a Starter Kit
 
-These packages have public source code but are **experimental and untagged**. Until approved Composer releases exist, use local Composer path repositories for `lavertia/support` and `lavertia/panels`; do not expect Packagist resolution without them.
+Source repositories are public but these packages remain experimental and untagged. Until an approved Packagist release exists, set up local Composer path repositories for `lavertia/support` and `lavertia/panels` before installation.
 
 ```bash
 composer require lavertia/panels:^0.1
@@ -89,7 +89,7 @@ The adapters are currently copied as starter-kit assets rather than published un
 
 ## Status
 
-**v0.1 experimental**. PHP/Testbench and adapter builds are CI-gated. React/Vue/Svelte application-level integration and production readiness remain separate approval gates; real Eloquent pagination belongs to v0.2 Tables. Do not deploy this package in production yet.
+**v0.1 experimental:** PHP/Testbench, React/Vue/Svelte adapter checks, and Playground Laravel feature/type/build checks have run in GitHub Actions. Production readiness and approved package releases remain outstanding; server-side Eloquent pagination belongs to the v0.2 Tables package. Do not deploy this package in production yet.
 
 ## Local development before Packagist release
 
@@ -118,10 +118,61 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 }
 ```
 
-After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, use `lavertia/support` on `main` and check out the appropriate Panels development branch until its tested code is merged.
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, use `lavertia/support` and tested Panels branches, or their merged `main` commits, as sibling path repositories.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
 
-## Reporting vulnerabilities and license
 
-See [SECURITY.md](SECURITY.md) for confidential security reporting and [LICENSE.md](LICENSE.md) for the MIT grant. Third-party dependencies retain their own licenses.
+## Admin UI components (Filament-inspired visual hierarchy)
+
+The latest development branch adds the PHP components `PageHeader`, `StatsGrid`, `Stat` and `Section` for a structured dashboard. This is a **visual inspiration**, not a Filament fork or a Filament-compatible API.
+
+```php
+use Lavertia\Panels\Components\{
+    Action, PageHeader, Section, Stat, StatsGrid,
+    Table, TextColumn
+};
+
+return [
+    PageHeader::make('Overview')
+        ->description('Manage your workspace')
+        ->components([
+            Action::make('source')
+                ->label('View source')
+                ->appearance('primary')
+                ->url('https://github.com/lavertia/playground'),
+        ]),
+
+    StatsGrid::make([
+        Stat::make('Members', 6)->tone('success'),
+        Stat::make('Pending', 2)->tone('warning'),
+    ]),
+
+    Section::make('Directory')->components([
+        Table::make('members')
+            ->label('Team members')
+            ->searchable()
+            ->columns([
+                TextColumn::make('name')->sortable(),
+                TextColumn::make('status')->badge([
+                    'Active' => 'success',
+                    'Pending' => 'warning',
+                ]),
+            ])
+            ->rows([
+                ['name' => 'Sara', 'status' => 'Active'],
+                ['name' => 'Omar', 'status' => 'Pending'],
+            ]),
+    ]),
+];
+```
+
+The same PHP schema renders through React, Vue, and Svelte with static Tailwind CSS 4 utilities, responsive layout, accessible labels and focus states, light/dark mode, readable badges, and descriptive empty states.
+
+**Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. `TextInput` does not persist changes yet. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
+
+To update an existing Starter Kit app, review generated files and then run `php artisan lavertia:install --stack=react --force` (or `vue`/`svelte`). The `--force` flag overwrites generated renderer/page files. See [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component roles and limitations.
+
+## Security and license
+
+See [SECURITY.md](SECURITY.md) to report vulnerabilities privately, [LICENSE.md](LICENSE.md) for MIT terms, and [release readiness](https://github.com/lavertia/lavertia/issues/3) for open-source alpha limitations.
