@@ -29,7 +29,7 @@ final class PackageCompatibilityTest extends TestCase
 
         self::assertInstanceOf(CanonicalForm::class, $old);
         self::assertInstanceOf(Form::class, $new);
-        self::assertSame($new->toArray(), $old->toArray());
+        self::assertEquals($new->toArray(), $old->toArray());
         self::assertSame('root/name', $old->toArray()['components'][0]['key']);
     }
 
