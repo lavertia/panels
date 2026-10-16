@@ -12,7 +12,7 @@ Define pages and nested PHP components once and render them with React 19, Vue 3
 
 ## Install into a Starter Kit
 
-These packages are currently experimental and private; until tagged/published, use local Composer path repositories for `lavertia/support` and `lavertia/panels`. Do not assume `composer require` resolves on public Packagist yet.
+Source repositories are public but these packages remain experimental and untagged. Until an approved Packagist release exists, set up local Composer path repositories for `lavertia/support` and `lavertia/panels` before installation.
 
 ```bash
 composer require lavertia/panels:^0.1
@@ -89,7 +89,7 @@ The adapters are currently copied as starter-kit assets rather than published un
 
 ## Status
 
-**0.1 experimental**. Composer integration, app-level end-to-end tests (React/Vue/Svelte), authorization tests and real Eloquent pagination remain outstanding. Do not deploy this package in production yet.
+**v0.1 experimental:** PHP/Testbench, React/Vue/Svelte adapter checks, and Playground Laravel feature/type/build checks have run in GitHub Actions. Production readiness and approved package releases remain outstanding; server-side Eloquent pagination belongs to the v0.2 Tables package. Do not deploy this package in production yet.
 
 ## Local development before Packagist release
 
@@ -118,7 +118,7 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 }
 ```
 
-After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, keep the support and panels branches checked out to their paired feature branches.
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, use `lavertia/support` and tested Panels branches, or their merged `main` commits, as sibling path repositories.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
 
@@ -172,3 +172,7 @@ The same PHP schema renders through React, Vue, and Svelte with static Tailwind 
 **Scope:** `Table::searchable()` and `TextColumn::sortable()` operate solely on the bounded client-side snapshot (up to 100 rows). They are **not** a server-backed filter/sort API. `TextInput` does not persist changes yet. All executable actions must be implemented as explicitly authorized Laravel routes on the server.
 
 To update an existing Starter Kit app, review generated files and then run `php artisan lavertia:install --stack=react --force` (or `vue`/`svelte`). The `--force` flag overwrites generated renderer/page files. See [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component roles and limitations.
+
+## Security and license
+
+See [SECURITY.md](SECURITY.md) to report vulnerabilities privately, [LICENSE.md](LICENSE.md) for MIT terms, and [release readiness](https://github.com/lavertia/lavertia/issues/3) for open-source alpha limitations.
