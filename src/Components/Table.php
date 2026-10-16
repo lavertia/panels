@@ -15,9 +15,7 @@ final class Table extends AbstractComponent implements TableComponent
     /** @var list<TableColumnComponent> */
     private array $columns = [];
 
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {
@@ -74,7 +72,7 @@ final class Table extends AbstractComponent implements TableComponent
     /**
      * Temporary bounded snapshot only. Server-driven pagination is not implemented yet.
      *
-     * @param list<array<string, scalar|null>> $rows
+     * @param  list<array<string, scalar|null>>  $rows
      */
     public function rows(array $rows): static
     {

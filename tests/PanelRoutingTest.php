@@ -6,8 +6,8 @@ namespace Lavertia\Panels\Tests;
 
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
-use Lavertia\Panels\Panel;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Panel;
 use Orchestra\Testbench\TestCase;
 
 final class PanelRoutingTest extends TestCase
