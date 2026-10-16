@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: lavertia/forms
-          ref: feat/v02-canonical-descriptors
+          ref: main
           path: forms
       - name: Checkout Tables
         uses: actions/checkout@v4
