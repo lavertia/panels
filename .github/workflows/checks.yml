@@ -5,6 +5,9 @@ on:
     tags: ["v0.*"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -38,31 +41,9 @@ jobs:
       - run: npm run test:runtime
       - run: npm run test:adapters -- ${{ matrix.stack }}
 
-  php-gate:
-    name: PHP dependency access
-    runs-on: ubuntu-latest
-    outputs:
-      available: ${{ steps.inspect.outputs.available }}
-    steps:
-      - name: Detect accessible Support dependency
-        id: inspect
-        env:
-          LAVERTIA_READ_TOKEN: ${{ secrets.LAVERTIA_READ_TOKEN }}
-        run: |
-          if [ -n "$LAVERTIA_READ_TOKEN" ] \
-            || curl -fsS --max-time 10 -o /dev/null https://api.github.com/repos/lavertia/support; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::PHP integration tests not run. Set LAVERTIA_READ_TOKEN while Support is private."
-            echo "## PHPUnit / Testbench: BLOCKED" >> "$GITHUB_STEP_SUMMARY"
-            echo "Private lavertia/support access unavailable. Adapter runtime/build checks cannot substitute for PHP tests." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
   php-tests:
     name: PHPUnit / Testbench
-    needs: [lint, php-gate]
-    if: needs.php-gate.outputs.available == 'true'
+    needs: lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -76,7 +57,6 @@ jobs:
         with:
           repository: lavertia/support
           ref: main
-          token: ${{ secrets.LAVERTIA_READ_TOKEN || github.token }}
           path: support
       - uses: shivammathur/setup-php@v2
         with:
@@ -97,7 +77,7 @@ jobs:
 
   release-gate:
     name: v0 release verification
-    needs: [lint, adapters, php-gate, php-tests]
+    needs: [lint, adapters, php-tests]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -105,7 +85,6 @@ jobs:
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] \
             || [ "${{ needs.adapters.result }}" != "success" ] \
-            || [ "${{ needs.php-gate.outputs.available }}" != "true" ] \
             || [ "${{ needs.php-tests.result }}" != "success" ]; then
             echo "::error::v0 release blocked: full adapter and PHP/Testbench checks must pass. Skipped jobs are not release successes."
             exit 1
