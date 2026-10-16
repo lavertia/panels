@@ -149,7 +149,14 @@ final class Table extends AbstractComponent implements TableComponent
     /** @return list<Component> */
     public function getComponents(): array
     {
-        return [...$this->columns, ...$this->filters];
+        // Column names use letters, digits and underscores. The built-in
+        // filter- prefix cannot collide with an ordinary column name.
+        $filters = array_map(
+            static fn (SelectFilter $filter): SelectFilter => $filter->key('filter-'.$filter->getFilterName()),
+            $this->filters,
+        );
+
+        return [...$this->columns, ...$filters];
     }
 
     /**
