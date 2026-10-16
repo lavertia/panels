@@ -34,10 +34,14 @@ abstract class Page
 
     final public function __invoke(): Response
     {
+        $locale = app()->getLocale();
+
         return Inertia::render('lavertia/page', [
             'lavertia' => [
                 'version' => ComponentProtocol::VERSION,
                 'title' => static::title(),
+                'locale' => $locale,
+                'direction' => in_array($locale, ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
                 'tree' => $this->tree(),
             ],
         ]);

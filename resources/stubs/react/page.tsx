@@ -10,7 +10,7 @@ export default function LavertiaPage({ lavertia }: { lavertia: LavertiaPayload }
     return (
         <>
             <Head title={lavertia.title ?? 'Lavertia'} />
-            <main className="min-h-[calc(100vh-8rem)] bg-gray-50/70 px-4 py-6 sm:px-6 lg:px-8 dark:bg-gray-950/40">
+            <main lang={lavertia.locale ?? "en"} dir={lavertia.direction ?? "ltr"} className="min-h-[calc(100vh-8rem)] bg-gray-50/70 px-4 py-6 sm:px-6 lg:px-8 dark:bg-gray-950/40">
                 <div className="mx-auto w-full max-w-[1440px]">
                     <LavertiaRenderer node={lavertia.tree} />
                 </div>

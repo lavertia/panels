@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:adapters": "node scripts/build-adapter.mjs"
+    "test:adapters": "node scripts/build-adapter.mjs",
+    "test:runtime": "node scripts/test-shared-runtime.mjs"
   },
   "devDependencies": {
     "@inertiajs/react": "^3.0.0",
