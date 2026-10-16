@@ -83,7 +83,7 @@ final class DashboardPage extends Page
 
 - `lavertia/support`: base Component contracts, immutable composition and versioned JSON serialization.
 - `lavertia/panels`: pages, route registration, Starter Kit installer and initial PHP/UI adapters.
-- Canonical [Forms](https://github.com/lavertia/forms) and [Tables](https://github.com/lavertia/tables) packages are public experimental modules; Panels keeps compatibility until PR #7 integrates their aliases.
+- Canonical [Forms](https://github.com/lavertia/forms) and [Tables](https://github.com/lavertia/tables) packages are public experimental modules. Panels v0.2 uses compatibility aliases for legacy `Lavertia\\Panels\\Components\\Form`, `Table`, `TextColumn`, `Select`, and other extracted descriptors. See [the migration guide](docs/PACKAGE_MIGRATION_V02.md).
 
 The adapters are currently copied as starter-kit assets rather than published under `@lavertia/ui`; the `lavertia/ui` repository can own distributable adapters after separate framework build and SSR tests are added.
 
@@ -118,7 +118,7 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 }
 ```
 
-After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. For development, use `lavertia/support` on `main` and `lavertia/panels` at its tested development ref; upcoming canonical Forms/Tables aliases are tracked in PR #7.
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. For development, use `lavertia/support` on `main` and `lavertia/panels` at its tested development ref; canonical Forms/Tables are available as local sibling Composer path dependencies.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
 
@@ -176,3 +176,7 @@ To update an existing Starter Kit app, review generated files and then run `php 
 ## Security and licensing
 
 MIT licensed for Lavertia-owned source ([LICENSE.md](LICENSE.md)). Report security issues privately via [SECURITY.md](SECURITY.md); verify pre-release status in [the release checklist](https://github.com/lavertia/lavertia/issues/3).
+
+### Canonical package integration
+
+The v0.2 Panels development code delegates form and table descriptors to the independent `lavertia/forms` and `lavertia/tables` packages and maintains backwards-compatible `Lavertia\\Panels\\Components` aliases. Use explicitly scoped Eloquent Builders and server-side authorization; the frontend never receives raw Eloquent queries or PHP callbacks. No stable package tag has been approved.

@@ -58,6 +58,18 @@ jobs:
           repository: lavertia/support
           ref: main
           path: support
+      - name: Checkout Forms
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/forms
+          ref: main
+          path: forms
+      - name: Checkout Tables
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/tables
+          ref: main
+          path: tables
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
@@ -67,6 +79,8 @@ jobs:
       - name: Resolve PHP dependencies from local protocol
         run: |
           composer config repositories.lavertia-support '{"type":"path","url":"../support","options":{"symlink":true,"versions":{"lavertia/support":"0.1.0"}}}'
+          composer config repositories.lavertia-forms '{"type":"path","url":"../forms","options":{"symlink":true,"versions":{"lavertia/forms":"0.2.0"}}}'
+          composer config repositories.lavertia-tables '{"type":"path","url":"../tables","options":{"symlink":true,"versions":{"lavertia/tables":"0.2.0"}}}'
           composer install --no-interaction --prefer-dist --no-progress
       - name: PHP smoke and PHPUnit
         run: |
