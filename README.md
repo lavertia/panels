@@ -12,7 +12,7 @@ Define pages and nested PHP components once and render them with React 19, Vue 3
 
 ## Install into a Starter Kit
 
-These packages are currently experimental and private; until tagged/published, use local Composer path repositories for `lavertia/support` and `lavertia/panels`. Do not assume `composer require` resolves on public Packagist yet.
+These packages have public source code but are **experimental and untagged**. Until approved Composer releases exist, use local Composer path repositories for `lavertia/support` and `lavertia/panels`; do not expect Packagist resolution without them.
 
 ```bash
 composer require lavertia/panels:^0.1
@@ -89,7 +89,7 @@ The adapters are currently copied as starter-kit assets rather than published un
 
 ## Status
 
-**0.1 experimental**. Composer integration, app-level end-to-end tests (React/Vue/Svelte), authorization tests and real Eloquent pagination remain outstanding. Do not deploy this package in production yet.
+**v0.1 experimental**. PHP/Testbench and adapter builds are CI-gated. React/Vue/Svelte application-level integration and production readiness remain separate approval gates; real Eloquent pagination belongs to v0.2 Tables. Do not deploy this package in production yet.
 
 ## Local development before Packagist release
 
@@ -118,6 +118,10 @@ Clone `lavertia/support` and `lavertia/panels` as siblings next to your Laravel 
 }
 ```
 
-After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, keep the support and panels branches checked out to their paired feature branches.
+After configuring these in your **application's** `composer.json`, install with `composer require lavertia/panels:^0.1`. In package development, use `lavertia/support` on `main` and check out the appropriate Panels development branch until its tested code is merged.
 
 Each app selects **one** of React, Vue or Svelte; it does not load all three on the same page. The adapter owns only the Lavertia page/renderer and leaves the Starter Kit's authentication, Inertia app boot and app layout intact.
+
+## Reporting vulnerabilities and license
+
+See [SECURITY.md](SECURITY.md) for confidential security reporting and [LICENSE.md](LICENSE.md) for the MIT grant. Third-party dependencies retain their own licenses.
