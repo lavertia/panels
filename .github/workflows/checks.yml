@@ -98,7 +98,7 @@ jobs:
   release-gate:
     name: v0 release verification
     needs: [lint, adapters, php-gate, php-tests]
-    if: always() && startsWith(github.ref, 'refs/tags/v0.')
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Verify all mandatory jobs ran successfully
