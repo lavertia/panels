@@ -1,0 +1,42 @@
+name: Temporary scoped Pint formatter
+on:
+  push:
+    branches: ["feat/tables-forms-i18n-v02"]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.repository == 'lavertia/panels' && github.ref == 'refs/heads/feat/tables-forms-i18n-v02'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tables-forms-i18n-v02
+          path: panels
+      - uses: actions/checkout@v4
+        with:
+          repository: lavertia/support
+          ref: main
+          path: support
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - name: Apply Laravel Pint in only PHP source/test/config files
+        working-directory: panels
+        run: |
+          composer config repositories.lavertia-support '{"type":"path","url":"../support","options":{"symlink":true,"versions":{"lavertia/support":"0.1.0"}}}'
+          composer install --no-interaction --prefer-dist --no-progress
+          ./vendor/bin/pint src config tests
+      - name: Commit scoped PHP formatting to its current feature branch
+        run: |
+          git -C panels config user.name 'github-actions[bot]'
+          git -C panels config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C panels add src config tests
+          if ! git -C panels diff --cached --quiet; then
+            git -C panels commit -m 'style: format Panels PHP source and tests with Pint'
+            git -C panels push origin HEAD:feat/tables-forms-i18n-v02
+          fi
