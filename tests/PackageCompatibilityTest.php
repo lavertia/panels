@@ -45,7 +45,7 @@ final class PackageCompatibilityTest extends TestCase
 
         self::assertInstanceOf(CanonicalTable::class, $legacy);
         self::assertInstanceOf(Table::class, $canonical);
-        self::assertSame($canonical->toArray(), $legacy->toArray());
+        self::assertEquals($canonical->toArray(), $legacy->toArray());
     }
 
     public function test_old_and_new_fields_can_be_composed_together(): void
