@@ -6,6 +6,8 @@ foreach (
     [
         'Lavertia\\Panels\\' => __DIR__.'/../src/',
         'Lavertia\\Support\\' => __DIR__.'/../../support/src/',
+        'Lavertia\\Forms\\' => __DIR__.'/../../forms/src/',
+        'Lavertia\\Tables\\' => __DIR__.'/../../tables/src/',
     ] as $prefix => $directory
 ) {
     spl_autoload_register(static function (string $class) use ($prefix, $directory): void {
