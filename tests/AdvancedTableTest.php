@@ -85,7 +85,6 @@ final class AdvancedTableTest extends TestCase
         self::assertSame(2, $props['pagination']['total']);
     }
 
-
     public function test_server_pagination_uses_a_stable_primary_key_order_by_default(): void
     {
         $this->app->instance('request', Request::create('/admin/model-demo?lvt_records_page=2'));

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Lavertia\Panels\Http\Middleware\ResolveLocale;
 
 return [
     /*
@@ -17,7 +18,7 @@ return [
     'panels' => [
         'admin' => [
             'path' => 'admin',
-            'middleware' => ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class],
+            'middleware' => ['web', 'auth', ResolveLocale::class],
             'pages' => [],
         ],
     ],

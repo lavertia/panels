@@ -10,9 +10,7 @@ use Lavertia\Support\Contracts\ActionComponent;
 
 final class Action extends AbstractComponent implements ActionComponent
 {
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {
