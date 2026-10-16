@@ -13,9 +13,7 @@ final class Infolist extends AbstractComponent implements InfolistComponent
 {
     use SupportsComponents;
 
-    private function __construct(private readonly string $name)
-    {
-    }
+    private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
     {

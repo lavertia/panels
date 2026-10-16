@@ -11,7 +11,7 @@ final class Stat extends AbstractComponent
 {
     public static function make(string $label, string|int|float $value): self
     {
-        return (new self())
+        return (new self)
             ->withProp('label', $label)
             ->withProp('value', $value);
     }

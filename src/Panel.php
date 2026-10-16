@@ -11,8 +11,10 @@ use Lavertia\Panels\Pages\Page;
 final class Panel
 {
     private string $path;
+
     /** @var list<string> */
     private array $middleware = ['web', 'auth'];
+
     /** @var list<class-string<Page>> */
     private array $pages = [];
 

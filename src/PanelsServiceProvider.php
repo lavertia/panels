@@ -6,6 +6,7 @@ namespace Lavertia\Panels;
 
 use Illuminate\Support\ServiceProvider;
 use Lavertia\Panels\Commands\InstallCommand;
+use Lavertia\Panels\Http\Middleware\ResolveLocale;
 
 final class PanelsServiceProvider extends ServiceProvider
 {
@@ -35,7 +36,7 @@ final class PanelsServiceProvider extends ServiceProvider
 
             Panel::make($id)
                 ->path((string) ($options['path'] ?? $id))
-                ->middleware($options['middleware'] ?? ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class])
+                ->middleware($options['middleware'] ?? ['web', 'auth', ResolveLocale::class])
                 ->pages($options['pages'] ?? [])
                 ->registerRoutes();
         }
