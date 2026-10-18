@@ -37,7 +37,7 @@ final class ModularDiscoveryTest extends TestCase
                 'discover_pages' => [
                     [
                         'in' => inventoryPagesPath(),
-                        'for' => 'Modules\\\\Inventory\\\\Lavertia\\\\Pages',
+                        'for' => 'Modules\\Inventory\\Lavertia\\Pages',
                     ],
                 ],
             ],
