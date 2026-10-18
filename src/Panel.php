@@ -84,8 +84,8 @@ final class Panel
     /**
      * Discover PSR-4 autoloadable pages in a directory, including Laravel modules.
      *
-     * @param string $in Absolute directory containing Page subclasses
-     * @param string $for PSR-4 namespace corresponding to that directory
+     * @param  string  $in  Absolute directory containing Page subclasses
+     * @param  string  $for  PSR-4 namespace corresponding to that directory
      */
     public function discoverPages(string $in, string $for): self
     {
