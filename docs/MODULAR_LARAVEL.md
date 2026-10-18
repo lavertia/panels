@@ -1,9 +1,9 @@
 # Laravel modules (InterNACHI/modular and ordinary Composer packages)
 
-Lavertia Panels can load Page classes from a Laravel application's \`app/\` directory,
-from \`app-modules/*/src/\` packages created by [InterNACHI/modular](https://github.com/InterNACHI/modular),
+Lavertia Panels can load Page classes from a Laravel application's `app/` directory,
+from `app-modules/*/src/` packages created by [InterNACHI/modular](https://github.com/InterNACHI/modular),
 or from any Composer PSR-4 autoloadable package. **InterNACHI/modular is optional**:
-\`lavertia/panels\` does not depend on it.
+`lavertia/panels` does not depend on it.
 
 This alpha integration discovers **Pages only**. Filament Resources, Widgets and plugin
 contracts are not implemented by Lavertia yet.
@@ -12,18 +12,18 @@ contracts are not implemented by Lavertia yet.
 
 In the **host application**, install InterNACHI/modular if it is not already present:
 
-\`\`\`bash
+```bash
 composer require internachi/modular
 php artisan make:module inventory
 composer update modules/inventory -W
-\`\`\`
+```
 
 The module must be installed/autoloaded by Composer and its service provider must
-be registered with Laravel, usually through its module \`composer.json\`.
+be registered with Laravel, usually through its module `composer.json`.
 
 Example module layout:
 
-\`\`\`text
+```text
 app-modules/
   inventory/
     composer.json
@@ -33,11 +33,11 @@ app-modules/
       Lavertia/
         Pages/
           InventoryOverview.php
-\`\`\`
+```
 
-Match \`for:\` to the namespace in the module's **actual composer.json**. For example:
+Match `for:` to the namespace in the module's **actual composer.json**. For example:
 
-\`\`\`json
+```json
 {
   "name": "modules/inventory",
   "type": "library",
@@ -55,7 +55,7 @@ Match \`for:\` to the namespace in the module's **actual composer.json**. For ex
     }
   }
 }
-\`\`\`
+```
 
 The version in this example represents the **future compatible package release**.
 Until Lavertia is tagged/published, continue to use the project's documented
@@ -63,9 +63,9 @@ development path repositories and existing Composer constraints.
 
 ## 2. Register module Pages with an existing Panel
 
-\`app-modules/inventory/src/Providers/InventoryServiceProvider.php\`:
+`app-modules/inventory/src/Providers/InventoryServiceProvider.php`:
 
-\`\`\`php
+```php
 <?php
 
 declare(strict_types=1);
@@ -86,17 +86,17 @@ final class InventoryServiceProvider extends ServiceProvider
         );
     }
 }
-\`\`\`
+```
 
-This registers Pages in **only** the \`admin\` Panel. The Panel must already
-exist in \`config/lavertia.php\`; modules do not silently create public routes
-or bypass the Panel's middleware. \`PanelRegistry\` collects module registrations
+This registers Pages in **only** the `admin` Panel. The Panel must already
+exist in `config/lavertia.php`; modules do not silently create public routes
+or bypass the Panel's middleware. `PanelRegistry` collects module registrations
 during service provider boot. Routes are mounted once all service providers
 have booted, regardless of provider boot order.
 
-\`app-modules/inventory/src/Lavertia/Pages/InventoryOverview.php\`:
+`app-modules/inventory/src/Lavertia/Pages/InventoryOverview.php`:
 
-\`\`\`php
+```php
 <?php
 
 declare(strict_types=1);
@@ -118,22 +118,22 @@ final class InventoryOverview extends Page
         return [Text::make('Inventory overview')];
     }
 }
-\`\`\`
+```
 
-The resulting route is \`GET /admin/inventory/overview\`, named
-\`lavertia.admin.inventory.overview\`. React, Vue and Svelte all use the same
-existing \`lavertia/page\` Inertia renderer; no frontend module bundling is
+The resulting route is `GET /admin/inventory/overview`, named
+`lavertia.admin.inventory.overview`. React, Vue and Svelte all use the same
+existing `lavertia/page` Inertia renderer; no frontend module bundling is
 required merely to add PHP Pages.
 
-For multiple Panels (e.g. \`admin\` and \`branch\`), call
-\`$panels->discoverPages()\` once for each explicitly intended Panel.
+For multiple Panels (e.g. `admin` and `branch`), call
+`$panels->discoverPages()` once for each explicitly intended Panel.
 
 ## 3. Alternatively, discover Pages through config
 
 Module service providers are not mandatory if your project prefers explicit
-directory configuration. In \`config/lavertia.php\`:
+directory configuration. In `config/lavertia.php`:
 
-\`\`\`php
+```php
 'panels' => [
     'admin' => [
         'path' => 'admin',
@@ -149,9 +149,9 @@ directory configuration. In \`config/lavertia.php\`:
         ],
     ],
 ],
-\`\`\`
+```
 
-Or use \`Panel::make('admin')->discoverPages(in: ..., for: ...)\` when mounting
+Or use `Panel::make('admin')->discoverPages(in: ..., for: ...)` when mounting
 your own Panel programmatically.
 
 Discovery is recursive and deterministic. It ignores missing optional
@@ -165,7 +165,7 @@ overwriting each other. Namespace declarations must match Composer PSR-4.
 The host app's Vite config should watch module PHP paths if you want the
 browser to refresh after you save module Pages:
 
-\`\`\`ts
+```ts
 laravel({
     input: ['resources/css/app.css', 'resources/js/app.tsx'],
     refresh: [
@@ -175,20 +175,20 @@ laravel({
         'routes/**',
     ],
 })
-\`\`\`
+```
 
-Adjust \`input\` to your existing React/Vue/Svelte Starter Kit. This is
+Adjust `input` to your existing React/Vue/Svelte Starter Kit. This is
 Vite's **full-browser refresh** for PHP edits, not JavaScript HMR or a
 long-lived PHP runtime hot swap.
 
 ## 5. Verify and deploy
 
-\`\`\`bash
+```bash
 composer dump-autoload
 php artisan optimize:clear
 php artisan route:list --path=admin
 php artisan route:cache
-\`\`\`
+```
 
 If routes are already cached, clear/rebuild the route cache after introducing
 or removing module Pages. This discovery runs while routes are being
