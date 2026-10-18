@@ -30,6 +30,17 @@ final class ModularDiscoveryTest extends TestCase
                 'middleware' => ['web', 'auth'],
                 'pages' => [ExplicitAdminPage::class],
             ],
+            'reports' => [
+                'path' => 'reports',
+                'middleware' => ['web', 'auth'],
+                'pages' => [],
+                'discover_pages' => [
+                    [
+                        'in' => inventoryPagesPath(),
+                        'for' => 'Modules\\\\Inventory\\\\Lavertia\\\\Pages',
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -55,6 +66,17 @@ final class ModularDiscoveryTest extends TestCase
             static fn ($route): bool => $route->getName() === 'lavertia.admin.inventory.overview',
         ));
         self::assertNull($routes->getByName('lavertia.admin.abstract-module-page'));
+    }
+
+    public function test_config_driven_discovery_supports_modular_pages_without_provider_registration(): void
+    {
+        Route::getRoutes()->refreshNameLookups();
+
+        $route = Route::getRoutes()->getByName('lavertia.reports.inventory.overview');
+
+        self::assertNotNull($route);
+        self::assertSame('reports/inventory/overview', $route->uri());
+        self::assertContains('auth', $route->gatherMiddleware());
     }
 
     public function test_plain_panel_can_discover_module_pages_without_the_registry(): void
