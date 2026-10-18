@@ -14,10 +14,6 @@ use Lavertia\Panels\PanelsServiceProvider;
 use Modules\Inventory\Lavertia\Pages\InventoryOverview;
 use Orchestra\Testbench\TestCase;
 
-require_once __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Pages/InventoryOverview.php';
-require_once __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Pages/Reports/DailyStock.php';
-require_once __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Pages/AbstractModulePage.php';
-
 final class ModularDiscoveryTest extends TestCase
 {
     protected function getPackageProviders($app): array
