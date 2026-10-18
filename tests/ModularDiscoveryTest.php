@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Tests;
 
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -55,7 +54,10 @@ final class ModularDiscoveryTest extends TestCase
         self::assertSame(InventoryOverview::class, $overview->getActionName());
         self::assertContains('web', $overview->gatherMiddleware());
         self::assertContains('auth', $overview->gatherMiddleware());
-        self::assertSame(1, $routes->getRoutesByName()['lavertia.admin.inventory.overview'] === $overview ? 1 : 0);
+        self::assertCount(1, array_filter(
+            $routes->getRoutes(),
+            static fn ($route): bool => $route->getName() === 'lavertia.admin.inventory.overview',
+        ));
         self::assertNull($routes->getByName('lavertia.admin.abstract-module-page'));
     }
 
@@ -86,7 +88,8 @@ final class ModularDiscoveryTest extends TestCase
             )
             ->registerRoutes();
 
-        self::assertTrue(true);
+        Route::getRoutes()->refreshNameLookups();
+        self::assertNull(Route::getRoutes()->getByName('lavertia.optional.missing'));
     }
 
     public function test_rejects_invalid_psr4_namespace(): void
