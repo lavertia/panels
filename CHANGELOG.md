@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Discover PHP Pages recursively from Composer PSR-4 Laravel modules using `Panel::discoverPages()` or module service-provider `PanelRegistry` registration.
-- Defer route registration until Laravel providers finish booting; preserve panel middleware and reject duplicate/unsafe slugs.
+- Register module and config routes during provider boot (regardless of module provider order), preserving precedence over broad host routes, middleware and duplicate/unsafe slug rejection.
 - Verify installed `internachi/modular` modules in Laravel 13, including authenticated Inertia rendering, nested routes, and config/route caching in CI.
 
 - Replace 2023 Panels placeholder with a composable Inertia-based panel foundation.
