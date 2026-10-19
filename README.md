@@ -56,6 +56,32 @@ public function boot(\Lavertia\Panels\PanelRegistry $panels): void
 
 The host application's existing Panel middleware continues to protect these routes; module provider registrations are mounted during provider boot, preserving precedence over broad host routes. Alternatively use the Panel's `discover_pages` config or `Panel::discoverPages()` directly. This alpha feature discovers **Pages** (not Filament Resources/Widgets). See [Laravel Modular integration and Vite PHP refresh](docs/MODULAR_LARAVEL.md).
 
+### v0.3 alpha: modular Navigation and Dashboard Widgets
+
+Register a Page in a configured Panel, then add a permission-filtered NavigationItem and optionally discover DashboardWidgets from a Composer PSR-4 module's Service Provider:
+
+```php
+public function boot(\Lavertia\Panels\PanelRegistry $panels): void
+{
+    $panels->discoverWidgets(
+        panelId: 'admin',
+        in: dirname(__DIR__).'/Lavertia/Widgets',
+        for: 'Modules\\Inventory\\Lavertia\\Widgets',
+    );
+
+    $panels->navigationItem(
+        panelId: 'admin',
+        item: \Lavertia\Panels\Navigation\NavigationItem::make('inventory/overview', 'Inventory')
+            ->group('Operations')
+            ->ability('inventory.view'),
+    );
+}
+```
+
+The Module's Pages stay behind the Panel's Laravel middleware. The new opt-in `Lavertia\Panels\Pages\DashboardPage` renders all authorized Widgets registered for that Panel; it must not be registered alongside another Page with the same slug. Navigation is delivered as optional Inertia props and rendered by React, Vue and Svelte, including active state and RTL layout. Neither hiding links nor Widget `canView()` replaces server-side Policies and tenant scoping.
+
+See the [v0.3 Navigation and Widgets guide](docs/V03.md). Resources and Relation Managers remain future milestones.
+
 ### Example: place a Table anywhere
 
 ```php

@@ -6,8 +6,10 @@ namespace Lavertia\Panels\Tests;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\PanelsServiceProvider;
+use Modules\Inventory\Lavertia\Widgets\InventoryMetrics;
 use Orchestra\Testbench\TestCase;
 
 final class ModularEarlyProviderTest extends TestCase
@@ -27,6 +29,18 @@ final class ModularEarlyProviderTest extends TestCase
                 'pages' => [],
             ],
         ]);
+    }
+
+    public function test_module_booting_before_panels_contributes_navigation_and_widgets(): void
+    {
+        Route::getRoutes()->refreshNameLookups();
+
+        $registry = $this->app->make(PanelRegistry::class);
+
+        self::assertSame('Inventory', $registry->navigation('admin')[0]['label']);
+        self::assertSame('/admin/inventory/overview', $registry->navigation('admin')[0]['url']);
+        self::assertContains(InventoryMetrics::class, $registry->widgetClasses('admin'));
+        self::assertSame('stats-grid', $registry->dashboardComponents('admin')[0]->getType());
     }
 
     public function test_module_booting_before_panels_can_register_lavertia_pages(): void
@@ -49,6 +63,15 @@ final class FixtureEarlyInventoryModuleProvider extends ServiceProvider
             panelId: 'admin',
             in: __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Pages',
             for: 'Modules\\Inventory\\Lavertia\\Pages',
+        );
+        $panels->navigationItem(
+            panelId: 'admin',
+            item: NavigationItem::make('inventory/overview', 'Inventory'),
+        );
+        $panels->discoverWidgets(
+            panelId: 'admin',
+            in: __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Widgets',
+            for: 'Modules\\Inventory\\Lavertia\\Widgets',
         );
     }
 }

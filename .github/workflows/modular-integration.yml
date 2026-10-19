@@ -55,3 +55,73 @@ jobs:
           coverage: none
       - name: Install real module and verify dynamic/cached routes
         run: bash ../../panels/tests/integration/modular/run.sh
+
+  starterkit-adapters:
+    name: v0.3 installed adapter + ${{ matrix.stack }} typecheck/build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [react, vue, svelte]
+    defaults:
+      run:
+        working-directory: playground/${{ matrix.stack }}
+    steps:
+      - name: Checkout Panels candidate
+        uses: actions/checkout@v4
+        with:
+          path: panels
+      - name: Checkout Playground
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/playground
+          ref: main
+          path: playground
+      - name: Checkout Support
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/support
+          ref: main
+          path: support
+      - name: Checkout Forms
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/forms
+          ref: main
+          path: forms
+      - name: Checkout Tables
+        uses: actions/checkout@v4
+        with:
+          repository: lavertia/tables
+          ref: main
+          path: tables
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: playground/${{ matrix.stack }}/package-lock.json
+      - name: Install Laravel and frontend dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+          cp .env.example .env
+          mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions
+          php artisan key:generate --force
+          php artisan wayfinder:generate --with-form
+      - name: Install v0.3 adapters into Laravel Starter Kit
+        run: |
+          php artisan lavertia:install --stack=${{ matrix.stack }} --force
+          grep -q "Panel navigation" resources/js/pages/lavertia/page.*
+      - name: Type-check installed adapters
+        run: npm run types:check
+      - name: Build installed adapters
+        run: npm run build

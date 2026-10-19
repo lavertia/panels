@@ -21,6 +21,30 @@ cp ../../panels/tests/integration/modular/InventoryServiceProvider.php \
 composer update modules/inventory --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
 php artisan package:discover --ansi
 
+# The host keeps its existing Admin dashboard and enables an Inventory Panel.
+# This temporary config is confined to the CI workspace.
+cat > config/lavertia.php <<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'panels' => [
+        'admin' => [
+            'path' => 'admin',
+            'middleware' => ['web', 'auth'],
+            'pages' => [\App\Lavertia\Pages\DashboardPage::class],
+        ],
+        'inventory' => [
+            'path' => 'inventory',
+            'middleware' => ['web', 'auth'],
+            'pages' => [\Lavertia\Panels\Pages\DashboardPage::class],
+            'navigation' => [['slug' => 'dashboard', 'label' => 'Inventory dashboard']],
+        ],
+    ],
+];
+PHP
+
 cp .env.example .env
 php artisan key:generate --force
 test -f database/database.sqlite || touch database/database.sqlite
@@ -33,12 +57,13 @@ cp ../../panels/tests/integration/modular/LavertiaModularIntegrationPest.php \
     tests/Feature/LavertiaModularIntegrationTest.php
 
 assert_module_routes() {
-    php artisan route:list --path=admin --json > /tmp/lavertia-module-routes.json
+    php artisan route:list --json > /tmp/lavertia-module-routes.json
     php -r '
         $routes = json_decode(file_get_contents("/tmp/lavertia-module-routes.json"), true, 512, JSON_THROW_ON_ERROR);
         $expected = [
             "lavertia.admin.inventory.overview" => "admin/inventory/overview",
             "lavertia.admin.inventory.reports.daily-stock" => "admin/inventory/reports/daily-stock",
+            "lavertia.inventory.dashboard" => "inventory/dashboard",
         ];
         foreach ($expected as $name => $uri) {
             $matches = array_values(array_filter(

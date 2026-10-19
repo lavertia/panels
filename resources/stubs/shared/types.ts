@@ -7,7 +7,16 @@ export interface ComponentNode {
     components: ComponentNode[];
 }
 
+export interface NavigationLink {
+    label: string;
+    slug: string;
+    group: string | null;
+    url: string;
+    active: boolean;
+}
+
 export interface LavertiaPayload {
+    navigation?: NavigationLink[];
     version: number;
     title?: string;
     tree: ComponentNode;
