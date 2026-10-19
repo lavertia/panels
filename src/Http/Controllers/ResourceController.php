@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
 use Lavertia\Forms\Components\Form;
@@ -22,7 +23,6 @@ use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
 use Lavertia\Tables\Components\Table;
-use Inertia\Inertia;
 
 final class ResourceController
 {
@@ -75,11 +75,12 @@ final class ResourceController
         $validated = $request->validate($resource->rules(null));
 
         // Use the resource's model connection, allowing apps with multiple DBs.
-        $model = (new ($resource::model()))->getConnection()->transaction(
+        $modelClass = $resource::model();
+        $model = (new $modelClass)->getConnection()->transaction(
             static fn (): Model => $resource->createRecord($validated),
         );
 
-        if (! $model instanceof ($resource::model())) {
+        if (! $model instanceof $modelClass) {
             throw new InvalidArgumentException('Resource createRecord returned an unexpected model.');
         }
 
