@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Inventory\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\PanelRegistry;
 
 final class InventoryServiceProvider extends ServiceProvider
 {
