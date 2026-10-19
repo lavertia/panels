@@ -29,7 +29,7 @@ mkdir -p storage/framework/views storage/framework/cache/data storage/framework/
 php artisan optimize:clear
 php artisan modules:list
 
-cp ../../panels/tests/integration/modular/LavertiaModularIntegrationTest.php \
+cp ../../panels/tests/integration/modular/LavertiaModularIntegrationPest.php \
     tests/Feature/LavertiaModularIntegrationTest.php
 
 assert_module_routes() {
