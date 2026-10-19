@@ -39,12 +39,7 @@ final class ModularEarlyProviderTest extends TestCase
 
         self::assertSame('Inventory', $registry->navigation('admin')[0]['label']);
         self::assertSame('/admin/inventory/overview', $registry->navigation('admin')[0]['url']);
-        self::assertSame([InventoryMetrics::class], $registry->widgetClasses('admin') === []
-            ? []
-            : array_values(array_filter(
-                $registry->widgetClasses('admin'),
-                static fn (string $class): bool => $class === InventoryMetrics::class,
-            )));
+        self::assertContains(InventoryMetrics::class, $registry->widgetClasses('admin'));
         self::assertSame('stats-grid', $registry->dashboardComponents('admin')[0]->getType());
     }
 
