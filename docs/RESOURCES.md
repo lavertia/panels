@@ -136,7 +136,7 @@ For StockResource in the admin Panel, Laravel registers:
 | PUT | /admin/resources/stocks/{record} | Save validated changes | update |
 | DELETE | /admin/resources/stocks/{record} | Delete record | delete |
 
-All routes retain your Panel middleware and Laravel session-based CSRF validation. Forms use Inertia POST/PUT, while the delete endpoint expects a genuine DELETE request. The first alpha UI includes Create and Edit links. A first-class Delete confirmation UI and per-row Table actions are planned as the next UI enhancement; do not use a GET link to delete data.
+All routes retain your Panel middleware and Laravel session-based CSRF validation. Forms use Inertia POST/PUT, while the delete endpoint expects a genuine DELETE request. The alpha UI includes Create and Edit links and a Policy-gated Delete button on the record View page, with explicit browser confirmation and an Inertia DELETE request. Per-row Table View/Edit links and bulk actions remain future enhancements; do not use a GET link to delete data.
 
 Navigation is generated automatically for the Resource index and hidden unless its model policy grants viewAny. The same panel's Resource URL never leaks into another Panel.
 
