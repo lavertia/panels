@@ -45,7 +45,6 @@ abstract class Page
             $navigation = app(PanelRegistry::class)->navigation($matches[1], $routeName);
         }
 
-
         return Inertia::render('lavertia/page', [
             'lavertia' => [
                 'version' => ComponentProtocol::VERSION,
