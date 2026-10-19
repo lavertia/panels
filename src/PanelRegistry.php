@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels;
 
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Http\Controllers\ResourceController;
@@ -40,7 +40,6 @@ final class PanelRegistry
 
     /** @var array<string, list<array{in: string, for: string}>> */
     private array $widgetDirectories = [];
-
 
     /** @var array<string, array<string, class-string<Resource>>> */
     private array $resources = [];
@@ -343,7 +342,7 @@ final class PanelRegistry
         Route::middleware($middleware)
             ->prefix($prefix)
             ->name('lavertia.'.$panelId.'.')
-            ->group(static function () use ($url, $name, $panelId, $resourceClass): void {
+            ->group(static function () use ($url, $panelId, $resourceClass): void {
                 $definitions = [
                     ['get', $url, 'index', ''],
                     ['get', $url.'/create', 'create', '.create'],
