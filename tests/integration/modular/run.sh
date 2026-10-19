@@ -25,6 +25,7 @@ cp .env.example .env
 php artisan key:generate --force
 test -f database/database.sqlite || touch database/database.sqlite
 php artisan migrate --force
+mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions
 php artisan optimize:clear
 php artisan modules:list
 
