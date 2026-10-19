@@ -126,6 +126,13 @@ final class ResourceController
                 ->url(route($this->routeName($request).'.edit', ['record' => $record->getKey()], false));
         }
 
+        if (Gate::allows('delete', $record)) {
+            $actions[] = Action::make('delete')->label('Delete')->appearance('outline')
+                ->url(route($this->routeName($request).'.destroy', ['record' => $record->getKey()], false))
+                ->method('delete')
+                ->confirm('Delete this record? This cannot be undone.');
+        }
+
         return $this->render($request, $resource::title(), [
             PageHeader::make($resource::title())->components($actions),
             Infolist::make('record')->label($resource::title())->components($items),
