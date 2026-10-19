@@ -218,11 +218,11 @@ final class PanelRegistry
             }
 
             foreach ($options['navigation'] ?? [] as $item) {
-                if (! $item instanceof NavigationItem) {
-                    throw new InvalidArgumentException('Panel navigation must contain NavigationItem objects.');
+                if (! is_array($item)) {
+                    throw new InvalidArgumentException('Panel config navigation must contain arrays for config:cache compatibility.');
                 }
 
-                $this->navigationItem($id, $item);
+                $this->navigationItem($id, NavigationItem::fromArray($item));
             }
 
             foreach ($options['dashboard_widgets'] ?? [] as $widget) {
