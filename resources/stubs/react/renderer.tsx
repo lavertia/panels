@@ -162,7 +162,7 @@ function TablePreview({ node }: { node: ComponentNode }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h3 className="text-sm font-semibold text-gray-950 dark:text-white">{title}</h3>
-                        {node.props.description && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
+                        {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {node.props.columnManager !== false && (
@@ -302,9 +302,9 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
             return (
                 <header className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
                     <div className="min-w-0">
-                        {node.props.eyebrow && <p className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>}
+                        {typeof node.props.eyebrow === 'string' && node.props.eyebrow.length > 0 && <p className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>}
                         <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{String(node.props.title ?? 'Overview')}</h1>
-                        {node.props.description && <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
+                        {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
                     </div>
                     {children.length > 0 && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
                 </header>
@@ -321,7 +321,7 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
                         <span aria-hidden="true" className={'size-2.5 rounded-full ring-4 ' + statAccentClass(node.props.tone)} />
                     </div>
                     <p className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{String(node.props.value ?? '—')}</p>
-                    {node.props.description && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
+                    {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
                 </article>
             );
 
@@ -330,7 +330,7 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
                 <section className="space-y-4" aria-label={String(node.props.title ?? 'Section')}>
                     <div>
                         <h2 className="text-base font-semibold text-gray-950 dark:text-white">{String(node.props.title ?? '')}</h2>
-                        {node.props.description && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
+                        {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
                     </div>
                     <div className="flex min-w-0 flex-col gap-4">{children}</div>
                 </section>
@@ -399,7 +399,7 @@ case 'form':
                         aria-describedby={node.props.helperText ? node.key + '-help' : undefined}
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/20 dark:bg-gray-950 dark:text-gray-100"
                     />
-                    {node.props.helperText && <p id={node.key + '-help'} className="text-xs text-gray-500 dark:text-gray-400">{String(node.props.helperText)}</p>}
+                    {typeof node.props.helperText === 'string' && node.props.helperText.length > 0 && <p id={node.key + '-help'} className="text-xs text-gray-500 dark:text-gray-400">{String(node.props.helperText)}</p>}
                 </div>
             );
 
