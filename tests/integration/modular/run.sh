@@ -56,12 +56,13 @@ cp ../../panels/tests/integration/modular/LavertiaModularIntegrationPest.php \
     tests/Feature/LavertiaModularIntegrationTest.php
 
 assert_module_routes() {
-    php artisan route:list --path=admin --json > /tmp/lavertia-module-routes.json
+    php artisan route:list --json > /tmp/lavertia-module-routes.json
     php -r '
         $routes = json_decode(file_get_contents("/tmp/lavertia-module-routes.json"), true, 512, JSON_THROW_ON_ERROR);
         $expected = [
             "lavertia.admin.inventory.overview" => "admin/inventory/overview",
             "lavertia.admin.inventory.reports.daily-stock" => "admin/inventory/reports/daily-stock",
+            "lavertia.inventory.dashboard" => "inventory/dashboard",
         ];
         foreach ($expected as $name => $uri) {
             $matches = array_values(array_filter(
