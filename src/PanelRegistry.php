@@ -6,8 +6,8 @@ namespace Lavertia\Panels;
 
 use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
-use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
+use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Contracts\Component;
@@ -27,7 +27,6 @@ final class PanelRegistry
 
     /** @var array<string, array<string, class-string<Page>>> */
     private array $registeredSlugs = [];
-
 
     /** @var array<string, array<string, NavigationItem>> */
     private array $navigationItems = [];
@@ -102,11 +101,9 @@ final class PanelRegistry
 
         $items = array_values($this->navigationItems[$panelId] ?? []);
 
-        usort($items, static fn (NavigationItem $a, NavigationItem $b): int =>
-            ($a->groupName() <=> $b->groupName())
+        usort($items, static fn (NavigationItem $a, NavigationItem $b): int => ($a->groupName() <=> $b->groupName())
             ?: ($a->sortOrder() <=> $b->sortOrder())
-            ?: ($a->slug <=> $b->slug)
-        );
+            ?: ($a->slug <=> $b->slug));
 
         $currentRoute ??= request()->route()?->getName();
         $navigation = [];
@@ -186,9 +183,7 @@ final class PanelRegistry
 
         $widgets = array_values($classes);
 
-        usort($widgets, static fn (string $a, string $b): int =>
-            ($a::sort() <=> $b::sort()) ?: ($a <=> $b)
-        );
+        usort($widgets, static fn (string $a, string $b): int => ($a::sort() <=> $b::sort()) ?: ($a <=> $b));
 
         return $widgets;
     }
