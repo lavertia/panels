@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Tests;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -18,8 +19,8 @@ final class ModularDiscoveryTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        // Intentionally boot the module *after* Panels to verify deferral.
-        return [PanelsServiceProvider::class, FixtureInventoryModuleProvider::class];
+        // The module must work even when it boots after Panels.
+        return [PanelsServiceProvider::class, FixtureInventoryModuleProvider::class, FixtureBroadHostRoutesProvider::class];
     }
 
     protected function getEnvironmentSetUp($app): void
@@ -42,6 +43,13 @@ final class ModularDiscoveryTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    public function test_panel_routes_win_over_later_registered_dynamic_team_routes(): void
+    {
+        $route = Route::getRoutes()->match(Request::create('/admin/dashboard', 'GET'));
+
+        self::assertSame(ExplicitAdminPage::class, $route->getActionName());
     }
 
     public function test_module_provider_discovers_nested_pages_with_original_middleware(): void
@@ -152,6 +160,15 @@ final class FixtureInventoryModuleProvider extends ServiceProvider
             in: inventoryPagesPath(),
             for: 'Modules\\Inventory\\Lavertia\\Pages',
         );
+    }
+}
+
+final class FixtureBroadHostRoutesProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        Route::get('{current_team}/dashboard', static fn () => abort(403))
+            ->name('example.tenant.dashboard');
     }
 }
 
