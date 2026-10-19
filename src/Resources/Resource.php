@@ -68,7 +68,7 @@ abstract class Resource
         $query = $this->query();
         $model = static::model();
 
-        if (! is_subclass_of($model, Model::class) || ! $query->getModel() instanceof $model) {
+        if (! is_subclass_of($model, Model::class) || ! is_a($query->getModel(), $model)) {
             throw new InvalidArgumentException('Resource query must use its declared Eloquent model.');
         }
 
