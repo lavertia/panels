@@ -3,6 +3,7 @@ name: Laravel Modular runtime
 on:
   push:
     branches: [main, "feat/**"]
+    tags: ["v0.*"]
   pull_request:
 
 permissions:
