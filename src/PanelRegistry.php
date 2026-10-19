@@ -419,6 +419,10 @@ final class PanelRegistry
             }
 
             if (app()->routesAreCached()) {
+                // Laravel has restored the cached routes already. Still resolve
+                // early-booted module Resources for authorized navigation.
+                $this->discoverRegisteredResources($id);
+
                 continue;
             }
 
