@@ -54,7 +54,7 @@ public function boot(\Lavertia\Panels\PanelRegistry $panels): void
 }
 ```
 
-The host application's existing Panel middleware continues to protect these routes; module providers are collected before route mounting. Alternatively use the Panel's `discover_pages` config or `Panel::discoverPages()` directly. This alpha feature discovers **Pages** (not Filament Resources/Widgets). See [Laravel Modular integration and Vite PHP refresh](docs/MODULAR_LARAVEL.md).
+The host application's existing Panel middleware continues to protect these routes; module provider registrations are mounted during provider boot, preserving precedence over broad host routes. Alternatively use the Panel's `discover_pages` config or `Panel::discoverPages()` directly. This alpha feature discovers **Pages** (not Filament Resources/Widgets). See [Laravel Modular integration and Vite PHP refresh](docs/MODULAR_LARAVEL.md).
 
 ### Example: place a Table anywhere
 
