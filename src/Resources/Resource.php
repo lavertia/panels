@@ -53,7 +53,7 @@ abstract class Resource
      * The owner MUST assign tenant/organization fields from server context;
      * validated form fields must never determine tenancy.
      *
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      */
     abstract public function createRecord(array $validated): Model;
 
