@@ -7,6 +7,7 @@ namespace Lavertia\Panels\Pages;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lavertia\Panels\PanelRegistry;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -36,6 +37,15 @@ abstract class Page
     {
         $locale = app()->getLocale();
 
+        $routeName = request()->route()?->getName();
+        $navigation = [];
+
+        if (is_string($routeName)
+            && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1) {
+            $navigation = app(PanelRegistry::class)->navigation($matches[1], $routeName);
+        }
+
+
         return Inertia::render('lavertia/page', [
             'lavertia' => [
                 'version' => ComponentProtocol::VERSION,
@@ -43,6 +53,7 @@ abstract class Page
                 'locale' => $locale,
                 'direction' => in_array($locale, ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
                 'tree' => $this->tree(),
+                'navigation' => $navigation,
             ],
         ]);
     }
