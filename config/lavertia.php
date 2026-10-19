@@ -12,6 +12,9 @@ return [
      *         'path' => 'admin',
      *         'middleware' => ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class],
      *         'pages' => [App\Lavertia\Pages\DashboardPage::class],
+     *         'discover_pages' => [
+     *             ['in' => app_path('Lavertia/Pages'), 'for' => 'App\\Lavertia\\Pages'],
+     *         ],
      *     ],
      * ],
      */
@@ -20,6 +23,7 @@ return [
             'path' => 'admin',
             'middleware' => ['web', 'auth', ResolveLocale::class],
             'pages' => [],
+            'discover_pages' => [],
         ],
     ],
 ];

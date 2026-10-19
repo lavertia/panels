@@ -39,6 +39,23 @@ Add your Page class to `config/lavertia.php`:
 
 Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
 
+### Laravel Modular support (module-owned Pages)
+
+Lavertia can discover PHP Pages from [InterNACHI/modular](https://github.com/InterNACHI/modular) `app-modules/*/src/` packages **without adding a hard dependency on Modular**. In the module's Laravel service provider, register the Pages belonging to a configured Panel:
+
+```php
+public function boot(\Lavertia\Panels\PanelRegistry $panels): void
+{
+    $panels->discoverPages(
+        panelId: 'admin',
+        in: dirname(__DIR__).'/Lavertia/Pages',
+        for: 'Modules\\Inventory\\Lavertia\\Pages',
+    );
+}
+```
+
+The host application's existing Panel middleware continues to protect these routes; module providers are collected before route mounting. Alternatively use the Panel's `discover_pages` config or `Panel::discoverPages()` directly. This alpha feature discovers **Pages** (not Filament Resources/Widgets). See [Laravel Modular integration and Vite PHP refresh](docs/MODULAR_LARAVEL.md).
+
 ### Example: place a Table anywhere
 
 ```php
