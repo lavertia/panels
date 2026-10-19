@@ -90,9 +90,11 @@ final class InventoryServiceProvider extends ServiceProvider
 
 This registers Pages in **only** the `admin` Panel. The Panel must already
 exist in `config/lavertia.php`; modules do not silently create public routes
-or bypass the Panel's middleware. `PanelRegistry` collects module registrations
-during service provider boot. Routes are mounted once all service providers
-have booted, regardless of provider boot order.
+or bypass the Panel's middleware. `PanelRegistry` accepts either provider
+boot order: modules booting before Panels are collected, while modules booting
+after Panels add their routes immediately. In both cases, routes are mounted
+before the host's broad web routes, so paths like `/admin/dashboard` are not
+shadowed by `/{current_team}/dashboard`.
 
 `app-modules/inventory/src/Lavertia/Pages/InventoryOverview.php`:
 

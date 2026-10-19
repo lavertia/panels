@@ -58,13 +58,13 @@ assert_module_routes() {
 
 echo "Checking uncached module discovery..."
 assert_module_routes
-php artisan test tests/Feature/LavertiaModularIntegrationTest.php --compact
+php artisan test tests/Feature/LavertiaDashboardTest.php tests/Feature/LavertiaModularIntegrationTest.php --compact
 
 echo "Checking Laravel config and route caching..."
 php artisan config:cache
 php artisan route:cache
 assert_module_routes
-php artisan test tests/Feature/LavertiaModularIntegrationTest.php --compact
+php artisan test tests/Feature/LavertiaDashboardTest.php tests/Feature/LavertiaModularIntegrationTest.php --compact
 
 echo "Checking route cache rebuild..."
 php artisan route:clear

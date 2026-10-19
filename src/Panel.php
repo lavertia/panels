@@ -137,6 +137,12 @@ final class Panel
         return array_values($discovered);
     }
 
+    /** @return list<class-string<Page>> */
+    public function pageClasses(): array
+    {
+        return array_values(array_unique(array_merge($this->pages, $this->discoveredPages())));
+    }
+
     public function registerRoutes(): void
     {
         Route::middleware($this->middleware)
@@ -145,7 +151,7 @@ final class Panel
             ->group(function (): void {
                 $slugs = [];
 
-                foreach (array_unique(array_merge($this->pages, $this->discoveredPages())) as $page) {
+                foreach ($this->pageClasses() as $page) {
                     $slug = $page::slug();
 
                     if (preg_match('#^[a-z0-9][a-z0-9/-]*$#D', $slug) !== 1
