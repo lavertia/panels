@@ -61,6 +61,8 @@ final class EloquentResourcesTest extends TestCase
         });
 
         Gate::policy(StockItem::class, StockItemPolicy::class);
+        // The hosting Laravel Starter Kit owns the login route, not Panels.
+        Route::get('/login', static fn (): string => 'Login')->name('login');
         Route::getRoutes()->refreshNameLookups();
     }
 
