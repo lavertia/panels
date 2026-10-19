@@ -12,6 +12,9 @@ return [
      *         'path' => 'admin',
      *         'middleware' => ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class],
      *         'pages' => [App\Lavertia\Pages\DashboardPage::class],
+     *         'navigation' => [\Lavertia\Panels\Navigation\NavigationItem::make('dashboard', 'Dashboard')],
+     *         'dashboard_widgets' => [],
+     *         'discover_widgets' => [],
      *         'discover_pages' => [
      *             ['in' => app_path('Lavertia/Pages'), 'for' => 'App\\Lavertia\\Pages'],
      *         ],
@@ -24,6 +27,9 @@ return [
             'middleware' => ['web', 'auth', ResolveLocale::class],
             'pages' => [],
             'discover_pages' => [],
+            'navigation' => [],
+            'dashboard_widgets' => [],
+            'discover_widgets' => [],
         ],
     ],
 ];
