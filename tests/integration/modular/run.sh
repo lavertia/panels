@@ -39,6 +39,7 @@ return [
             'path' => 'inventory',
             'middleware' => ['web', 'auth'],
             'pages' => [\Lavertia\Panels\Pages\DashboardPage::class],
+            'navigation' => [['slug' => 'dashboard', 'label' => 'Inventory dashboard']],
         ],
     ],
 ];
