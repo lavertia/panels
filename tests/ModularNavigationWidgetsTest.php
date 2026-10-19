@@ -168,7 +168,7 @@ final class ModularNavigationWidgetsTest extends TestCase
         $this->app->make(PanelRegistry::class)->dashboardWidget('admin', \stdClass::class);
     }
 
-    public function test_rejects_navigation_config_with_objects_instead_of_cache_safe_arrays(): void
+    public function test_navigation_config_factory_rejects_invalid_sort_values(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
