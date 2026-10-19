@@ -88,6 +88,11 @@ jobs:
           composer test
       - name: PSR style
         run: composer lint
+      - name: Diagnose Pint formatting diff
+        if: failure()
+        run: |
+          vendor/bin/pint --quiet
+          git diff -- src config tests
 
   release-gate:
     name: v0 release verification
