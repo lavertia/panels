@@ -12,7 +12,7 @@ return [
      *         'path' => 'admin',
      *         'middleware' => ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class],
      *         'pages' => [App\Lavertia\Pages\DashboardPage::class],
-     *         'navigation' => [\Lavertia\Panels\Navigation\NavigationItem::make('dashboard', 'Dashboard')],
+     *         'navigation' => [['slug' => 'dashboard', 'label' => 'Dashboard']],
      *         'dashboard_widgets' => [],
      *         'discover_widgets' => [],
      *         'discover_pages' => [
