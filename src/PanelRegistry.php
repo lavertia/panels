@@ -218,13 +218,13 @@ final class PanelRegistry
     }
 
 
-    /** @param class-string<Resource> $resourceClass */
+    /** @param  class-string<Resource>  $resourceClass */
     public function resource(string $panelId, string $resourceClass): void
     {
         Panel::make($panelId);
 
         if (! is_subclass_of($resourceClass, Resource::class)
-            || (new ReflectionClass($resourceClass))->isAbstract()
+            || ! (new ReflectionClass($resourceClass))->isInstantiable()
             || ! is_subclass_of($resourceClass::model(), Model::class)) {
             throw new InvalidArgumentException('Resources must be concrete Resource classes for Eloquent models.');
         }
@@ -301,7 +301,7 @@ final class PanelRegistry
                 $class = $directory['for'].'\\'.str_replace(['/', '\\'], '\\', $relative);
 
                 if (class_exists($class) && is_subclass_of($class, Resource::class)
-                    && ! (new ReflectionClass($class))->isAbstract()) {
+                    && (new ReflectionClass($class))->isInstantiable()) {
                     $this->resource($panelId, $class);
                 }
             }
@@ -315,8 +315,8 @@ final class PanelRegistry
     }
 
     /**
-     * @param array<string, mixed> $options
-     * @param class-string<Resource> $resourceClass
+     * @param  array<string, mixed>  $options
+     * @param  class-string<Resource>  $resourceClass
      */
     private function mountResource(string $panelId, array $options, string $resourceClass): void
     {
