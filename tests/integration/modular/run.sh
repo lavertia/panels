@@ -21,6 +21,29 @@ cp ../../panels/tests/integration/modular/InventoryServiceProvider.php \
 composer update modules/inventory --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
 php artisan package:discover --ansi
 
+# The host keeps its existing Admin dashboard and enables an Inventory Panel.
+# This temporary config is confined to the CI workspace.
+cat > config/lavertia.php <<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'panels' => [
+        'admin' => [
+            'path' => 'admin',
+            'middleware' => ['web', 'auth'],
+            'pages' => [\App\Lavertia\Pages\DashboardPage::class],
+        ],
+        'inventory' => [
+            'path' => 'inventory',
+            'middleware' => ['web', 'auth'],
+            'pages' => [\Lavertia\Panels\Pages\DashboardPage::class],
+        ],
+    ],
+];
+PHP
+
 cp .env.example .env
 php artisan key:generate --force
 test -f database/database.sqlite || touch database/database.sqlite
