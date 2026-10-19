@@ -39,6 +39,42 @@ final class NavigationItem
         return new self($slug, $label);
     }
 
+    /** @param array<string, mixed> $config */
+    public static function fromArray(array $config): self
+    {
+        if (! is_string($config['slug'] ?? null) || ! is_string($config['label'] ?? null)) {
+            throw new InvalidArgumentException('Configured navigation items require slug and label strings.');
+        }
+
+        $item = self::make($config['slug'], $config['label']);
+
+        if (array_key_exists('group', $config) && $config['group'] !== null) {
+            if (! is_string($config['group'])) {
+                throw new InvalidArgumentException('Navigation group must be a string.');
+            }
+
+            $item = $item->group($config['group']);
+        }
+
+        if (array_key_exists('sort', $config)) {
+            if (! is_int($config['sort'])) {
+                throw new InvalidArgumentException('Navigation sort must be an integer.');
+            }
+
+            $item = $item->sort($config['sort']);
+        }
+
+        if (array_key_exists('ability', $config) && $config['ability'] !== null) {
+            if (! is_string($config['ability'])) {
+                throw new InvalidArgumentException('Navigation ability must be a string.');
+            }
+
+            $item = $item->ability($config['ability']);
+        }
+
+        return $item;
+    }
+
     public function group(string $group): self
     {
         if (trim($group) === '') {
