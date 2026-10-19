@@ -9,7 +9,8 @@ test -f ../../panels/tests/integration/modular/InventoryServiceProvider.php
 composer config repositories.lavertia-forms '{"type":"path","url":"../../forms","options":{"symlink":true,"versions":{"lavertia/forms":"0.2.0"}}}'
 composer config repositories.lavertia-tables '{"type":"path","url":"../../tables","options":{"symlink":true,"versions":{"lavertia/tables":"0.2.0"}}}'
 
-composer require internachi/modular --with-all-dependencies --no-interaction --prefer-dist --no-progress
+composer require internachi/modular --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
+php artisan package:discover --ansi
 php artisan make:module inventory --accept-default-namespace
 
 mkdir -p app-modules/inventory/src
@@ -17,7 +18,8 @@ cp -R ../../panels/tests/Fixtures/app-modules/inventory/src/Lavertia app-modules
 cp ../../panels/tests/integration/modular/InventoryServiceProvider.php \
     app-modules/inventory/src/Providers/InventoryServiceProvider.php
 
-composer update modules/inventory --with-all-dependencies --no-interaction --prefer-dist --no-progress
+composer update modules/inventory --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
+php artisan package:discover --ansi
 
 cp .env.example .env
 php artisan key:generate --force
