@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Lavertia\Panels\Navigation;
 
 use Illuminate\Support\Facades\Gate;
-use Lavertia\Panels\Http\Controllers\ResourceController;
-use Lavertia\Panels\Resources\Resource;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Http\Controllers\ResourceController;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\Resource;
 
 /**
  * Navigation items resolve to registered Lavertia Page routes in the same Panel.
@@ -153,7 +153,7 @@ final class NavigationItem
             && is_subclass_of($resourceClass, Resource::class)
             && Gate::allows('viewAny', $resourceClass::model());
 
-        if (! $page && ! $resource) {
+        if ($page === false && $resource === false) {
             return null;
         }
 
