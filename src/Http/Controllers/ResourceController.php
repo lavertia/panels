@@ -77,18 +77,21 @@ final class ResourceController
         // Use the resource's model connection, allowing apps with multiple DBs.
         $modelClass = $resource::model();
         $model = (new $modelClass)->getConnection()->transaction(
-            static fn (): Model => $resource->createRecord($validated),
+            static function () use ($resource, $validated, $modelClass): Model {
+                $created = $resource->createRecord($validated);
+
+                if (! $created instanceof $modelClass || $created->getKey() === null) {
+                    throw new InvalidArgumentException('Resource createRecord returned an unexpected model.');
+                }
+
+                // Reject and ROLLBACK a record created outside the caller's scope.
+                $resource->findRecord((string) $created->getKey());
+
+                return $created;
+            },
         );
 
-        if (! $model instanceof $modelClass) {
-            throw new InvalidArgumentException('Resource createRecord returned an unexpected model.');
-        }
-
-        // The created model must be accessible through the same scoped query.
-        // No cross-tenant ID is ever returned to the browser.
-        $resource->findRecord((string) $model->getKey());
-
-        return to_route($this->routeName($request).'.show', ['record' => $model->getRouteKey()]);
+        return to_route($this->routeName($request).'.show', ['record' => $model->getKey()]);
     }
 
     public function show(Request $request): Response
@@ -120,7 +123,7 @@ final class ResourceController
 
         if (Gate::allows('update', $record)) {
             $actions[] = Action::make('edit')->label('Edit')->appearance('primary')
-                ->url(route($this->routeName($request).'.edit', ['record' => $record->getRouteKey()], false));
+                ->url(route($this->routeName($request).'.edit', ['record' => $record->getKey()], false));
         }
 
         return $this->render($request, $resource::title(), [
@@ -139,7 +142,7 @@ final class ResourceController
             PageHeader::make('Edit '.$resource::title()),
             Form::make('resource-'.$resource::slug())
                 ->label($resource::title())
-                ->action(route($this->routeName($request).'.update', ['record' => $record->getRouteKey()], false))
+                ->action(route($this->routeName($request).'.update', ['record' => $record->getKey()], false))
                 ->method('put')
                 ->submitLabel('Save')
                 ->components($resource->fields($record)),
