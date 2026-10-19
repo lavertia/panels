@@ -12,7 +12,7 @@ use Lavertia\Panels\Http\Controllers\ResourceController;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
-use Lavertia\Panels\Resources\Resource;
+use Lavertia\Panels\Resources\Resource as EloquentResource;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Contracts\Component;
 use ReflectionClass;
@@ -41,7 +41,7 @@ final class PanelRegistry
     /** @var array<string, list<array{in: string, for: string}>> */
     private array $widgetDirectories = [];
 
-    /** @var array<string, array<string, class-string<Resource>>> */
+    /** @var array<string, array<string, class-string<EloquentResource>>> */
     private array $resources = [];
 
     /** @var array<string, array<string, bool>> */
@@ -217,13 +217,12 @@ final class PanelRegistry
         return $components;
     }
 
-
-    /** @param  class-string<Resource>  $resourceClass */
+    /** @param  class-string<EloquentResource>  $resourceClass */
     public function resource(string $panelId, string $resourceClass): void
     {
         Panel::make($panelId);
 
-        if (! is_subclass_of($resourceClass, Resource::class)
+        if (! is_subclass_of($resourceClass, EloquentResource::class)
             || ! (new ReflectionClass($resourceClass))->isInstantiable()
             || ! is_subclass_of($resourceClass::model(), Model::class)) {
             throw new InvalidArgumentException('Resources must be concrete Resource classes for Eloquent models.');
@@ -300,7 +299,7 @@ final class PanelRegistry
                 $relative = substr($file->getRelativePathname(), 0, -4);
                 $class = $directory['for'].'\\'.str_replace(['/', '\\'], '\\', $relative);
 
-                if (class_exists($class) && is_subclass_of($class, Resource::class)
+                if (class_exists($class) && is_subclass_of($class, EloquentResource::class)
                     && (new ReflectionClass($class))->isInstantiable()) {
                     $this->resource($panelId, $class);
                 }
@@ -308,7 +307,7 @@ final class PanelRegistry
         }
     }
 
-    /** @return array<string, class-string<Resource>> */
+    /** @return array<string, class-string<EloquentResource>> */
     public function resourceClasses(string $panelId): array
     {
         return $this->resources[$panelId] ?? [];
@@ -316,7 +315,7 @@ final class PanelRegistry
 
     /**
      * @param  array<string, mixed>  $options
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<EloquentResource>  $resourceClass
      */
     private function mountResource(string $panelId, array $options, string $resourceClass): void
     {
