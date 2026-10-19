@@ -371,8 +371,6 @@ final class PanelRegistry
             return;
         }
 
-        $this->mounted = true;
-
         foreach (config('lavertia.panels', []) as $id => $options) {
             if (! is_string($id) || ! is_array($options)) {
                 continue;
@@ -453,6 +451,8 @@ final class PanelRegistry
                 $this->mountResource($id, $options, $class);
             }
         }
+
+        $this->mounted = true;
     }
 
     /**
