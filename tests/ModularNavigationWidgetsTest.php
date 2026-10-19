@@ -36,7 +36,7 @@ final class ModularNavigationWidgetsTest extends TestCase
                 'middleware' => ['web', 'auth'],
                 'pages' => [DashboardPage::class],
                 'navigation' => [
-                    NavigationItem::make('dashboard', 'Dashboard')->sort(0),
+                    ['slug' => 'dashboard', 'label' => 'Dashboard', 'sort' => 0],
                 ],
                 'dashboard_widgets' => [InventoryMetrics::class],
                 'discover_widgets' => [
@@ -51,7 +51,7 @@ final class ModularNavigationWidgetsTest extends TestCase
                 'middleware' => ['web', 'auth'],
                 'pages' => [DashboardPage::class],
                 'navigation' => [
-                    NavigationItem::make('dashboard', 'Branch dashboard'),
+                    ['slug' => 'dashboard', 'label' => 'Branch dashboard'],
                 ],
                 'dashboard_widgets' => [BranchDashboardWidget::class],
             ],
@@ -166,6 +166,13 @@ final class ModularNavigationWidgetsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->app->make(PanelRegistry::class)->dashboardWidget('admin', \stdClass::class);
+    }
+
+    public function test_rejects_navigation_config_with_objects_instead_of_cache_safe_arrays(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        NavigationItem::fromArray(['slug' => 'dashboard', 'label' => 'Dashboard', 'sort' => 'first']);
     }
 
     public function test_rejects_unsafe_navigation_paths(): void
