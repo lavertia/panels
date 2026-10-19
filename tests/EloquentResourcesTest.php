@@ -127,7 +127,9 @@ final class EloquentResourcesTest extends TestCase
 
         $this->get('/admin/resources/stock-items/'.$mine->id, ['X-Inertia' => 'true'])
             ->assertOk()
-            ->assertJsonPath('props.lavertia.tree.components.1.type', 'infolist');
+            ->assertJsonPath('props.lavertia.tree.components.1.type', 'infolist')
+            ->assertJsonPath('props.lavertia.tree.components.0.components.2.props.method', 'delete')
+            ->assertJsonPath('props.lavertia.tree.components.0.components.2.props.confirm', 'Delete this record? This cannot be undone.');
 
         $this->get('/admin/resources/stock-items/'.$others->id, ['X-Inertia' => 'true'])->assertNotFound();
         $this->get('/admin/resources/stock-items/'.$others->id.'/edit', ['X-Inertia' => 'true'])->assertNotFound();
