@@ -72,6 +72,20 @@ final class NavigationItem
         return $copy;
     }
 
+    public function groupName(): string
+    {
+        return $this->group ?? '';
+    }
+
+    public function sameConfiguration(self $other): bool
+    {
+        return $this->slug === $other->slug
+            && $this->label === $other->label
+            && $this->group === $other->group
+            && $this->sort === $other->sort
+            && $this->ability === $other->ability;
+    }
+
     public function sortOrder(): int
     {
         return $this->sort;
