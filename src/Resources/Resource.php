@@ -91,7 +91,7 @@ abstract class Resource
         }
 
         foreach ($columns as $column) {
-            if (! $column instanceof TableColumnComponent) {
+            if (! is_a($column, TableColumnComponent::class)) {
                 throw new InvalidArgumentException('Resource columns must implement TableColumnComponent.');
             }
         }
@@ -109,7 +109,7 @@ abstract class Resource
         }
 
         foreach ($fields as $field) {
-            if (! $field instanceof FieldComponent) {
+            if (! is_a($field, FieldComponent::class)) {
                 throw new InvalidArgumentException('Resource form fields must implement FieldComponent.');
             }
         }
