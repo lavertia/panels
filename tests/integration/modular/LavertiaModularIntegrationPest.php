@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Inventory\Lavertia\Pages\InventoryOverview;
@@ -10,6 +11,8 @@ use Modules\Inventory\Models\StockItem;
 
 beforeEach(function (): void {
     $this->withoutVite();
+    // Exercise authorization and validation without issuing a browser CSRF cookie.
+    $this->withoutMiddleware(PreventRequestForgery::class);
 });
 
 it('registers module pages behind existing panel middleware', function (): void {
