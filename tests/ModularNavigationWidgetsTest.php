@@ -16,6 +16,7 @@ use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\PanelsServiceProvider;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Components\Text;
+use Modules\Inventory\Lavertia\Widgets\HiddenInventoryWidget;
 use Modules\Inventory\Lavertia\Widgets\InventoryMetrics;
 use Orchestra\Testbench\TestCase;
 
@@ -120,12 +121,10 @@ final class ModularNavigationWidgetsTest extends TestCase
     {
         $registry = $this->app->make(PanelRegistry::class);
 
-        self::assertSame([InventoryMetrics::class], $registry->widgetClasses('admin') === []
-            ? []
-            : array_values(array_filter(
-                $registry->widgetClasses('admin'),
-                static fn (string $class): bool => $class === InventoryMetrics::class,
-            )));
+        self::assertSame(
+            [HiddenInventoryWidget::class, InventoryMetrics::class],
+            $registry->widgetClasses('admin'),
+        );
 
         $components = $registry->dashboardComponents('admin');
         self::assertCount(1, $components);
