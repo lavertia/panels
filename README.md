@@ -88,7 +88,7 @@ See the [v0.3 Navigation and Widgets guide](docs/V03.md). Resources and Relation
 
 An Inventory Module can register `PanelRegistry::discoverResources(panelId: 'admin', in: ..., for: ...)`; the registered Resource gets seven named Laravel CRUD routes, a policy-protected Navigation link, scoped Tables and validated Inertia Forms. The implementation is route-cache compatible and works with Laravel 13 + InterNACHI/modular.
 
-See the [Resources and CRUD guide](docs/RESOURCES.md) for complete examples, route names, authorization and tenancy boundaries. Relation Managers, per-row Table actions and first-class Delete confirmation UI are future enhancements; v0.3 remains development alpha.
+See the [Resources and CRUD guide](docs/RESOURCES.md) for complete examples, route names, authorization and tenancy boundaries. A Policy-gated, browser-confirmed Inertia Delete action is available on the record View page. Relation Managers, per-row Table links and bulk actions remain future enhancements; v0.3 is development alpha.
 
 ### Example: place a Table anywhere
 
