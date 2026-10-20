@@ -3,6 +3,18 @@ import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import type { ComponentNode, TableColumn } from './types';
 import {
+    addRepeaterRow,
+    canAddRepeaterRow,
+    canRemoveRepeaterRow,
+    formDataToPayload,
+    initialRepeaterRows,
+    moveRepeaterRow,
+    reconcileField,
+    removeRepeaterRow,
+    repeaterFieldNode,
+} from './form-state';
+import { runClientAction } from './client-actions';
+import {
     badgeClass,
     columnBadgeTone,
     safeHref,
@@ -18,12 +30,45 @@ import {
 } from './types';
 
 defineOptions({ name: 'LavertiaRenderer' });
+const emit = defineEmits<{ saved: [] }>();
 
 const props = defineProps<{ node: ComponentNode }>();
+const modalDialog = ref<HTMLDialogElement | null>(null);
+const modalForm = computed(() => props.node.props.modal === true
+    ? props.node.components.find((child) => child.type === 'form')
+    : undefined);
+
+function onModalSaved(): void {
+    if (props.node.props.closeOnSuccess !== false) modalDialog.value?.close();
+}
+
+function onDialogClick(event: MouseEvent): void {
+    if (event.target === modalDialog.value) modalDialog.value?.close();
+}
 const label = computed(() => String(props.node.props.label ?? props.node.props.name ?? ''));
 const title = computed(() => String(props.node.props.title ?? ''));
 const input = ref(String(props.node.props.value ?? ''));
 const checked = ref(props.node.props.checked === true);
+const inputDirty = ref(false);
+const checkedDirty = ref(false);
+watch(() => props.node.props.value, (value) => {
+    const next = reconcileField(input.value, String(value ?? ''), inputDirty.value);
+    input.value = next.value;
+    inputDirty.value = next.dirty;
+});
+watch(() => props.node.props.checked, (value) => {
+    const next = reconcileField(checked.value, value === true, checkedDirty.value);
+    checked.value = next.value;
+    checkedDirty.value = next.dirty;
+});
+
+const repeaterRows = ref(initialRepeaterRows(props.node));
+const collapsedRows = ref<Record<string, boolean>>({});
+const repeaterName = computed(() => String(props.node.props.name ?? ''));
+
+function toggleRepeaterRow(key: string): void {
+    collapsedRows.value = { ...collapsedRows.value, [key]: !collapsedRows.value[key] };
+}
 const href = computed(() => safeHref(props.node.props.href));
 const formAction = computed(() => {
     const value = props.node.props.action;
@@ -34,13 +79,32 @@ const formMethod = computed<'post' | 'put' | 'patch'>(() =>
 const processing = ref(false);
 const formErrors = ref<Record<string, string>>({});
 const saved = ref(false);
+const clientActionBusy = ref(false);
+const clientActionError = ref<string | null>(null);
+
+async function executeClientAction(): Promise<void> {
+    if (typeof props.node.props.clientAction !== 'string' || clientActionBusy.value) return;
+
+    clientActionBusy.value = true;
+    clientActionError.value = null;
+
+    try {
+        await runClientAction(props.node.props.clientAction, props.node.props.clientParams);
+    } catch {
+        clientActionError.value = 'Unable to run this client action.';
+    } finally {
+        clientActionBusy.value = false;
+    }
+}
 
 function submitForm(event: Event): void {
     if (!formAction.value || processing.value) return;
-    const data: Record<string, string> = {};
-    for (const [name, value] of new FormData(event.currentTarget as HTMLFormElement).entries()) {
-        if (typeof value === 'string') data[name] = value;
-    }
+    const form = event.currentTarget as HTMLFormElement;
+    const repeaterPaths = Array.from(
+        form.querySelectorAll<HTMLElement>('[data-lavertia-repeater]'),
+        (element) => element.dataset.lavertiaRepeater ?? '',
+    ).filter(Boolean);
+    const data = formDataToPayload(new FormData(form), repeaterPaths);
     formErrors.value = {};
     saved.value = false;
     processing.value = true;
@@ -48,7 +112,16 @@ function submitForm(event: Event): void {
         method: formMethod.value,
         data,
         preserveScroll: true,
-        onSuccess: () => { saved.value = true; },
+        onSuccess: () => {
+            saved.value = true;
+            emit('saved');
+            if (Array.isArray(props.node.props.refreshOnSuccess)) {
+                const only = props.node.props.refreshOnSuccess.filter(
+                    (value): value is string => typeof value === 'string',
+                );
+                if (only.length > 0) router.reload({ only });
+            }
+        },
         onError: (errors) => { formErrors.value = errors; },
         onFinish: () => { processing.value = false; },
     });
@@ -228,20 +301,58 @@ watch(() => props.node.props.value, (next) => {
         </button>
         <p v-else role="status" class="text-xs text-gray-500">{{ tx('draft') }}</p>
     </form>
+    <section v-else-if="node.type === 'repeater'" :data-lavertia-repeater="repeaterName"
+        :aria-label="label" class="col-span-full space-y-3">
+        <h3 class="text-sm font-semibold">{{ label }}</h3>
+        <div v-for="(row, index) in repeaterRows" :key="row.key"
+            class="rounded-lg border border-gray-200 p-3 dark:border-white/15">
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold">{{ tx('itemLabel') }} {{ index + 1 }}</span>
+                <div class="flex flex-wrap gap-1">
+                    <template v-if="node.props.reorderable !== false">
+                        <button type="button" :disabled="index === 0" :aria-label="tx('moveUp')"
+                            @click="repeaterRows = moveRepeaterRow(node, repeaterRows, row.key, -1)"
+                            class="rounded border px-2 py-1 text-xs disabled:opacity-40">↑</button>
+                        <button type="button" :disabled="index === repeaterRows.length - 1" :aria-label="tx('moveDown')"
+                            @click="repeaterRows = moveRepeaterRow(node, repeaterRows, row.key, 1)"
+                            class="rounded border px-2 py-1 text-xs disabled:opacity-40">↓</button>
+                    </template>
+                    <button v-if="node.props.collapsible === true" type="button"
+                        :aria-label="collapsedRows[row.key] ? tx('expand') : tx('collapse')"
+                        @click="toggleRepeaterRow(row.key)" class="rounded border px-2 py-1 text-xs">
+                        {{ collapsedRows[row.key] ? '+' : '−' }}
+                    </button>
+                    <button v-if="node.props.deletable !== false" type="button"
+                        :disabled="!canRemoveRepeaterRow(node, repeaterRows.length)" :aria-label="tx('removeItem')"
+                        @click="repeaterRows = removeRepeaterRow(node, repeaterRows, row.key)"
+                        class="rounded border px-2 py-1 text-xs disabled:opacity-40">×</button>
+                </div>
+            </div>
+            <div v-show="!collapsedRows[row.key]" class="grid gap-3 sm:grid-cols-2">
+                <LavertiaRenderer v-for="child in node.components" :key="child.key + ':' + row.key"
+                    :node="repeaterFieldNode(child, row, index, repeaterName)" />
+            </div>
+        </div>
+        <button v-if="canAddRepeaterRow(node, repeaterRows.length)" type="button"
+            @click="repeaterRows = addRepeaterRow(node, repeaterRows)"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold dark:border-white/20">
+            + {{ tx('addItem') }}
+        </button>
+    </section>
     <label v-else-if="node.type === 'select'" class="flex flex-col gap-1.5 text-sm font-semibold">
         {{ label }}
-        <select v-model="input" :name="String(node.props.name ?? '')" :required="node.props.required === true" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+        <select v-model="input" @change="inputDirty = true" :name="String(node.props.name ?? '')" :required="node.props.required === true" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
             <option value="">—</option>
             <option v-for="(text, value) in (node.props.options as Record<string, string> ?? {})" :key="value" :value="value">{{ text }}</option>
         </select>
     </label>
     <label v-else-if="node.type === 'textarea'" class="flex flex-col gap-1.5 text-sm font-semibold">
         {{ label }}
-        <textarea v-model="input" :name="String(node.props.name ?? '')" :required="node.props.required === true" :rows="Number(node.props.rows ?? 3)" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
+        <textarea v-model="input" @input="inputDirty = true" :name="String(node.props.name ?? '')" :required="node.props.required === true" :rows="Number(node.props.rows ?? 3)" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
     </label>
     <label v-else-if="node.type === 'checkbox'" class="flex items-center gap-2 text-sm font-semibold">
         <input type="hidden" :name="String(node.props.name ?? '')" value="0" />
-        <input v-model="checked" type="checkbox" :name="String(node.props.name ?? '')" value="1" />{{ label }}
+        <input v-model="checked" @change="checkedDirty = true" type="checkbox" :name="String(node.props.name ?? '')" value="1" />{{ label }}
     </label>
 
         <div v-else-if="node.type === 'text-input'" class="flex min-w-0 flex-col gap-1.5">
@@ -249,6 +360,7 @@ watch(() => props.node.props.value, (next) => {
         <input
             :id="node.key"
             v-model="input"
+            @input="inputDirty = true"
             type="text"
             :required="node.props.required === true"
             :name="String(node.props.name ?? '')"
@@ -347,6 +459,27 @@ watch(() => props.node.props.value, (next) => {
             </nav>
         </footer>
     </section>
+
+    <template v-else-if="node.type === 'action' && modalForm">
+        <button type="button" :class="actionClass" @click="modalDialog?.showModal()">{{ label }}</button>
+        <dialog ref="modalDialog" :aria-label="label" @click="onDialogClick"
+            class="m-auto max-h-[90vh] w-[min(95vw,680px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-2xl backdrop:bg-gray-900/60 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+            <div class="mb-4 flex items-center justify-between gap-4">
+                <h2 class="text-lg font-semibold">{{ label }}</h2>
+                <button type="button" aria-label="Close modal" @click="modalDialog?.close()"
+                    class="rounded border px-2 py-1">×</button>
+            </div>
+            <LavertiaRenderer :node="modalForm" @saved="onModalSaved" />
+        </dialog>
+    </template>
+
+    <span v-else-if="node.type === 'action' && typeof node.props.clientAction === 'string'"
+        class="inline-flex flex-col gap-1">
+        <button type="button" :class="actionClass" :disabled="clientActionBusy" @click="executeClientAction">
+            {{ label }}
+        </button>
+        <span v-if="clientActionError" role="alert" class="text-xs text-rose-600">{{ clientActionError }}</span>
+    </span>
 
     <Link v-else-if="node.type === 'action' && href?.startsWith('/')" :href="href" :class="actionClass">{{ label }}</Link>
 

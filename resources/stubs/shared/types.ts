@@ -212,6 +212,8 @@ const translations = {
         show: 'Showing', records: 'records', moveLeft: 'Move column left',
         moveRight: 'Move column right', preview: 'Local preview',
         submit: 'Save changes', saving: 'Saving...', saved: 'Changes saved.', draft: 'Form preview only — no save endpoint',
+        addItem: 'Add item', removeItem: 'Remove item', moveUp: 'Move item up', moveDown: 'Move item down',
+        collapse: 'Collapse item', expand: 'Expand item', itemLabel: 'Item',
     },
     ar: {
         search: 'ابحث في السجلات...', filters: 'الفلاتر', columns: 'الأعمدة', reset: 'إعادة ضبط',
@@ -221,6 +223,8 @@ const translations = {
         show: 'عرض', records: 'سجلات', moveLeft: 'حرّك العمود للخلف',
         moveRight: 'حرّك العمود للأمام', preview: 'معاينة محلية',
         submit: 'حفظ التغييرات', saving: 'جارٍ الحفظ...', saved: 'تم حفظ التغييرات.', draft: 'معاينة النموذج فقط — الحفظ غير مفعّل',
+        addItem: 'إضافة عنصر', removeItem: 'حذف العنصر', moveUp: 'تحريك للأعلى', moveDown: 'تحريك للأسفل',
+        collapse: 'طي العنصر', expand: 'توسيع العنصر', itemLabel: 'عنصر',
     },
     fr: {
         search: 'Rechercher...', filters: 'Filtres', columns: 'Colonnes', reset: 'Réinitialiser',
@@ -230,6 +234,8 @@ const translations = {
         show: 'Affichage', records: 'enregistrements', moveLeft: 'Déplacer à gauche',
         moveRight: 'Déplacer à droite', preview: 'Aperçu local',
         submit: 'Enregistrer', saving: 'Enregistrement...', saved: 'Modifications enregistrées.', draft: 'Aperçu du formulaire — aucun enregistrement',
+        addItem: 'Ajouter un élément', removeItem: 'Supprimer l’élément', moveUp: 'Monter', moveDown: 'Descendre',
+        collapse: 'Réduire l’élément', expand: 'Développer l’élément', itemLabel: 'Élément',
     },
 } as const;
 

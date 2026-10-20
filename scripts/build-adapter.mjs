@@ -30,6 +30,8 @@ await mkdir(dirname(targetRenderer), { recursive: true });
 await copyFile(resolve(projectRoot, 'resources/stubs', stack, 'page.' + extension), targetPage);
 await copyFile(resolve(projectRoot, 'resources/stubs', stack, 'renderer.' + extension), targetRenderer);
 await copyFile(resolve(projectRoot, 'resources/stubs/shared/types.ts'), targetTypes);
+await copyFile(resolve(projectRoot, 'resources/stubs/shared/form-state.ts'), resolve(root, 'resources/js/components/lavertia/form-state.ts'));
+await copyFile(resolve(projectRoot, 'resources/stubs/shared/client-actions.ts'), resolve(root, 'resources/js/components/lavertia/client-actions.ts'));
 await writeFile(resolve(root, 'entry.ts'), "import Page from './resources/js/pages/lavertia/page." + extension + "'; void Page;\n");
 await writeFile(resolve(root, 'index.html'), '<!doctype html><html><body><div id="app"></div><script type="module" src="/entry.ts"></script></body></html>');
 

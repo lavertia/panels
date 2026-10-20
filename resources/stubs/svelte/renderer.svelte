@@ -3,6 +3,18 @@
     import Self from './renderer.svelte';
     import type { ComponentNode, TableColumn } from './types';
     import {
+        addRepeaterRow,
+        canAddRepeaterRow,
+        canRemoveRepeaterRow,
+        formDataToPayload,
+        initialRepeaterRows,
+        moveRepeaterRow,
+        reconcileField,
+        removeRepeaterRow,
+        repeaterFieldNode,
+    } from './form-state';
+    import { runClientAction } from './client-actions';
+    import {
         badgeClass,
         columnBadgeTone,
         safeHref,
@@ -17,12 +29,48 @@
         translate,
     } from './types';
 
-    let { node }: { node: ComponentNode } = $props();
+    let { node, onSaved }: { node: ComponentNode; onSaved?: () => void } = $props();
+    let modalElement: HTMLDialogElement | undefined = $state();
+    let modalForm = $derived(node.props.modal === true
+        ? node.components.find((child) => child.type === 'form')
+        : undefined);
+
+    function onModalSaved(): void {
+        if (node.props.closeOnSuccess !== false) modalElement?.close();
+    }
+
+    function onDialogClick(event: MouseEvent): void {
+        if (event.target === modalElement) modalElement?.close();
+    }
     let input = $state('');
     let checked = $state(false);
+    let inputDirty = $state(false);
+    let checkedDirty = $state(false);
+    let repeaterRows = $state(initialRepeaterRows(node));
+    let collapsedRows = $state<Record<string, boolean>>({});
+
+    function toggleRepeaterRow(key: string): void {
+        collapsedRows = { ...collapsedRows, [key]: !collapsedRows[key] };
+    }
     let processing = $state(false);
     let formErrors = $state<Record<string, string>>({});
     let saved = $state(false);
+    let clientActionBusy = $state(false);
+    let clientActionError = $state<string | null>(null);
+
+    async function executeClientAction(): Promise<void> {
+        if (typeof node.props.clientAction !== 'string' || clientActionBusy) return;
+
+        clientActionBusy = true;
+        clientActionError = null;
+        try {
+            await runClientAction(node.props.clientAction, node.props.clientParams);
+        } catch {
+            clientActionError = 'Unable to run this client action.';
+        } finally {
+            clientActionBusy = false;
+        }
+    }
     let formAction = $derived(typeof node.props.action === 'string'
         && node.props.action.startsWith('/') && !node.props.action.startsWith('//') ? node.props.action : null);
 
@@ -30,10 +78,12 @@
         event.preventDefault();
         if (!formAction || processing) return;
 
-        const data: Record<string, string> = {};
-        for (const [name, value] of new FormData(event.currentTarget as HTMLFormElement).entries()) {
-            if (typeof value === 'string') data[name] = value;
-        }
+        const form = event.currentTarget as HTMLFormElement;
+        const repeaterPaths = Array.from(
+            form.querySelectorAll<HTMLElement>('[data-lavertia-repeater]'),
+            (element) => element.dataset.lavertiaRepeater ?? '',
+        ).filter(Boolean);
+        const data = formDataToPayload(new FormData(form), repeaterPaths);
         const method: 'post' | 'put' | 'patch' = node.props.method === 'put' || node.props.method === 'patch'
             ? node.props.method : 'post';
         formErrors = {};
@@ -43,7 +93,16 @@
             method,
             data,
             preserveScroll: true,
-            onSuccess: () => { saved = true; },
+            onSuccess: () => {
+                saved = true;
+                onSaved?.();
+                if (Array.isArray(node.props.refreshOnSuccess)) {
+                    const only = node.props.refreshOnSuccess.filter(
+                        (value): value is string => typeof value === 'string',
+                    );
+                    if (only.length > 0) router.reload({ only });
+                }
+            },
             onError: (errors) => { formErrors = errors; },
             onFinish: () => { processing = false; },
         });
@@ -138,8 +197,12 @@
     }
 
     $effect(() => {
-        input = String(node.props.value ?? '');
-        checked = node.props.checked === true;
+        const nextInput = reconcileField(input, String(node.props.value ?? ''), inputDirty);
+        input = nextInput.value;
+        inputDirty = nextInput.dirty;
+        const nextChecked = reconcileField(checked, node.props.checked === true, checkedDirty);
+        checked = nextChecked.value;
+        checkedDirty = nextChecked.dirty;
     });
 </script>
 
@@ -250,10 +313,55 @@
             <p role="status" class="text-xs text-gray-500">{tx('draft')}</p>
         {/if}
     </form>
+{:else if node.type === 'repeater'}
+    <section data-lavertia-repeater={String(node.props.name ?? '')}
+        aria-label={label} class="col-span-full space-y-3">
+        <h3 class="text-sm font-semibold">{label}</h3>
+        {#each repeaterRows as row, index (row.key)}
+            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/15">
+                <div class="mb-3 flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold">{tx('itemLabel')} {index + 1}</span>
+                    <div class="flex flex-wrap gap-1">
+                        {#if node.props.reorderable !== false}
+                            <button type="button" disabled={index === 0} aria-label={tx('moveUp')}
+                                onclick={() => { repeaterRows = moveRepeaterRow(node, repeaterRows, row.key, -1); }}
+                                class="rounded border px-2 py-1 text-xs disabled:opacity-40">↑</button>
+                            <button type="button" disabled={index === repeaterRows.length - 1} aria-label={tx('moveDown')}
+                                onclick={() => { repeaterRows = moveRepeaterRow(node, repeaterRows, row.key, 1); }}
+                                class="rounded border px-2 py-1 text-xs disabled:opacity-40">↓</button>
+                        {/if}
+                        {#if node.props.collapsible === true}
+                            <button type="button" aria-label={collapsedRows[row.key] ? tx('expand') : tx('collapse')}
+                                onclick={() => toggleRepeaterRow(row.key)}
+                                class="rounded border px-2 py-1 text-xs">{collapsedRows[row.key] ? '+' : '−'}</button>
+                        {/if}
+                        {#if node.props.deletable !== false}
+                            <button type="button" disabled={!canRemoveRepeaterRow(node, repeaterRows.length)}
+                                aria-label={tx('removeItem')}
+                                onclick={() => { repeaterRows = removeRepeaterRow(node, repeaterRows, row.key); }}
+                                class="rounded border px-2 py-1 text-xs disabled:opacity-40">×</button>
+                        {/if}
+                    </div>
+                </div>
+                <!-- Preserve mounted field state when collapsed. -->
+                <div class={collapsedRows[row.key] ? 'hidden' : 'grid gap-3 sm:grid-cols-2'}>
+                    {#each node.components as child (child.key)}
+                        <Self node={repeaterFieldNode(child, row, index, String(node.props.name ?? ''))} />
+                    {/each}
+                </div>
+            </div>
+        {/each}
+        {#if canAddRepeaterRow(node, repeaterRows.length)}
+            <button type="button" onclick={() => { repeaterRows = addRepeaterRow(node, repeaterRows); }}
+                class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold dark:border-white/20">
+                + {tx('addItem')}
+            </button>
+        {/if}
+    </section>
 {:else if node.type === 'select'}
     <label class="flex flex-col gap-1.5 text-sm font-semibold">
         {label}
-        <select bind:value={input} name={String(node.props.name ?? '')} required={node.props.required === true} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
+        <select bind:value={input} onchange={() => { inputDirty = true; }} name={String(node.props.name ?? '')} required={node.props.required === true} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
             <option value="">—</option>
             {#each Object.entries((node.props.options as Record<string, string>) ?? {}) as [value, option] (value)}
                 <option {value}>{option}</option>
@@ -263,12 +371,12 @@
 {:else if node.type === 'textarea'}
     <label class="flex flex-col gap-1.5 text-sm font-semibold">
         {label}
-        <textarea bind:value={input} name={String(node.props.name ?? '')} required={node.props.required === true} rows={Number(node.props.rows ?? 3)} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950"></textarea>
+        <textarea bind:value={input} oninput={() => { inputDirty = true; }} name={String(node.props.name ?? '')} required={node.props.required === true} rows={Number(node.props.rows ?? 3)} class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950"></textarea>
     </label>
 {:else if node.type === 'checkbox'}
     <label class="flex items-center gap-2 text-sm font-semibold">
         <input type="hidden" name={String(node.props.name ?? '')} value="0" />
-        <input type="checkbox" name={String(node.props.name ?? '')} value="1" bind:checked />{label}
+        <input type="checkbox" name={String(node.props.name ?? '')} value="1" bind:checked onchange={() => { checkedDirty = true; }} />{label}
     </label>
 {:else if node.type === 'text-input'}
     <div class="flex min-w-0 flex-col gap-1.5">
@@ -276,6 +384,7 @@
         <input
             id={node.key}
             bind:value={input}
+            oninput={() => { inputDirty = true; }}
             type="text"
             required={node.props.required === true}
             name={String(node.props.name ?? '')}
@@ -409,6 +518,25 @@
             </nav>
         </footer>
     </section>
+{:else if node.type === 'action' && modalForm}
+    <button type="button" class={actionClass} onclick={() => modalElement?.showModal()}>{label}</button>
+    <dialog bind:this={modalElement} aria-label={label} onclick={onDialogClick}
+        class="m-auto max-h-[90vh] w-[min(95vw,680px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-2xl backdrop:bg-gray-900/60 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+        <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold">{label}</h2>
+            <button type="button" aria-label="Close modal" onclick={() => modalElement?.close()}
+                class="rounded border px-2 py-1">×</button>
+        </div>
+        <Self node={modalForm} onSaved={onModalSaved} />
+    </dialog>
+{:else if node.type === 'action' && typeof node.props.clientAction === 'string'}
+    <span class="inline-flex flex-col gap-1">
+        <button type="button" class={actionClass} disabled={clientActionBusy}
+            onclick={() => { void executeClientAction(); }}>{label}</button>
+        {#if clientActionError}
+            <span role="alert" class="text-xs text-rose-600">{clientActionError}</span>
+        {/if}
+    </span>
 {:else if node.type === 'action' && href?.startsWith('/')}
     <Link {href} class={actionClass}>{label}</Link>
 {:else if node.type === 'action' && href}

@@ -76,4 +76,96 @@ assert.equal(runtime.translate('ar', 'submit'), 'حفظ التغييرات');
 assert.equal(runtime.translate('fr', 'saved'), 'Modifications enregistrées.');
 assert.equal(runtime.translate('unsupported', 'submit'), 'Save changes');
 
+
+// Exercise the exact frontend-neutral runtime shipped to React/Vue/Svelte.
+const formSource = readFileSync(resolve('resources/stubs/shared/form-state.ts'), 'utf8');
+const formCompiled = ts.transpileModule(formSource, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    reportDiagnostics: true,
+});
+assert.deepEqual(formCompiled.diagnostics, []);
+const formRuntime = await import('data:text/javascript;base64,' + Buffer.from(formCompiled.outputText).toString('base64'));
+
+assert.deepEqual(formRuntime.reconcileField('Typing', 'Stale from server', true), {
+    value: 'Typing', dirty: true,
+});
+assert.deepEqual(formRuntime.reconcileField('Typing', 'Typing', true), {
+    value: 'Typing', dirty: false,
+});
+assert.deepEqual(formRuntime.reconcileField('Old', 'New', false), {
+    value: 'New', dirty: false,
+});
+
+const repeater = {
+    type: 'repeater', key: 'root/items',
+    props: {
+        name: 'items', minItems: 1, maxItems: 3, defaultItems: 1,
+        defaultRows: [{ description: 'Existing', quantity: 2 }],
+        addable: true, deletable: true, reorderable: true,
+    },
+    components: [{
+        type: 'text-input', key: 'root/items/description',
+        props: { name: 'description', required: true }, components: [],
+    }],
+};
+let repeaterRows = formRuntime.initialRepeaterRows(repeater);
+assert.equal(repeaterRows.length, 1);
+assert.equal(repeaterRows[0].key, 'initial-0');
+assert.equal(formRuntime.canRemoveRepeaterRow(repeater, repeaterRows.length), false);
+assert.deepEqual(
+    formRuntime.repeaterFieldNode(repeater.components[0], repeaterRows[0], 0, 'items').props,
+    { name: 'items[0][description]', required: true, value: 'Existing' },
+);
+
+repeaterRows = formRuntime.addRepeaterRow(repeater, repeaterRows);
+repeaterRows = formRuntime.addRepeaterRow(repeater, repeaterRows);
+assert.equal(repeaterRows.length, 3);
+assert.equal(formRuntime.addRepeaterRow(repeater, repeaterRows).length, 3);
+const movedKey = repeaterRows[2].key;
+const moved = formRuntime.moveRepeaterRow(repeater, repeaterRows, movedKey, -1);
+assert.equal(moved[1].key, movedKey);
+assert.equal(formRuntime.repeaterFieldNode(repeater.components[0], moved[1], 1, 'items').key,
+    repeater.components[0].key + ':' + movedKey);
+repeaterRows = formRuntime.removeRepeaterRow(repeater, moved, movedKey);
+assert.equal(repeaterRows.length, 2);
+
+// Empty repeaters are preserved as [] on submit; arrays are indexed for Laravel.
+const nestedForm = new FormData();
+nestedForm.append('notify', '0');
+nestedForm.append('notify', '1');
+nestedForm.append('items[0][description]', 'Pencil');
+nestedForm.append('items[0][quantity]', '4');
+nestedForm.append('items[1][description]', 'Notebook');
+nestedForm.append('orders[0][lines][0][sku]', 'AAA');
+nestedForm.append('__proto__[polluted]', 'unsafe');
+nestedForm.append('constructor[prototype][polluted]', 'unsafe');
+const payload = formRuntime.formDataToPayload(nestedForm, ['items', 'empty', 'orders[0][lines]']);
+assert.deepEqual(payload, {
+    items: [
+        { description: 'Pencil', quantity: '4' },
+        { description: 'Notebook' },
+    ],
+    empty: [],
+    orders: [{ lines: [{ sku: 'AAA' }] }],
+    notify: '1',
+});
+assert.equal({}.polluted, undefined);
+
+const clientActionsSource = readFileSync(resolve('resources/stubs/shared/client-actions.ts'), 'utf8');
+const clientActionsCompiled = ts.transpileModule(clientActionsSource, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    reportDiagnostics: true,
+});
+assert.deepEqual(clientActionsCompiled.diagnostics, []);
+const actions = await import('data:text/javascript;base64,' + Buffer.from(clientActionsCompiled.outputText).toString('base64'));
+let printedFormat = '';
+const unregister = actions.registerClientAction('receipts.print', async (params) => {
+    printedFormat = params.format;
+});
+await actions.runClientAction('receipts.print', { format: 'a4' });
+assert.equal(printedFormat, 'a4');
+unregister();
+await assert.rejects(actions.runClientAction('receipts.print', {}), /Unregistered/);
+assert.throws(() => actions.registerClientAction('javascript:alert(1)', () => {}), /Invalid/);
+
 console.log('Lavertia shared adapter runtime checks passed.');
