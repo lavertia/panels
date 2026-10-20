@@ -13,6 +13,7 @@
         removeRepeaterRow,
         repeaterFieldNode,
     } from './form-state';
+    import { runClientAction } from './client-actions';
     import {
         badgeClass,
         columnBadgeTone,
@@ -42,6 +43,22 @@
     let processing = $state(false);
     let formErrors = $state<Record<string, string>>({});
     let saved = $state(false);
+    let clientActionBusy = $state(false);
+    let clientActionError = $state<string | null>(null);
+
+    async function executeClientAction(): Promise<void> {
+        if (typeof node.props.clientAction !== 'string' || clientActionBusy) return;
+
+        clientActionBusy = true;
+        clientActionError = null;
+        try {
+            await runClientAction(node.props.clientAction, node.props.clientParams);
+        } catch {
+            clientActionError = 'Unable to run this client action.';
+        } finally {
+            clientActionBusy = false;
+        }
+    }
     let formAction = $derived(typeof node.props.action === 'string'
         && node.props.action.startsWith('/') && !node.props.action.startsWith('//') ? node.props.action : null);
 
@@ -488,6 +505,14 @@
             </nav>
         </footer>
     </section>
+{:else if node.type === 'action' && typeof node.props.clientAction === 'string'}
+    <span class="inline-flex flex-col gap-1">
+        <button type="button" class={actionClass} disabled={clientActionBusy}
+            onclick={() => { void executeClientAction(); }}>{label}</button>
+        {#if clientActionError}
+            <span role="alert" class="text-xs text-rose-600">{clientActionError}</span>
+        {/if}
+    </span>
 {:else if node.type === 'action' && href?.startsWith('/')}
     <Link {href} class={actionClass}>{label}</Link>
 {:else if node.type === 'action' && href}
