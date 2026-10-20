@@ -6,6 +6,8 @@ namespace Lavertia\Panels\Tests;
 
 use InvalidArgumentException;
 use Lavertia\Panels\Components\Action;
+use Lavertia\Forms\Components\Form;
+use Lavertia\Forms\Components\TextInput;
 use PHPUnit\Framework\TestCase;
 
 final class ClientActionDescriptorTest extends TestCase
@@ -23,6 +25,50 @@ final class ClientActionDescriptorTest extends TestCase
         self::assertSame(2, $node['props']->clientParams->copies);
         self::assertArrayNotHasKey('href', (array) $node['props']);
         self::assertJson(json_encode($node, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_modal_action_serializes_form_and_save_lifecycle(): void
+    {
+        $node = Action::make('editUser')
+            ->label('Edit user')
+            ->modal(
+                Form::make('editUser')
+                    ->action('/users/12')
+                    ->method('patch')
+                    ->refreshOnSuccess(['lavertia'])
+                    ->components([TextInput::make('name')->value('Sara')]),
+            )
+            ->closeOnSuccess()
+            ->toArray();
+
+        self::assertSame('action', $node['type']);
+        self::assertTrue($node['props']->modal);
+        self::assertTrue($node['props']->closeOnSuccess);
+        self::assertSame('form', $node['components'][0]['type']);
+        self::assertSame('/users/12', $node['components'][0]['props']->action);
+        self::assertSame(['lavertia'], $node['components'][0]['props']->refreshOnSuccess);
+        self::assertSame('root/editUser/name', $node['components'][0]['components'][0]['key']);
+    }
+
+    public function test_modal_action_rejects_conflicting_behavior(): void
+    {
+        $rejected = 0;
+
+        foreach ([
+            fn () => Action::make('x')->url('/users')->modal(Form::make('edit')),
+            fn () => Action::make('x')->clientAction('users.edit')->modal(Form::make('edit')),
+            fn () => Action::make('x')->modal(Form::make('edit'))->url('/users'),
+            fn () => Action::make('x')->modal(Form::make('edit'))->clientAction('users.edit'),
+        ] as $invalid) {
+            try {
+                $invalid();
+                self::fail('Expected mutually exclusive action behavior.');
+            } catch (InvalidArgumentException) {
+                $rejected++;
+            }
+        }
+
+        self::assertSame(4, $rejected);
     }
 
     public function test_unsafe_client_actions_are_rejected(): void
