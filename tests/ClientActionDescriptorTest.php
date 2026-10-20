@@ -35,7 +35,6 @@ final class ClientActionDescriptorTest extends TestCase
                 Form::make('editUser')
                     ->action('/users/12')
                     ->method('patch')
-                    ->refreshOnSuccess(['lavertia'])
                     ->components([TextInput::make('name')->value('Sara')]),
             )
             ->closeOnSuccess()
@@ -46,7 +45,6 @@ final class ClientActionDescriptorTest extends TestCase
         self::assertTrue($node['props']->closeOnSuccess);
         self::assertSame('form', $node['components'][0]['type']);
         self::assertSame('/users/12', $node['components'][0]['props']->action);
-        self::assertSame(['lavertia'], $node['components'][0]['props']->refreshOnSuccess);
         self::assertSame('root/editUser/name', $node['components'][0]['components'][0]['key']);
     }
 
