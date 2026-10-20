@@ -35,6 +35,7 @@ final class InstallCommand extends Command
         $assets = [
             $root.'/shared/types.ts' => resource_path('js/components/lavertia/types.ts'),
             $root.'/shared/form-state.ts' => resource_path('js/components/lavertia/form-state.ts'),
+            $root.'/shared/client-actions.ts' => resource_path('js/components/lavertia/client-actions.ts'),
             $root.'/'.$stack.'/renderer.'.$extension => resource_path('js/components/lavertia/renderer.'.$extension),
             $root.'/'.$stack.'/page.'.$extension => resource_path('js/pages/lavertia/page.'.$extension),
         ];
