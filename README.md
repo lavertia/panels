@@ -21,7 +21,7 @@ php artisan lavertia:install --stack=react
 php artisan vendor:publish --tag=lavertia-config
 ```
 
-The command creates four files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}`, `resources/js/components/lavertia/types.ts` and `resources/js/components/lavertia/form-state.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
+The command creates five files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}`, `resources/js/components/lavertia/types.ts`, `resources/js/components/lavertia/form-state.ts` and `resources/js/components/lavertia/client-actions.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
@@ -96,9 +96,32 @@ Inertia partial reload may be requested after a successful save; this is not a
 full browser refresh. Refreshing a more granular top-level data prop will become
 possible when Pages split field data from the component schema.
 
+Host applications can also register named browser actions. PHP only sends the
+action identifier and JSON-safe data; executable JavaScript lives in the app's
+TypeScript bundle:
+
+```php
+Action::make('printReceipt')
+    ->label('Print')
+    ->clientAction('receipts.print', ['format' => 'a4']);
+```
+
+In an app startup module, import the generated registry:
+
+```typescript
+import { registerClientAction } from '@/components/lavertia/client-actions';
+
+registerClientAction('receipts.print', async (params) => {
+    window.print();
+});
+```
+
+Handlers run only after a user clicks an Action. Errors are rendered in
+an accessible alert; Laravel cannot send arbitrary scripts or bypass the host's
+bundling/CSP rules.
+
 Important limitations: this is **not** a modal Action API, automatic model
-persistence, a complete dirty-state conflict resolver, or a JavaScript action
-registry. Future versions will provide these. Continue using Laravel Policies,
+persistence, a complete dirty-state conflict resolver, or a full form-state conflict resolver. Future versions will provide these. Continue using Laravel Policies,
 Form Requests, CSRF protection and transactions for nested writes. Each row
 identifier supplied by a browser must be tenant-scoped and authorized.
 
