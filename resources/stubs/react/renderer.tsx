@@ -1,7 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, router } from '@inertiajs/react';
 import type { ComponentNode, TableColumn, TableRow } from './types';
+import {
+    addRepeaterRow,
+    canAddRepeaterRow,
+    canRemoveRepeaterRow,
+    formDataToPayload,
+    initialRepeaterRows,
+    moveRepeaterRow,
+    reconcileField,
+    removeRepeaterRow,
+    repeaterFieldNode,
+} from './form-state';
 import {
     badgeClass,
     columnBadgeTone,
@@ -34,10 +45,11 @@ function FormRenderer({ node, children }: { node: ComponentNode; children: React
         event.preventDefault();
         if (!action || processing) return;
 
-        const data: Record<string, string> = {};
-        for (const [name, value] of new FormData(event.currentTarget).entries()) {
-            if (typeof value === 'string') data[name] = value;
-        }
+        const repeaterPaths = Array.from(
+            event.currentTarget.querySelectorAll<HTMLElement>('[data-lavertia-repeater]'),
+            (element) => element.dataset.lavertiaRepeater ?? '',
+        ).filter(Boolean);
+        const data = formDataToPayload(new FormData(event.currentTarget), repeaterPaths);
 
         setSaved(false);
         setErrors({});
@@ -46,7 +58,15 @@ function FormRenderer({ node, children }: { node: ComponentNode; children: React
             method,
             data,
             preserveScroll: true,
-            onSuccess: () => setSaved(true),
+            onSuccess: () => {
+                setSaved(true);
+                if (Array.isArray(node.props.refreshOnSuccess)) {
+                    const only = node.props.refreshOnSuccess.filter(
+                        (value): value is string => typeof value === 'string',
+                    );
+                    if (only.length > 0) router.reload({ only, preserveScroll: true, preserveState: true });
+                }
+            },
             onError: (validationErrors) => setErrors(validationErrors),
             onFinish: () => setProcessing(false),
         });
@@ -68,6 +88,58 @@ function FormRenderer({ node, children }: { node: ComponentNode; children: React
 }
 
 
+
+
+function RepeaterRenderer({ node }: { node: ComponentNode }) {
+    const [rows, setRows] = useState(() => initialRepeaterRows(node));
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+    const name = String(node.props.name ?? '');
+
+    return (
+        <section className="col-span-full space-y-3" data-lavertia-repeater={name}
+            aria-label={String(node.props.label ?? name)}>
+            <h3 className="text-sm font-semibold">{String(node.props.label ?? name)}</h3>
+            {rows.map((row, index) => (
+                <div key={row.key} className="rounded-lg border border-gray-200 p-3 dark:border-white/15">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold">{translate(node.props.locale, 'itemLabel')} {index + 1}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {node.props.reorderable !== false && <>
+                                <button type="button" disabled={index === 0} aria-label={translate(node.props.locale, 'moveUp')}
+                                    onClick={() => setRows((previous) => moveRepeaterRow(node, previous, row.key, -1))}
+                                    className="rounded border px-2 py-1 text-xs disabled:opacity-40">↑</button>
+                                <button type="button" disabled={index === rows.length - 1} aria-label={translate(node.props.locale, 'moveDown')}
+                                    onClick={() => setRows((previous) => moveRepeaterRow(node, previous, row.key, 1))}
+                                    className="rounded border px-2 py-1 text-xs disabled:opacity-40">↓</button>
+                            </>}
+                            {node.props.collapsible === true &&
+                                <button type="button" aria-label={collapsed[row.key] ? translate(node.props.locale, 'expand') : translate(node.props.locale, 'collapse')}
+                                    onClick={() => setCollapsed((previous) => ({ ...previous, [row.key]: !previous[row.key] }))}
+                                    className="rounded border px-2 py-1 text-xs">{collapsed[row.key] ? '+' : '−'}</button>}
+                            {node.props.deletable !== false &&
+                                <button type="button" disabled={!canRemoveRepeaterRow(node, rows.length)}
+                                    aria-label={translate(node.props.locale, 'removeItem')}
+                                    onClick={() => setRows((previous) => removeRepeaterRow(node, previous, row.key))}
+                                    className="rounded border px-2 py-1 text-xs disabled:opacity-40">×</button>}
+                        </div>
+                    </div>
+                    {/* Keep fields mounted while collapsed so the form payload retains values. */}
+                    <div className={collapsed[row.key] ? 'hidden' : 'grid gap-3 sm:grid-cols-2'}>
+                        {node.components.map((field) => {
+                            const child = repeaterFieldNode(field, row, index, name);
+                            return <LavertiaRenderer key={child.key} node={child} />;
+                        })}
+                    </div>
+                </div>
+            ))}
+            {canAddRepeaterRow(node, rows.length) &&
+                <button type="button" onClick={() => setRows((previous) => addRepeaterRow(node, previous))}
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold dark:border-white/20">
+                    + {translate(node.props.locale, 'addItem')}
+                </button>}
+        </section>
+    );
+}
 
 function TablePreview({ node }: { node: ComponentNode }) {
     const columns = tableColumns(node);
@@ -283,10 +355,20 @@ function ActionLink({ node }: { node: ComponentNode }) {
 export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
     const [input, setInput] = useState(String(node.props.value ?? ''));
     const [checked, setChecked] = useState(node.props.checked === true);
+    const inputDirty = useRef(false);
+    const checkedDirty = useRef(false);
 
     useEffect(() => {
-        setInput(String(node.props.value ?? ''));
+        const next = reconcileField(input, String(node.props.value ?? ''), inputDirty.current);
+        inputDirty.current = next.dirty;
+        setInput(next.value);
     }, [node.props.value]);
+
+    useEffect(() => {
+        const next = reconcileField(checked, node.props.checked === true, checkedDirty.current);
+        checkedDirty.current = next.dirty;
+        setChecked(next.value);
+    }, [node.props.checked]);
 
     const children = node.components.map((child) => <LavertiaRenderer key={child.key} node={child} />);
 
@@ -360,10 +442,13 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
 case 'form':
             return <FormRenderer node={node}>{children}</FormRenderer>;
 
+        case 'repeater':
+            return <RepeaterRenderer node={node} />;
+
         case 'select':
             return <label className="flex flex-col gap-1.5 text-sm font-semibold">
                 {String(node.props.label ?? node.props.name ?? '')}
-                <select name={String(node.props.name ?? '')} value={input} required={node.props.required === true} onChange={(event) => setInput(event.target.value)}
+                <select name={String(node.props.name ?? '')} value={input} required={node.props.required === true} onChange={(event) => { inputDirty.current = true; setInput(event.target.value); }}
                     className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950">
                     <option value="">—</option>
                     {Object.entries(node.props.options && typeof node.props.options === 'object' ? node.props.options as Record<string, string> : {}).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -373,14 +458,14 @@ case 'form':
         case 'textarea':
             return <label className="flex flex-col gap-1.5 text-sm font-semibold">
                 {String(node.props.label ?? node.props.name ?? '')}
-                <textarea name={String(node.props.name ?? '')} required={node.props.required === true} rows={Number(node.props.rows ?? 3)} value={input} onChange={(event) => setInput(event.target.value)}
+                <textarea name={String(node.props.name ?? '')} required={node.props.required === true} rows={Number(node.props.rows ?? 3)} value={input} onChange={(event) => { inputDirty.current = true; setInput(event.target.value); }}
                     className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-normal dark:border-white/20 dark:bg-gray-950" />
             </label>;
 
         case 'checkbox':
             return <label className="flex items-center gap-2 text-sm font-semibold">
                 <input type="hidden" name={String(node.props.name ?? '')} value="0" />
-                <input type="checkbox" name={String(node.props.name ?? '')} value="1" checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+                <input type="checkbox" name={String(node.props.name ?? '')} value="1" checked={checked} onChange={(event) => { checkedDirty.current = true; setChecked(event.target.checked); }} />
                 {String(node.props.label ?? node.props.name ?? '')}
             </label>;
 
@@ -395,7 +480,7 @@ case 'form':
                         required={node.props.required === true}
                         value={input}
                         placeholder={String(node.props.placeholder ?? '')}
-                        onChange={(event) => setInput(event.target.value)}
+                        onChange={(event) => { inputDirty.current = true; setInput(event.target.value); }}
                         aria-describedby={node.props.helperText ? node.key + '-help' : undefined}
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/20 dark:bg-gray-950 dark:text-gray-100"
                     />
