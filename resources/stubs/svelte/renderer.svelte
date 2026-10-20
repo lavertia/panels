@@ -49,6 +49,13 @@
         });
     }
 
+    function invokeDelete(): void {
+        if (!href?.startsWith('/')) return;
+        const message = typeof node.props.confirm === 'string' && node.props.confirm.trim()
+            ? node.props.confirm : 'Delete this record?';
+        if (window.confirm(message)) router.delete(href, { preserveScroll: true });
+    }
+
     let search = $state('');
     let sortKey = $state<string | null>(null);
     let direction = $state<'asc' | 'desc'>('asc');
@@ -409,9 +416,11 @@
             </nav>
         </footer>
     </section>
-{:else if node.type === 'action' && href?.startsWith('/')}
+{:else if node.type === 'action' && node.props.method === 'delete' && href?.startsWith('/')}
+    <button type="button" class={actionClass} onclick={invokeDelete}>{label}</button>
+{:else if node.type === 'action' && node.props.method !== 'delete' && href?.startsWith('/')}
     <Link {href} class={actionClass}>{label}</Link>
-{:else if node.type === 'action' && href}
+{:else if node.type === 'action' && node.props.method !== 'delete' && href}
     <a {href} rel="noopener noreferrer" class={actionClass}>{label}</a>
 {:else if node.type === 'action'}
     <span class="text-sm text-gray-500">{label}</span>

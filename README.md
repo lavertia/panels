@@ -82,6 +82,14 @@ The Module's Pages stay behind the Panel's Laravel middleware. The new opt-in `L
 
 See the [v0.3 Navigation and Widgets guide](docs/V03.md). Resources and Relation Managers remain future milestones.
 
+### v0.3 alpha: Eloquent Resources and CRUD
+
+`Resource` defines a model, a **required tenant-scoped Eloquent query**, Table columns, Form fields and validation rules, plus explicit create/update/delete methods. Existing Panel auth middleware and Laravel Policies protect each operation; no unrestricted implicit model binding or client-provided tenant assignment is performed.
+
+An Inventory Module can register `PanelRegistry::discoverResources(panelId: 'admin', in: ..., for: ...)`; the registered Resource gets seven named Laravel CRUD routes, a policy-protected Navigation link, scoped Tables and validated Inertia Forms. The implementation is route-cache compatible and works with Laravel 13 + InterNACHI/modular.
+
+See the [Resources and CRUD guide](docs/RESOURCES.md) for complete examples, route names, authorization and tenancy boundaries. A Policy-gated, browser-confirmed Inertia Delete action is available on the record View page. Relation Managers, per-row Table links and bulk actions remain future enhancements; v0.3 is development alpha.
+
 ### Example: place a Table anywhere
 
 ```php

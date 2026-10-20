@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add initial modular Eloquent Resources with policy-protected and scoped List/Create/View/Edit/Update/Delete routes, explicit persistence, validation, auto Navigation and config/route-cache compatibility.
+- Add Testbench and real Laravel 13 InterNACHI/modular regression fixtures for Resource CRUD, authentication and cross-user access isolation.
+
 - Add v0.3 alpha NavigationItem and PanelRegistry navigation, with per-Panel routing, Laravel Gate filtering, labels/groups/ordering, active-state and safe, registered-only links.
 - Add DashboardWidget contract, Composer PSR-4 widget discovery and opt-in modular DashboardPage with authorization checks.
 - Extend Inertia page payload with optional navigation and render responsive, RTL-aware navigation across React, Vue and Svelte.

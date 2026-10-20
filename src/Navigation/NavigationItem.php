@@ -7,7 +7,9 @@ namespace Lavertia\Panels\Navigation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Http\Controllers\ResourceController;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\Resource;
 
 /**
  * Navigation items resolve to registered Lavertia Page routes in the same Panel.
@@ -137,8 +139,21 @@ final class NavigationItem
         $name = 'lavertia.'.$panelId.'.'.str_replace('/', '.', $this->slug);
         $route = Route::getRoutes()->getByName($name);
 
-        // Do not expose an unregistered or unrelated Laravel route via module nav.
-        if ($route === null || ! is_subclass_of($route->getActionName(), Page::class)) {
+        // Only known Lavertia Pages or a policy-authorized Resource index
+        // may appear in navigation. Raw controller routes are never trusted.
+        if ($route === null) {
+            return null;
+        }
+
+        $page = is_subclass_of($route->getActionName(), Page::class);
+        $resourceClass = $route->defaults['lavertiaResource'] ?? null;
+        $resource = $route->getActionName() === ResourceController::class.'@index'
+            && ($route->defaults['lavertiaPanel'] ?? null) === $panelId
+            && is_string($resourceClass)
+            && is_subclass_of($resourceClass, Resource::class)
+            && Gate::allows('viewAny', $resourceClass::model());
+
+        if ($page === false && $resource === false) {
             return null;
         }
 

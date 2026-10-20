@@ -14,7 +14,11 @@ php artisan package:discover --ansi
 php artisan make:module inventory --accept-default-namespace
 
 mkdir -p app-modules/inventory/src
+mkdir -p app-modules/inventory/database/migrations
 cp -R ../../panels/tests/Fixtures/app-modules/inventory/src/Lavertia app-modules/inventory/src/
+cp -R ../../panels/tests/Fixtures/app-modules/inventory/src/Models app-modules/inventory/src/
+cp -R ../../panels/tests/Fixtures/app-modules/inventory/src/Policies app-modules/inventory/src/
+cp ../../panels/tests/integration/modular/migrations/*_inventory_*.php app-modules/inventory/database/migrations/
 cp ../../panels/tests/integration/modular/InventoryServiceProvider.php \
     app-modules/inventory/src/Providers/InventoryServiceProvider.php
 
@@ -64,6 +68,13 @@ assert_module_routes() {
             "lavertia.admin.inventory.overview" => "admin/inventory/overview",
             "lavertia.admin.inventory.reports.daily-stock" => "admin/inventory/reports/daily-stock",
             "lavertia.inventory.dashboard" => "inventory/dashboard",
+            "lavertia.admin.resources.stocks" => "admin/resources/stocks",
+            "lavertia.admin.resources.stocks.create" => "admin/resources/stocks/create",
+            "lavertia.admin.resources.stocks.store" => "admin/resources/stocks",
+            "lavertia.admin.resources.stocks.show" => "admin/resources/stocks/{record}",
+            "lavertia.admin.resources.stocks.edit" => "admin/resources/stocks/{record}/edit",
+            "lavertia.admin.resources.stocks.update" => "admin/resources/stocks/{record}",
+            "lavertia.admin.resources.stocks.destroy" => "admin/resources/stocks/{record}",
         ];
         foreach ($expected as $name => $uri) {
             $matches = array_values(array_filter(

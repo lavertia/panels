@@ -48,6 +48,24 @@ final class PageCompositionTest extends TestCase
         self::assertSame('text', $insideCard[2]['type']);
     }
 
+    public function test_action_supports_confirmed_delete_without_changing_get_link_behavior(): void
+    {
+        $action = Action::make('delete')->label('Delete')
+            ->url('/admin/resources/stocks/1')->method('delete')
+            ->confirm('Delete this record?');
+
+        self::assertSame('delete', $action->getProps()['method']);
+        self::assertSame('Delete this record?', $action->getProps()['confirm']);
+        self::assertNull(Action::make('docs')->url('https://example.com')->getProps()['method'] ?? null);
+    }
+
+    public function test_actions_reject_unsupported_mutation_methods(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Action::make('unsafe')->method('post');
+    }
+
     public function test_unsafe_action_url_is_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);

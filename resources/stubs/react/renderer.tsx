@@ -275,6 +275,15 @@ function ActionLink({ node }: { node: ComponentNode }) {
     const classes = base + ' ' + variant;
 
     if (!href) return <span className="text-sm text-gray-500">{label}</span>;
+    if (node.props.method === 'delete') {
+        if (!href.startsWith('/')) return <span className="text-sm text-gray-500">{label}</span>;
+
+        return <button type="button" className={classes} onClick={() => {
+            const prompt = typeof node.props.confirm === 'string' && node.props.confirm.trim()
+                ? node.props.confirm : 'Delete this record?';
+            if (window.confirm(prompt)) router.delete(href, { preserveScroll: true });
+        }}>{label}</button>;
+    }
     if (href.startsWith('/')) return <Link href={href} className={classes}>{label}</Link>;
 
     return <a href={href} className={classes} rel="noopener noreferrer">{label}</a>;

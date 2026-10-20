@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Http\Controllers\ResourceController;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\Resource as EloquentResource;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Contracts\Component;
 use ReflectionClass;
@@ -36,6 +40,15 @@ final class PanelRegistry
 
     /** @var array<string, list<array{in: string, for: string}>> */
     private array $widgetDirectories = [];
+
+    /** @var array<string, array<string, class-string<EloquentResource>>> */
+    private array $resources = [];
+
+    /** @var array<string, array<string, bool>> */
+    private array $mountedResources = [];
+
+    /** @var array<string, list<array{in: string, for: string}>> */
+    private array $resourceDirectories = [];
 
     private bool $mounted = false;
 
@@ -204,13 +217,157 @@ final class PanelRegistry
         return $components;
     }
 
+    /** @param  class-string<EloquentResource>  $resourceClass */
+    public function resource(string $panelId, string $resourceClass): void
+    {
+        Panel::make($panelId);
+
+        if (! is_subclass_of($resourceClass, EloquentResource::class)
+            || ! (new ReflectionClass($resourceClass))->isInstantiable()
+            || ! is_subclass_of($resourceClass::model(), Model::class)) {
+            throw new InvalidArgumentException('Resources must be concrete Resource classes for Eloquent models.');
+        }
+
+        $slug = $resourceClass::slug();
+
+        if (preg_match('/^[a-z][a-z0-9-]*$/D', $slug) !== 1 || $slug === 'create') {
+            throw new InvalidArgumentException('Resource slug must be a safe single URL segment.');
+        }
+
+        $existing = $this->resources[$panelId][$slug] ?? null;
+
+        if ($existing !== null && $existing !== $resourceClass) {
+            throw new InvalidArgumentException('Duplicate resource slug in Panel '.$panelId.': '.$slug);
+        }
+
+        $this->resources[$panelId][$slug] = $resourceClass;
+
+        $item = NavigationItem::make('resources/'.$slug, $resourceClass::title());
+
+        if ($group = $resourceClass::navigationGroup()) {
+            $item = $item->group($group);
+        }
+
+        $this->navigationItem($panelId, $item);
+
+        if ($this->mounted && ! app()->routesAreCached()) {
+            $options = config('lavertia.panels.'.$panelId);
+
+            if (is_array($options)) {
+                $this->mountResource($panelId, $options, $resourceClass);
+            }
+        }
+    }
+
+    /** Recursively discover PSR-4 Composer classes extending Resource. */
+    public function discoverResources(string $panelId, string $in, string $for): void
+    {
+        Panel::make($panelId);
+
+        $namespace = trim($for, '\\');
+
+        if (trim($in) === ''
+            || preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*$/D', $namespace) !== 1) {
+            throw new InvalidArgumentException('Resource discovery requires a directory and valid PHP namespace.');
+        }
+
+        $entry = ['in' => $in, 'for' => $namespace];
+
+        if (! in_array($entry, $this->resourceDirectories[$panelId] ?? [], true)) {
+            $this->resourceDirectories[$panelId][] = $entry;
+        }
+
+        if ($this->mounted) {
+            $this->discoverRegisteredResources($panelId);
+        }
+    }
+
+    private function discoverRegisteredResources(string $panelId): void
+    {
+        $filesystem = new Filesystem;
+
+        foreach ($this->resourceDirectories[$panelId] ?? [] as $directory) {
+            if (! $filesystem->isDirectory($directory['in'])) {
+                continue;
+            }
+
+            foreach ($filesystem->allFiles($directory['in']) as $file) {
+                if ($file->getExtension() !== 'php') {
+                    continue;
+                }
+
+                $relative = substr($file->getRelativePathname(), 0, -4);
+                $class = $directory['for'].'\\'.str_replace(['/', '\\'], '\\', $relative);
+
+                if (class_exists($class) && is_subclass_of($class, EloquentResource::class)
+                    && (new ReflectionClass($class))->isInstantiable()) {
+                    $this->resource($panelId, $class);
+                }
+            }
+        }
+    }
+
+    /** @return array<string, class-string<EloquentResource>> */
+    public function resourceClasses(string $panelId): array
+    {
+        return $this->resources[$panelId] ?? [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  class-string<EloquentResource>  $resourceClass
+     */
+    private function mountResource(string $panelId, array $options, string $resourceClass): void
+    {
+        $slug = $resourceClass::slug();
+
+        if (isset($this->mountedResources[$panelId][$slug])) {
+            return;
+        }
+
+        $url = 'resources/'.$slug;
+        $name = 'lavertia.'.$panelId.'.resources.'.$slug;
+
+        if (isset($this->registeredSlugs[$panelId][$url])
+            || Route::getRoutes()->getByName($name) !== null) {
+            throw new InvalidArgumentException('Resource conflicts with an existing Panel route: '.$url);
+        }
+
+        $prefix = (string) ($options['path'] ?? $panelId);
+        $middleware = $options['middleware'] ?? ['web', 'auth', ResolveLocale::class];
+
+        // Every operation uses an invokable controller method; no route closures,
+        // ensuring route:cache works in production Laravel applications.
+        Route::middleware($middleware)
+            ->prefix($prefix)
+            ->name('lavertia.'.$panelId.'.')
+            ->group(static function () use ($url, $panelId, $resourceClass): void {
+                $definitions = [
+                    ['get', $url, 'index', ''],
+                    ['get', $url.'/create', 'create', '.create'],
+                    ['post', $url, 'store', '.store'],
+                    ['get', $url.'/{record}', 'show', '.show'],
+                    ['get', $url.'/{record}/edit', 'edit', '.edit'],
+                    ['put', $url.'/{record}', 'update', '.update'],
+                    ['delete', $url.'/{record}', 'destroy', '.destroy'],
+                ];
+
+                foreach ($definitions as [$verb, $path, $method, $suffix]) {
+                    Route::$verb($path, [ResourceController::class, $method])
+                        ->defaults('lavertiaResource', $resourceClass)
+                        ->defaults('lavertiaPanel', $panelId)
+                        ->name('resources.'.$resourceClass::slug().$suffix);
+                }
+            });
+
+        $this->mountedResources[$panelId][$slug] = true;
+    }
+
     public function mountConfiguredPanels(): void
     {
         if ($this->mounted) {
             return;
         }
-
-        $this->mounted = true;
 
         foreach (config('lavertia.panels', []) as $id => $options) {
             if (! is_string($id) || ! is_array($options)) {
@@ -243,7 +400,29 @@ final class PanelRegistry
                 $this->discoverWidgets($id, $discovery['in'], $discovery['for']);
             }
 
+            foreach ($options['resources'] ?? [] as $resourceClass) {
+                if (! is_string($resourceClass)) {
+                    throw new InvalidArgumentException('Configured resources must be class names.');
+                }
+
+                $this->resource($id, $resourceClass);
+            }
+
+            foreach ($options['discover_resources'] ?? [] as $directory) {
+                if (! is_array($directory)
+                    || ! is_string($directory['in'] ?? null)
+                    || ! is_string($directory['for'] ?? null)) {
+                    throw new InvalidArgumentException('Resource discovery requires in and for strings.');
+                }
+
+                $this->discoverResources($id, $directory['in'], $directory['for']);
+            }
+
             if (app()->routesAreCached()) {
+                // Laravel has restored the cached routes already. Still resolve
+                // early-booted module Resources for authorized navigation.
+                $this->discoverRegisteredResources($id);
+
                 continue;
             }
 
@@ -265,7 +444,17 @@ final class PanelRegistry
             }
 
             $this->mountPages($id, $options, $panel->pageClasses());
+
+            // Register Resource routes after ordinary Pages but before host
+            // wildcard routes. Resources from late module providers also work.
+            $this->discoverRegisteredResources($id);
+
+            foreach ($this->resourceClasses($id) as $class) {
+                $this->mountResource($id, $options, $class);
+            }
         }
+
+        $this->mounted = true;
     }
 
     /**

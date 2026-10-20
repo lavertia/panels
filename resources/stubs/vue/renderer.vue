@@ -29,6 +29,16 @@ const formAction = computed(() => {
     const value = props.node.props.action;
     return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : null;
 });
+function invokeDelete(): void {
+    const url = href.value;
+    if (!url?.startsWith('/')) return;
+
+    const message = typeof props.node.props.confirm === 'string' && props.node.props.confirm.trim()
+        ? props.node.props.confirm : 'Delete this record?';
+
+    if (window.confirm(message)) router.delete(url, { preserveScroll: true });
+}
+
 const formMethod = computed<'post' | 'put' | 'patch'>(() =>
     props.node.props.method === 'put' || props.node.props.method === 'patch' ? props.node.props.method : 'post');
 const processing = ref(false);
@@ -348,9 +358,12 @@ watch(() => props.node.props.value, (next) => {
         </footer>
     </section>
 
-    <Link v-else-if="node.type === 'action' && href?.startsWith('/')" :href="href" :class="actionClass">{{ label }}</Link>
+    <button v-else-if="node.type === 'action' && node.props.method === 'delete' && href?.startsWith('/')"
+        type="button" :class="actionClass" @click="invokeDelete">{{ label }}</button>
 
-    <a v-else-if="node.type === 'action' && href" :href="href" :class="actionClass" rel="noopener noreferrer">{{ label }}</a>
+    <Link v-else-if="node.type === 'action' && node.props.method !== 'delete' && href?.startsWith('/')" :href="href" :class="actionClass">{{ label }}</Link>
+
+    <a v-else-if="node.type === 'action' && node.props.method !== 'delete' && href" :href="href" :class="actionClass" rel="noopener noreferrer">{{ label }}</a>
 
     <span v-else-if="node.type === 'action'" class="text-sm text-gray-500">{{ label }}</span>
 

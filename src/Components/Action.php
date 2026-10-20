@@ -58,6 +58,25 @@ final class Action extends AbstractComponent implements ActionComponent
         return $this->withProp('href', $url);
     }
 
+    /** HTTP DELETE invokes Laravel's normal CSRF and Policy-protected endpoint. */
+    public function method(string $method): static
+    {
+        if (! in_array($method, ['get', 'delete'], true)) {
+            throw new InvalidArgumentException('Actions support GET links or DELETE requests only.');
+        }
+
+        return $this->withProp('method', $method);
+    }
+
+    public function confirm(string $message): static
+    {
+        if (trim($message) === '' || mb_strlen($message) > 300) {
+            throw new InvalidArgumentException('Action confirmation must be a short, nonempty message.');
+        }
+
+        return $this->withProp('confirm', $message);
+    }
+
     /** @return array<string, mixed> */
     public function getProps(): array
     {

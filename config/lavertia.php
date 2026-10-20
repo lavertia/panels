@@ -14,6 +14,7 @@ return [
      *         'pages' => [App\Lavertia\Pages\DashboardPage::class],
      *         'navigation' => [['slug' => 'dashboard', 'label' => 'Dashboard']],
      *         'dashboard_widgets' => [],
+     *         'resources' => [\Modules\Inventory\Lavertia\Resources\StockResource::class],
      *         'discover_widgets' => [],
      *         'discover_pages' => [
      *             ['in' => app_path('Lavertia/Pages'), 'for' => 'App\\Lavertia\\Pages'],
@@ -30,6 +31,8 @@ return [
             'navigation' => [],
             'dashboard_widgets' => [],
             'discover_widgets' => [],
+            'resources' => [],
+            'discover_resources' => [],
         ],
     ],
 ];
