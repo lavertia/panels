@@ -21,7 +21,7 @@ php artisan lavertia:install --stack=react
 php artisan vendor:publish --tag=lavertia-config
 ```
 
-The command creates three files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
+The command creates four files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}`, `resources/js/components/lavertia/types.ts` and `resources/js/components/lavertia/form-state.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
@@ -81,6 +81,26 @@ public function boot(\Lavertia\Panels\PanelRegistry $panels): void
 The Module's Pages stay behind the Panel's Laravel middleware. The new opt-in `Lavertia\Panels\Pages\DashboardPage` renders all authorized Widgets registered for that Panel; it must not be registered alongside another Page with the same slug. Navigation is delivered as optional Inertia props and rendered by React, Vue and Svelte, including active state and RTL layout. Neither hiding links nor Widget `canView()` replaces server-side Policies and tenant scoping.
 
 See the [v0.3 Navigation and Widgets guide](docs/V03.md). Resources and Relation Managers remain future milestones.
+
+### Local-first form interactions (experimental)
+
+The React, Vue and Svelte installers now include one shared form-state runtime.
+Repeated rows can be added, removed, reordered, and collapsed locally without
+network requests. Their indexed values are submitted as nested arrays through
+Inertia; even an empty repeater is submitted as an empty array. Typed text and
+checkboxes remain unchanged when stale server props arrive.
+
+Use the Repeater descriptor from the canonical lavertia/forms package. Existing
+Forms/Fields keep their PHP API. With Forms' refreshOnSuccess(['lavertia']) an
+Inertia partial reload may be requested after a successful save; this is not a
+full browser refresh. Refreshing a more granular top-level data prop will become
+possible when Pages split field data from the component schema.
+
+Important limitations: this is **not** a modal Action API, automatic model
+persistence, a complete dirty-state conflict resolver, or a JavaScript action
+registry. Future versions will provide these. Continue using Laravel Policies,
+Form Requests, CSRF protection and transactions for nested writes. Each row
+identifier supplied by a browser must be tenant-scoped and authorized.
 
 ### Example: place a Table anywhere
 
