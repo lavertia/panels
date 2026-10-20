@@ -16,5 +16,6 @@ final class StarterKitAssetsTest extends TestCase
         }
 
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/types.ts');
+        self::assertFileExists(__DIR__.'/../resources/stubs/shared/form-state.ts');
     }
 }
