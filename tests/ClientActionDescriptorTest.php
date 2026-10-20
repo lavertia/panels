@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Lavertia\Panels\Tests;
 
 use InvalidArgumentException;
-use Lavertia\Panels\Components\Action;
 use Lavertia\Forms\Components\Form;
 use Lavertia\Forms\Components\TextInput;
+use Lavertia\Panels\Components\Action;
 use PHPUnit\Framework\TestCase;
 
 final class ClientActionDescriptorTest extends TestCase
