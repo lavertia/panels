@@ -13,6 +13,7 @@ import {
     removeRepeaterRow,
     repeaterFieldNode,
 } from './form-state';
+import { runClientAction } from './client-actions';
 import {
     badgeClass,
     columnBadgeTone,
@@ -65,6 +66,23 @@ const formMethod = computed<'post' | 'put' | 'patch'>(() =>
 const processing = ref(false);
 const formErrors = ref<Record<string, string>>({});
 const saved = ref(false);
+const clientActionBusy = ref(false);
+const clientActionError = ref<string | null>(null);
+
+async function executeClientAction(): Promise<void> {
+    if (typeof props.node.props.clientAction !== 'string' || clientActionBusy.value) return;
+
+    clientActionBusy.value = true;
+    clientActionError.value = null;
+
+    try {
+        await runClientAction(props.node.props.clientAction, props.node.props.clientParams);
+    } catch {
+        clientActionError.value = 'Unable to run this client action.';
+    } finally {
+        clientActionBusy.value = false;
+    }
+}
 
 function submitForm(event: Event): void {
     if (!formAction.value || processing.value) return;
@@ -427,6 +445,14 @@ watch(() => props.node.props.value, (next) => {
             </nav>
         </footer>
     </section>
+
+    <span v-else-if="node.type === 'action' && typeof node.props.clientAction === 'string'"
+        class="inline-flex flex-col gap-1">
+        <button type="button" :class="actionClass" :disabled="clientActionBusy" @click="executeClientAction">
+            {{ label }}
+        </button>
+        <span v-if="clientActionError" role="alert" class="text-xs text-rose-600">{{ clientActionError }}</span>
+    </span>
 
     <Link v-else-if="node.type === 'action' && href?.startsWith('/')" :href="href" :class="actionClass">{{ label }}</Link>
 
