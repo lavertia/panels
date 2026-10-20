@@ -31,7 +31,7 @@ import {
 
 type SortDirection = 'asc' | 'desc';
 
-function FormRenderer({ node, children }: { node: ComponentNode; children: ReactNode }) {
+function FormRenderer({ node, children, onSaved }: { node: ComponentNode; children: ReactNode; onSaved?: () => void }) {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saved, setSaved] = useState(false);
@@ -61,6 +61,7 @@ function FormRenderer({ node, children }: { node: ComponentNode; children: React
             preserveScroll: true,
             onSuccess: () => {
                 setSaved(true);
+                onSaved?.();
                 if (Array.isArray(node.props.refreshOnSuccess)) {
                     const only = node.props.refreshOnSuccess.filter(
                         (value): value is string => typeof value === 'string',
@@ -336,6 +337,7 @@ function TablePreview({ node }: { node: ComponentNode }) {
 
 }
 function ActionLink({ node }: { node: ComponentNode }) {
+    const dialogRef = useRef<HTMLDialogElement>(null);
     const [clientBusy, setClientBusy] = useState(false);
     const [clientError, setClientError] = useState<string | null>(null);
     const label = String(node.props.label ?? node.props.name ?? 'Action');
@@ -361,6 +363,33 @@ function ActionLink({ node }: { node: ComponentNode }) {
             ? 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 dark:border-white/20 dark:text-gray-200 dark:hover:bg-white/10'
             : 'border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:border-white/15 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700';
     const classes = base + ' ' + variant;
+
+    const modalForm = node.props.modal === true
+        ? node.components.find((component) => component.type === 'form')
+        : undefined;
+    if (modalForm) {
+        return <>
+            <button type="button" className={classes}
+                onClick={() => dialogRef.current?.showModal()}>{label}</button>
+            <dialog ref={dialogRef} onClick={(event) => {
+                if (event.target === dialogRef.current) dialogRef.current.close();
+            }} aria-label={label}
+                className="m-auto w-[min(95vw,680px)] max-h-[90vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-2xl backdrop:bg-gray-900/60 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                    <h2 className="text-lg font-semibold">{label}</h2>
+                    <button type="button" onClick={() => dialogRef.current?.close()}
+                        aria-label="Close modal" className="rounded border px-2 py-1">×</button>
+                </div>
+                <FormRenderer node={modalForm}
+                    onSaved={() => {
+                        if (node.props.closeOnSuccess !== false) dialogRef.current?.close();
+                    }}>
+                    {modalForm.components.map((child) =>
+                        <LavertiaRenderer key={child.key} node={child} />)}
+                </FormRenderer>
+            </dialog>
+        </>;
+    }
 
     if (typeof node.props.clientAction === 'string') {
         return <span className="inline-flex flex-col gap-1">
