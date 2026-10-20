@@ -30,8 +30,21 @@ import {
 } from './types';
 
 defineOptions({ name: 'LavertiaRenderer' });
+const emit = defineEmits<{ saved: [] }>();
 
 const props = defineProps<{ node: ComponentNode }>();
+const modalDialog = ref<HTMLDialogElement | null>(null);
+const modalForm = computed(() => props.node.props.modal === true
+    ? props.node.components.find((child) => child.type === 'form')
+    : undefined);
+
+function onModalSaved(): void {
+    if (props.node.props.closeOnSuccess !== false) modalDialog.value?.close();
+}
+
+function onDialogClick(event: MouseEvent): void {
+    if (event.target === modalDialog.value) modalDialog.value?.close();
+}
 const label = computed(() => String(props.node.props.label ?? props.node.props.name ?? ''));
 const title = computed(() => String(props.node.props.title ?? ''));
 const input = ref(String(props.node.props.value ?? ''));
@@ -101,6 +114,7 @@ function submitForm(event: Event): void {
         preserveScroll: true,
         onSuccess: () => {
             saved.value = true;
+            emit('saved');
             if (Array.isArray(props.node.props.refreshOnSuccess)) {
                 const only = props.node.props.refreshOnSuccess.filter(
                     (value): value is string => typeof value === 'string',
@@ -445,6 +459,19 @@ watch(() => props.node.props.value, (next) => {
             </nav>
         </footer>
     </section>
+
+    <template v-else-if="node.type === 'action' && modalForm">
+        <button type="button" :class="actionClass" @click="modalDialog?.showModal()">{{ label }}</button>
+        <dialog ref="modalDialog" :aria-label="label" @click="onDialogClick"
+            class="m-auto max-h-[90vh] w-[min(95vw,680px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-2xl backdrop:bg-gray-900/60 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+            <div class="mb-4 flex items-center justify-between gap-4">
+                <h2 class="text-lg font-semibold">{{ label }}</h2>
+                <button type="button" aria-label="Close modal" @click="modalDialog?.close()"
+                    class="rounded border px-2 py-1">×</button>
+            </div>
+            <LavertiaRenderer :node="modalForm" @saved="onModalSaved" />
+        </dialog>
+    </template>
 
     <span v-else-if="node.type === 'action' && typeof node.props.clientAction === 'string'"
         class="inline-flex flex-col gap-1">
