@@ -175,6 +175,31 @@ final class EloquentResourcesTest extends TestCase
         self::assertDatabaseMissing('inventory_stock_items', ['id' => $record->id]);
     }
 
+    public function test_update_that_accidentally_moves_record_outside_tenant_is_rolled_back(): void
+    {
+        $this->authenticate(7);
+        $record = StockItem::query()->create(['owner_id' => 7, 'name' => 'Safe']);
+
+        StockItemResource::$simulateUnsafeTenantUpdate = true;
+
+        try {
+            $this->put('/admin/resources/stock-items/'.$record->id, ['name' => 'Unsafe'])
+                ->assertNotFound();
+        } finally {
+            StockItemResource::$simulateUnsafeTenantUpdate = false;
+        }
+
+        self::assertDatabaseHas('inventory_stock_items', [
+            'id' => $record->id,
+            'owner_id' => 7,
+            'name' => 'Safe',
+        ]);
+        self::assertDatabaseMissing('inventory_stock_items', [
+            'id' => $record->id,
+            'owner_id' => 8,
+        ]);
+    }
+
     public function test_duplicate_provider_resource_registration_is_idempotent(): void
     {
         $registry = app(PanelRegistry::class);
@@ -238,6 +263,8 @@ final class StockItemPolicy
 
 final class StockItemResource extends Resource
 {
+    public static bool $simulateUnsafeTenantUpdate = false;
+
     public static function model(): string
     {
         return StockItem::class;
@@ -291,7 +318,13 @@ final class StockItemResource extends Resource
 
     public function updateRecord(Model $record, array $validated): void
     {
-        $record->update(['name' => $validated['name']]);
+        $attributes = ['name' => $validated['name']];
+
+        if (self::$simulateUnsafeTenantUpdate) {
+            $attributes['owner_id'] = 8;
+        }
+
+        $record->update($attributes);
     }
 
     public function deleteRecord(Model $record): void
