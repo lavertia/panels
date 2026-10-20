@@ -151,4 +151,21 @@ assert.deepEqual(payload, {
 });
 assert.equal({}.polluted, undefined);
 
+const clientActionsSource = readFileSync(resolve('resources/stubs/shared/client-actions.ts'), 'utf8');
+const clientActionsCompiled = ts.transpileModule(clientActionsSource, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    reportDiagnostics: true,
+});
+assert.deepEqual(clientActionsCompiled.diagnostics, []);
+const actions = await import('data:text/javascript;base64,' + Buffer.from(clientActionsCompiled.outputText).toString('base64'));
+let printedFormat = '';
+const unregister = actions.registerClientAction('receipts.print', async (params) => {
+    printedFormat = params.format;
+});
+await actions.runClientAction('receipts.print', { format: 'a4' });
+assert.equal(printedFormat, 'a4');
+unregister();
+await assert.rejects(actions.runClientAction('receipts.print', {}), /Unregistered/);
+assert.throws(() => actions.registerClientAction('javascript:alert(1)', () => {}), /Invalid/);
+
 console.log('Lavertia shared adapter runtime checks passed.');
