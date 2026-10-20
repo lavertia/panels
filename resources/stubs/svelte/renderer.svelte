@@ -29,7 +29,19 @@
         translate,
     } from './types';
 
-    let { node }: { node: ComponentNode } = $props();
+    let { node, onSaved }: { node: ComponentNode; onSaved?: () => void } = $props();
+    let modalElement: HTMLDialogElement | undefined = $state();
+    let modalForm = $derived(node.props.modal === true
+        ? node.components.find((child) => child.type === 'form')
+        : undefined);
+
+    function onModalSaved(): void {
+        if (node.props.closeOnSuccess !== false) modalElement?.close();
+    }
+
+    function onDialogClick(event: MouseEvent): void {
+        if (event.target === modalElement) modalElement?.close();
+    }
     let input = $state('');
     let checked = $state(false);
     let inputDirty = $state(false);
@@ -83,6 +95,7 @@
             preserveScroll: true,
             onSuccess: () => {
                 saved = true;
+                onSaved?.();
                 if (Array.isArray(node.props.refreshOnSuccess)) {
                     const only = node.props.refreshOnSuccess.filter(
                         (value): value is string => typeof value === 'string',
@@ -505,6 +518,17 @@
             </nav>
         </footer>
     </section>
+{:else if node.type === 'action' && modalForm}
+    <button type="button" class={actionClass} onclick={() => modalElement?.showModal()}>{label}</button>
+    <dialog bind:this={modalElement} aria-label={label} onclick={onDialogClick}
+        class="m-auto max-h-[90vh] w-[min(95vw,680px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-2xl backdrop:bg-gray-900/60 dark:border-white/20 dark:bg-gray-950 dark:text-white">
+        <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold">{label}</h2>
+            <button type="button" aria-label="Close modal" onclick={() => modalElement?.close()}
+                class="rounded border px-2 py-1">×</button>
+        </div>
+        <Self node={modalForm} onSaved={onModalSaved} />
+    </dialog>
 {:else if node.type === 'action' && typeof node.props.clientAction === 'string'}
     <span class="inline-flex flex-col gap-1">
         <button type="button" class={actionClass} disabled={clientActionBusy}
