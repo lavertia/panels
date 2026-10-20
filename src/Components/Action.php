@@ -58,6 +58,34 @@ final class Action extends AbstractComponent implements ActionComponent
         return $this->withProp('href', $url);
     }
 
+    /**
+     * Invoke a client-side handler registered by the host frontend.
+     *
+     * JavaScript is never sent over the component protocol. Only the
+     * allowlisted name and JSON-safe payload reach the browser.
+     *
+     * @param array<string, mixed> $params
+     */
+    public function clientAction(string $name, array $params = []): static
+    {
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/D', $name) !== 1) {
+            throw new InvalidArgumentException('Invalid client action name.');
+        }
+
+        if ($params !== [] && array_is_list($params)) {
+            throw new InvalidArgumentException('Client action parameters must be an associative map.');
+        }
+
+        foreach (array_keys($params) as $key) {
+            if (! is_string($key) || preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,127}$/D', $key) !== 1) {
+                throw new InvalidArgumentException('Invalid client action parameter name.');
+            }
+        }
+
+        return $this->withProp('clientAction', $name)
+            ->withProp('clientParams', $params);
+    }
+
     /** @return array<string, mixed> */
     public function getProps(): array
     {
