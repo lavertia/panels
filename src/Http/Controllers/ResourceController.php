@@ -164,7 +164,13 @@ final class ResourceController
         $validated = $request->validate($resource->rules($record));
 
         $record->getConnection()->transaction(
-            static fn () => $resource->updateRecord($record, $validated),
+            static function () use ($resource, $record, $validated): void {
+                $resource->updateRecord($record, $validated);
+
+                // If a Resource accidentally changes the tenant/owner, roll
+                // the write back instead of redirecting to an inaccessible row.
+                $resource->findRecord((string) $record->getKey());
+            },
         );
 
         return to_route($this->routeName($request).'.show', ['record' => $record->getRouteKey()]);
