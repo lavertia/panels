@@ -96,6 +96,35 @@ Inertia partial reload may be requested after a successful save; this is not a
 full browser refresh. Refreshing a more granular top-level data prop will become
 possible when Pages split field data from the component schema.
 
+Forms may also be mounted inside an opt-in browser-native Action dialog.
+The dialog opens locally, submits the nested Form via Inertia, and closes
+**only after a successful save**; validation errors keep it open:
+
+```php
+use Lavertia\Panels\Components\Action;
+use Lavertia\Forms\Components\{Form, TextInput};
+
+Action::make('editUser')
+    ->label('Edit user')
+    ->modal(
+        Form::make('editUser')
+            ->action('/users/12')
+            ->method('patch')
+            ->refreshOnSuccess(['lavertia'])
+            ->components([
+                TextInput::make('name')->required()->value('Sara'),
+            ]),
+    )
+    ->closeOnSuccess();
+```
+
+This API uses native HTML dialog behavior (Escape-to-close and focus
+containment); no full-page reload is necessary. The Form route must redirect
+back using Laravel's normal Inertia validation workflow, and the input defaults
+must be supplied server-side with proper access checks. Dynamic record loading,
+granular invalidation, dirty-form discard prompts and accessibility browser
+E2E remain to be implemented.
+
 Host applications can also register named browser actions. PHP only sends the
 action identifier and JSON-safe data; executable JavaScript lives in the app's
 TypeScript bundle:
@@ -120,8 +149,8 @@ Handlers run only after a user clicks an Action. Errors are rendered in
 an accessible alert; Laravel cannot send arbitrary scripts or bypass the host's
 bundling/CSP rules.
 
-Important limitations: this is **not** a modal Action API, automatic model
-persistence, or a complete record-version conflict resolver. Future versions will provide these. Continue using Laravel Policies,
+Important limitations: this is **not** automatic model
+persistence, a full server-driven record hydration engine, or a complete record-version conflict resolver. Future versions will provide these. Continue using Laravel Policies,
 Form Requests, CSRF protection and transactions for nested writes. Each row
 identifier supplied by a browser must be tenant-scoped and authorized.
 
