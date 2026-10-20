@@ -70,7 +70,7 @@
                     const only = node.props.refreshOnSuccess.filter(
                         (value): value is string => typeof value === 'string',
                     );
-                    if (only.length > 0) router.reload({ only, preserveScroll: true, preserveState: true });
+                    if (only.length > 0) router.reload({ only });
                 }
             },
             onError: (errors) => { formErrors = errors; },
