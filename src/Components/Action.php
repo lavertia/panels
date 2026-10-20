@@ -64,7 +64,7 @@ final class Action extends AbstractComponent implements ActionComponent
      * JavaScript is never sent over the component protocol. Only the
      * allowlisted name and JSON-safe payload reach the browser.
      *
-     * @param array<string, mixed> $params
+     * @param  array<string, mixed>  $params
      */
     public function clientAction(string $name, array $params = []): static
     {
