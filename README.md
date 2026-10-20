@@ -121,7 +121,7 @@ an accessible alert; Laravel cannot send arbitrary scripts or bypass the host's
 bundling/CSP rules.
 
 Important limitations: this is **not** a modal Action API, automatic model
-persistence, a complete dirty-state conflict resolver, or a full form-state conflict resolver. Future versions will provide these. Continue using Laravel Policies,
+persistence, or a complete record-version conflict resolver. Future versions will provide these. Continue using Laravel Policies,
 Form Requests, CSRF protection and transactions for nested writes. Each row
 identifier supplied by a browser must be tenant-scoped and authorized.
 
