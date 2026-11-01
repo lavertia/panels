@@ -237,9 +237,14 @@ final class PanelRegistry
 
         $items = array_values($this->navigationItems[$panelId] ?? []);
 
+        // Ungrouped Pages render in the Starter Kit's "Lavertia" group.
+        $visibleGroup = static fn (NavigationItem $item): string => $item->groupName() === ''
+            ? 'Lavertia'
+            : $item->groupName();
+
         usort($items, static fn (NavigationItem $a, NavigationItem $b): int =>
-            (($groupRanks[$a->groupName()] ?? PHP_INT_MAX) <=> ($groupRanks[$b->groupName()] ?? PHP_INT_MAX))
-            ?: ($a->groupName() <=> $b->groupName())
+            (($groupRanks[$visibleGroup($a)] ?? PHP_INT_MAX) <=> ($groupRanks[$visibleGroup($b)] ?? PHP_INT_MAX))
+            ?: ($visibleGroup($a) <=> $visibleGroup($b))
             ?: ($a->sortOrder() <=> $b->sortOrder())
             ?: ($a->slug <=> $b->slug));
 
