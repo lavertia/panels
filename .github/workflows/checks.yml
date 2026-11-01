@@ -87,12 +87,7 @@ jobs:
           composer test:smoke
           composer test
       - name: PSR style
-        run: |
-          composer lint || {
-            vendor/bin/pint src/Commands/MakePageCommand.php
-            git --no-pager diff -- src/Commands/MakePageCommand.php
-            exit 1
-          }
+        run: composer lint
 
   release-gate:
     name: v0 release verification
