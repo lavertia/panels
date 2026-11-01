@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Lavertia\Panels\Components\PageHeader;
+use Lavertia\Panels\Components\Section;
+use Lavertia\Panels\Pages\Page;
+use Lavertia\Support\Contracts\Component;
+
+final class {{ class }} extends Page
+{
+    public static function slug(): string
+    {
+        return '{{ slug }}';
+    }
+
+    public static function title(): string
+    {
+        return '{{ title }}';
+    }
+
+    /** @return list<Component> */
+    protected function components(): array
+    {
+        return [
+            PageHeader::make('{{ title }}')
+                ->description('Manage {{ title }}.'),
+
+            Section::make('{{ title }}')
+                ->description('Build your page with Lavertia components.'),
+        ];
+    }
+}

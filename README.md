@@ -39,6 +39,47 @@ Add your Page class to `config/lavertia.php`:
 
 Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
 
+### Artisan Page generator (proposed CLI foundation)
+
+The \`lavertia:page\` command creates a real PHP-defined Page, without
+generating another React/Vue/Svelte page and without overwriting existing
+files unless \`--force\` is specified.
+
+```bash
+php artisan lavertia:page Invoices --panel=admin
+php artisan lavertia:page Billing/Invoices --panel=admin
+```
+
+It generates \`app/Lavertia/Pages/InvoicesPage.php\` or the corresponding
+nested namespace. It validates the selected Panel, derives a safe slug,
+rejects traversal and duplicate configured Page slugs, and reports the
+path of the generated PHP class.
+
+The command deliberately **does not mutate** \`config/lavertia.php\`.
+Register the generated Page under the selected Panel's \`pages\` array
+and optionally add a navigation item, or configure the existing
+\`discover_pages\` mechanism to discover a directory.
+
+```php
+'pages' => [
+    \App\Lavertia\Pages\InvoicesPage::class,
+],
+'navigation' => [
+    ['slug' => 'invoices', 'label' => 'Invoices', 'group' => 'Management'],
+],
+```
+
+Then run \`php artisan optimize:clear\` and
+\`php artisan route:list --path=admin\`. The existing route middleware
+still enforces authentication and all page data must remain scoped and
+authorized on the server.
+
+**Scope:** this adds \`lavertia:page\` only. The commands
+\`lavertia:resource\`, \`lavertia:panel\`, \`lavertia:form\`,
+\`lavertia:action\`, \`lavertia:infolist\`, \`lavertia:theme\`, and
+\`lavertia:component\` are not implemented by this change.
+
+
 ### Laravel Modular support (module-owned Pages)
 
 Lavertia can discover PHP Pages from [InterNACHI/modular](https://github.com/InterNACHI/modular) `app-modules/*/src/` packages **without adding a hard dependency on Modular**. In the module's Laravel service provider, register the Pages belonging to a configured Panel:

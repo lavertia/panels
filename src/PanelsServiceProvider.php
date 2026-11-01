@@ -6,6 +6,7 @@ namespace Lavertia\Panels;
 
 use Illuminate\Support\ServiceProvider;
 use Lavertia\Panels\Commands\InstallCommand;
+use Lavertia\Panels\Commands\MakePageCommand;
 
 final class PanelsServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,7 @@ final class PanelsServiceProvider extends ServiceProvider
         ], 'lavertia-config');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([InstallCommand::class]);
+            $this->commands([InstallCommand::class, MakePageCommand::class]);
         }
 
         // Mount host pages before broad app routes such as /{current_team}/dashboard.
