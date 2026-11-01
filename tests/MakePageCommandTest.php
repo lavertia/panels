@@ -6,9 +6,9 @@ namespace Lavertia\Panels\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use Lavertia\Panels\Pages\Page;
-use Lavertia\Panels\PanelsServiceProvider;
 use Lavertia\Panels\Panel;
 use Lavertia\Panels\PanelProvider;
+use Lavertia\Panels\PanelsServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 final class MakePageCommandTest extends TestCase
