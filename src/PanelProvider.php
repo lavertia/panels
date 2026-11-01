@@ -14,7 +14,7 @@ abstract class PanelProvider extends ServiceProvider
 {
     abstract public function panel(Panel $panel): Panel;
 
-    final public function boot(): void
+    final public function register(): void
     {
         $panel = $this->panel(Panel::make());
 
