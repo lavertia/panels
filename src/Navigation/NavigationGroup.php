@@ -7,8 +7,8 @@ namespace Lavertia\Panels\Navigation;
 use InvalidArgumentException;
 use Lavertia\Support\Components\AbstractComponent;
 use Lavertia\Support\Components\SupportsComponents;
-use Lavertia\Support\Contracts\ComposesComponents;
 use Lavertia\Support\Contracts\Component;
+use Lavertia\Support\Contracts\ComposesComponents;
 
 /**
  * A portable navigation widget. Can appear inside a Panel slot or a Page tree.
