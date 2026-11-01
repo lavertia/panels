@@ -62,7 +62,6 @@ final class Panel
     /** @var list<array{in: string, for: string}> */
     private array $widgetDirectories = [];
 
-
     /** @var list<NavigationItem> */
     private array $navigationItems = [];
 
