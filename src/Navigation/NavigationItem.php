@@ -139,7 +139,7 @@ final class NavigationItem
     public function badge(string $badge): self
     {
         if (trim($badge) === '' || mb_strlen($badge) > 20
-            || preg_match('/[<>\\x00-\\x1F\\x7F]/u', $badge) === 1) {
+            || preg_match('/[<>\\x00-\\x1F\\x7F]/u', $badge) !== 0) {
             throw new InvalidArgumentException('Invalid navigation badge.');
         }
 
