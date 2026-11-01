@@ -7,6 +7,8 @@ namespace Lavertia\Panels;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Http\Middleware\ResolveLocale;
+use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Plugins\PanelPlugin;
@@ -74,6 +76,13 @@ final class Panel
     private bool $stickyHeader = false;
 
     private bool $mobileNavigation = true;
+
+    /** @var list<string> Empty means Laravel's configured default language. */
+    private array $locales = [];
+
+    private ?string $defaultLocale = null;
+
+    private ?string $layout = null;
 
     /** @var list<PanelPlugin> */
     private array $plugins = [];
@@ -484,6 +493,42 @@ final class Panel
         return $copy;
     }
 
+    /**
+     * Opt in only when multiple languages are supported.
+     * With no configuration, a Panel renders in Laravel's default locale.
+     *
+     * @param  list<string>  $codes
+     */
+    public function locales(array $codes): self
+    {
+        $copy = clone $this;
+        $copy->locales = LocaleContext::validate($codes);
+
+        return $copy;
+    }
+
+    public function defaultLocale(string $code): self
+    {
+        LocaleContext::validate([$code]);
+
+        $copy = clone $this;
+        $copy->defaultLocale = $code;
+
+        return $copy;
+    }
+
+    public function layout(string $layout): self
+    {
+        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+            throw new InvalidArgumentException('Panel layout must be sidebar, top or full.');
+        }
+
+        $copy = clone $this;
+        $copy->layout = $layout;
+
+        return $copy;
+    }
+
     public function navigationPosition(string $position): self
     {
         if (! in_array($position, ['sidebar', 'top'], true)) {
@@ -621,6 +666,9 @@ final class Panel
             'content_width' => $this->contentWidth,
             'sidebar_width' => $this->sidebarWidth,
             'navigation_position' => $this->navigationPosition,
+            'layout' => $this->layout ?? ($this->navigationPosition === 'top' ? 'top' : 'sidebar'),
+            'locales' => $this->locales,
+            'default_locale' => $this->defaultLocale,
             'navigation_groups' => $this->navigationGroups,
             'topbar' => $this->topbar,
             'breadcrumbs' => $this->breadcrumbs,
@@ -741,7 +789,12 @@ final class Panel
 
     public function registerRoutes(): void
     {
-        Route::middleware($this->middleware)
+        // Always resolve Page locale after the host's web/session middleware.
+        $middleware = in_array(ResolveLocale::class, $this->middleware, true)
+            ? $this->middleware
+            : [...$this->middleware, ResolveLocale::class];
+
+        Route::middleware($middleware)
             ->prefix($this->path)
             ->name('lavertia.'.$this->id.'.')
             ->group(function (): void {
