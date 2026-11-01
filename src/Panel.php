@@ -34,7 +34,6 @@ final class Panel
     /** @var list<NavigationItem> */
     private array $navigationItems = [];
 
-
     /** @var list<string> */
     private array $middleware = ['web', 'auth'];
 
