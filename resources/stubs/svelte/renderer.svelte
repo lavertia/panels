@@ -16,6 +16,7 @@
     import { runClientAction } from './client-actions';
     import {
         badgeClass,
+        headerLinks,
         columnBadgeTone,
         safeHref,
         statAccentClass,
@@ -219,24 +220,52 @@
         {/each}
     </div>
 {:else if node.type === 'page-header'}
-    <header class="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
-        <div class="min-w-0">
-            {#if node.props.eyebrow}
-                <p class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>
-            {/if}
-            <h1 class="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{title || 'Overview'}</h1>
-            {#if node.props.description}
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>
-            {/if}
-        </div>
-        {#if node.components.length > 0}
-            <div class="flex shrink-0 flex-wrap items-center gap-2">
-                {#each node.components as child (child.key)}
-                    <Self node={child} />
-                {/each}
-            </div>
+    <div class="space-y-4">
+        {#if headerLinks(node.props.breadcrumbs).length > 0}
+            <nav aria-label="Breadcrumbs">
+                <ol class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {#each headerLinks(node.props.breadcrumbs) as crumb, index (index)}
+                        <li class="flex items-center gap-2">
+                            {#if index > 0}<span aria-hidden="true">/</span>{/if}
+                            {#if crumb.url}
+                                <Link href={crumb.url} class="hover:underline">{crumb.label}</Link>
+                            {:else}
+                                <span aria-current="page">{crumb.label}</span>
+                            {/if}
+                        </li>
+                    {/each}
+                </ol>
+            </nav>
         {/if}
-    </header>
+        <header class="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
+            <div class="min-w-0">
+                {#if node.props.eyebrow}
+                    <p class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>
+                {/if}
+                <h1 class="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{title || 'Overview'}</h1>
+                {#if node.props.description}
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>
+                {/if}
+            </div>
+            {#if node.components.length > 0}
+                <div class="flex shrink-0 flex-wrap items-center gap-2">
+                    {#each node.components as child (child.key)}
+                        <Self node={child} />
+                    {/each}
+                </div>
+            {/if}
+        </header>
+        {#if headerLinks(node.props.tabs).length > 0}
+            <nav aria-label="Page tabs" class="flex gap-4 overflow-x-auto border-b border-border">
+                {#each headerLinks(node.props.tabs).filter(tab => tab.url !== null) as tab (tab.url)}
+                    {#if tab.url}
+                        <Link href={tab.url} aria-current={tab.active ? 'page' : undefined}
+                            class={`shrink-0 border-b-2 px-1 pb-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${tab.active ? 'border-primary font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{tab.label}</Link>
+                    {/if}
+                {/each}
+            </nav>
+        {/if}
+    </div>
 {:else if node.type === 'stats-grid'}
     <div class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {#each node.components as child (child.key)}
