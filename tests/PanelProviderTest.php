@@ -64,6 +64,54 @@ final class PanelProviderTest extends TestCase
         self::assertTrue($links[0]['active']);
     }
 
+    public function test_navigation_icon_and_badge_are_validated_and_serialized(): void
+    {
+        $item = NavigationItem::make('provider-example', 'Example')
+            ->icon('receipt')
+            ->badge('New');
+
+        $link = $item->forPanel('admin', 'lavertia.admin.provider-example');
+
+        self::assertNotNull($link);
+        self::assertSame('receipt', $link['icon']);
+        self::assertSame('New', $link['badge']);
+        self::assertTrue($link['active']);
+        self::assertJson(json_encode($link, JSON_THROW_ON_ERROR));
+
+        $legacy = NavigationItem::make('provider-example', 'Example')
+            ->forPanel('admin', 'lavertia.admin.provider-example');
+
+        self::assertNull($legacy['icon']);
+        self::assertNull($legacy['badge']);
+
+        $fromArray = NavigationItem::fromArray([
+            'slug' => 'provider-example',
+            'label' => 'Example',
+            'icon' => 'receipt',
+            'badge' => 'New',
+        ]);
+
+        self::assertTrue($item->sameConfiguration($fromArray));
+        self::assertFalse($item->sameConfiguration(NavigationItem::make('provider-example', 'Example')));
+
+        foreach ([
+            fn () => $item->icon('alert<script>'),
+            fn () => $item->icon('unknown-icon'),
+            fn () => $item->badge('<img>'),
+            fn () => $item->badge(''),
+            fn () => $item->badge(str_repeat('A', 21)),
+            fn () => NavigationItem::fromArray(['slug' => 'provider-example', 'label' => 'Example', 'icon' => 100]),
+            fn () => NavigationItem::fromArray(['slug' => 'provider-example', 'label' => 'Example', 'badge' => []]),
+        ] as $invalid) {
+            try {
+                $invalid();
+                self::fail('Unsafe navigation metadata was accepted.');
+            } catch (InvalidArgumentException) {
+                // Expected.
+            }
+        }
+    }
+
     public function test_provider_settings_are_serializable_and_validated(): void
     {
         $appearance = app(PanelRegistry::class)->appearance('admin');
