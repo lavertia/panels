@@ -27,6 +27,28 @@ final class Panel
 
     private ?string $brandLogo = null;
 
+    private string $brandLogoDisplay = 'full';
+
+    private string $brandLogoPlacement = 'sidebar';
+
+    private bool $tenantSwitcher = true;
+
+    private string $tenantSwitcherPlacement = 'sidebar';
+
+    private bool $globalSearch = false;
+
+    private bool $notifications = false;
+
+    private bool $userMenuSettings = true;
+
+    private bool $userMenuLogout = true;
+
+    /** @var list<array{label: string, url: string, external: bool}> */
+    private array $footerLinks = [];
+
+    /** @var list<array{label: string, url: string, external: bool}> */
+    private array $userMenuLinks = [];
+
     private ?string $primaryColor = null;
 
     private ?bool $sidebarCollapsible = null;
@@ -145,6 +167,146 @@ final class Panel
         $copy->brandLogo = $logo;
 
         return $copy;
+    }
+
+    public function brandLogoDisplay(string $display): self
+    {
+        if (! in_array($display, ['full', 'icon', 'hidden'], true)) {
+            throw new InvalidArgumentException('Logo display must be full, icon or hidden.');
+        }
+
+        $copy = clone $this;
+        $copy->brandLogoDisplay = $display;
+
+        return $copy;
+    }
+
+    public function brandLogoPlacement(string $placement): self
+    {
+        if (! in_array($placement, ['sidebar', 'topbar', 'both'], true)) {
+            throw new InvalidArgumentException('Logo placement must be sidebar, topbar or both.');
+        }
+
+        $copy = clone $this;
+        $copy->brandLogoPlacement = $placement;
+
+        return $copy;
+    }
+
+    public function tenantSwitcher(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->tenantSwitcher = $enabled;
+
+        return $copy;
+    }
+
+    public function tenantSwitcherPlacement(string $placement): self
+    {
+        if (! in_array($placement, ['sidebar', 'topbar'], true)) {
+            throw new InvalidArgumentException('Tenant switcher placement must be sidebar or topbar.');
+        }
+
+        $copy = clone $this;
+        $copy->tenantSwitcherPlacement = $placement;
+
+        return $copy;
+    }
+
+    public function globalSearch(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->globalSearch = $enabled;
+
+        return $copy;
+    }
+
+    public function notifications(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->notifications = $enabled;
+
+        return $copy;
+    }
+
+    public function userMenuSettings(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->userMenuSettings = $enabled;
+
+        return $copy;
+    }
+
+    public function userMenuLogout(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->userMenuLogout = $enabled;
+
+        return $copy;
+    }
+
+    /**
+     * @param list<array{label: string, url: string, external?: bool}> $links
+     */
+    public function footerLinks(array $links): self
+    {
+        $copy = clone $this;
+        $copy->footerLinks = $this->normalizeLinks($links);
+
+        return $copy;
+    }
+
+    /**
+     * @param list<array{label: string, url: string, external?: bool}> $links
+     */
+    public function userMenuLinks(array $links): self
+    {
+        $copy = clone $this;
+        $copy->userMenuLinks = $this->normalizeLinks($links);
+
+        return $copy;
+    }
+
+    /**
+     * @param list<array{label: string, url: string, external?: bool}> $links
+     * @return list<array{label: string, url: string, external: bool}>
+     */
+    private function normalizeLinks(array $links): array
+    {
+        if (! array_is_list($links)) {
+            throw new InvalidArgumentException('Links must be an ordered list.');
+        }
+
+        $normalized = [];
+
+        foreach ($links as $link) {
+            if (! is_array($link) || ! is_string($link['label'] ?? null)
+                || ! is_string($link['url'] ?? null)
+                || trim($link['label']) === '' || mb_strlen($link['label']) > 80) {
+                throw new InvalidArgumentException('Links require a valid label and URL.');
+            }
+
+            $url = $link['url'];
+            $external = (bool) ($link['external'] ?? false);
+
+            if ($external) {
+                if (! str_starts_with($url, 'https://') || filter_var($url, FILTER_VALIDATE_URL) === false
+                    || parse_url($url, PHP_URL_USER) !== null || parse_url($url, PHP_URL_PASS) !== null) {
+                    throw new InvalidArgumentException('External links must use HTTPS without credentials.');
+                }
+            } elseif (! str_starts_with($url, '/') || str_starts_with($url, '//')
+                || preg_match('/[\\\\\r\n]/', $url) === 1) {
+                throw new InvalidArgumentException('Internal links must use same-origin absolute paths.');
+            }
+
+            $normalized[] = [
+                'label' => $link['label'],
+                'url' => $url,
+                'external' => $external,
+            ];
+        }
+
+        return $normalized;
     }
 
     public function primaryColor(string $hex): self
@@ -376,6 +538,16 @@ final class Panel
             'brand_name' => $this->brandName,
             'brand_subtitle' => $this->brandSubtitle,
             'brand_logo' => $this->brandLogo,
+            'brand_logo_display' => $this->brandLogoDisplay,
+            'brand_logo_placement' => $this->brandLogoPlacement,
+            'tenant_switcher' => $this->tenantSwitcher,
+            'tenant_switcher_placement' => $this->tenantSwitcherPlacement,
+            'global_search' => $this->globalSearch,
+            'notifications' => $this->notifications,
+            'footer_links' => $this->footerLinks,
+            'user_menu_links' => $this->userMenuLinks,
+            'user_menu_settings' => $this->userMenuSettings,
+            'user_menu_logout' => $this->userMenuLogout,
             'primary_color' => $this->primaryColor,
             'sidebar_collapsible' => $this->sidebarCollapsible,
             'sidebar_variant' => $this->sidebarVariant,
