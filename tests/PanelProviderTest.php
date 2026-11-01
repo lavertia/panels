@@ -12,6 +12,7 @@ use Lavertia\Panels\Panel;
 use Lavertia\Panels\PanelProvider;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\PanelsServiceProvider;
+use Lavertia\Panels\Plugins\PanelPlugin;
 use Orchestra\Testbench\TestCase;
 
 final class PanelProviderTest extends TestCase
@@ -33,6 +34,15 @@ final class PanelProviderTest extends TestCase
         self::assertSame('#3377cc', $appearance['primaryColor']);
         self::assertFalse($appearance['sidebarCollapsible']);
         self::assertSame('floating', $appearance['sidebarVariant']);
+        self::assertSame('dark', $appearance['themeMode']);
+        self::assertSame('top', $appearance['navigationPosition']);
+        self::assertSame('20rem', $appearance['sidebarWidth']);
+        self::assertFalse($appearance['breadcrumbs']);
+        self::assertTrue($appearance['stickyHeader']);
+        self::assertSame('lg', $appearance['borderRadius']);
+        self::assertSame('2xl', $appearance['contentWidth']);
+        self::assertFalse($appearance['mobileNavigation']);
+        self::assertNull(config('lavertia.panels.admin'));
 
         $route = Route::getRoutes()->getByName('lavertia.admin.provider-example');
 
@@ -62,6 +72,10 @@ final class PanelProviderTest extends TestCase
             fn () => Panel::make()->brandLogo('javascript:alert(1)'),
             fn () => Panel::make()->sidebarVariant('invalid'),
             fn () => Panel::make()->id('../admin'),
+            fn () => Panel::make()->themeMode('auto-exec'),
+            fn () => Panel::make()->sidebarWidth('100vw'),
+            fn () => Panel::make()->contentWidth('<iframe>'),
+            fn () => Panel::make()->navigationPosition('hidden'),
         ] as $invalid) {
             try {
                 $invalid();
@@ -71,7 +85,7 @@ final class PanelProviderTest extends TestCase
             }
         }
 
-        self::assertSame(6, $rejected);
+        self::assertSame(10, $rejected);
     }
 }
 
@@ -87,6 +101,15 @@ final class ExampleAdminPanelProvider extends PanelProvider
             ->primaryColor('#3377cc')
             ->sidebarVariant('floating')
             ->sidebarCollapsible(false)
+            ->themeMode('dark')
+            ->navigationPosition('top')
+            ->sidebarWidth('20rem')
+            ->breadcrumbs(false)
+            ->stickyHeader()
+            ->borderRadius('lg')
+            ->contentWidth('2xl')
+            ->mobileNavigation(false)
+            ->plugins([new ExamplePanelPlugin])
             ->pages([ProviderExamplePage::class])
             ->navigationItems([
                 NavigationItem::make('provider-example', 'Example'),
@@ -104,5 +127,13 @@ final class ProviderExamplePage extends Page
     protected function components(): array
     {
         return [];
+    }
+}
+
+final class ExamplePanelPlugin implements PanelPlugin
+{
+    public function register(PanelRegistry $registry, string $panelId): void
+    {
+        $registry->navigationItem($panelId, NavigationItem::make('provider-example', 'Example'));
     }
 }

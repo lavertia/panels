@@ -18,56 +18,42 @@ Repositories are public, but this remains an experimental, untagged version. Use
 composer require lavertia/panels:^0.1
 php artisan lavertia:install --stack=react
 # Or --stack=vue or --stack=svelte
-php artisan vendor:publish --tag=lavertia-config
+php artisan lavertia:panel Admin --id=admin
 ```
 
 The command creates five files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}`, `resources/js/components/lavertia/types.ts`, `resources/js/components/lavertia/form-state.ts` and `resources/js/components/lavertia/client-actions.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
-Add your Page class to `config/lavertia.php`:
+Register the generated `App\\Providers\\Lavertia\\AdminPanelProvider::class` in
+`bootstrap/providers.php`, and configure Pages, navigation, and styling
+inside that Provider. No `config/lavertia.php` exists or is published.
+Run `php artisan route:list --path=admin` and `npm run build` to verify.
 
-```php
-'panels' => [
-    'admin' => [
-        'path' => 'admin',
-        'middleware' => ['web', 'auth'],
-        'pages' => [App\Lavertia\Pages\DashboardPage::class],
-    ],
-],
-```
+### PanelProvider is the only source of Panel configuration
 
-Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
-
-### Laravel Starter Kit PanelProvider (experimental)
-
-Lavertia now supports a PHP-first \`PanelProvider\` patterned after Filament,
-while **reusing the actual React/Vue/Svelte Laravel Starter Kit layout**.
-There is no duplicate authentication stack, second sidebar, or separate SPA
-router.
-
-Generate a provider:
+**Do not create `config/lavertia.php`**. Each Panel is defined in a real
+Laravel `PanelProvider` registered through `bootstrap/providers.php`.
+The underlying official Laravel Starter Kit still owns Fortify, team switching,
+Inertia/Vite, the responsive Sidebar and user settings.
 
 ```bash
 php artisan lavertia:panel Admin --id=admin
+php artisan lavertia:page Invoices --panel=admin
 ```
 
-The generated class lives at
-\`app/Providers/Lavertia/AdminPanelProvider.php\`. Register it once in
-\`bootstrap/providers.php\`:
+Example `app/Providers/Lavertia/AdminPanelProvider.php`:
 
 ```php
-App\Providers\Lavertia\AdminPanelProvider::class,
-```
+<?php
 
-Configure the Panel in the generated provider (without replacing the
-Starter Kit's shell):
+namespace App\Providers\Lavertia;
 
-```php
+use App\Lavertia\Pages\DashboardPage;
+use Lavertia\Panels\Http\Middleware\ResolveLocale;
+use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Panel;
 use Lavertia\Panels\PanelProvider;
-use Lavertia\Panels\Navigation\NavigationItem;
-use Lavertia\Panels\Http\Middleware\ResolveLocale;
 
 final class AdminPanelProvider extends PanelProvider
 {
@@ -77,162 +63,100 @@ final class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->middleware(['web', 'auth', ResolveLocale::class])
-            ->brandName('Fenix Admin')
-            ->brandSubtitle('Management')
-            ->brandLogo('/images/fenix.svg')
-            ->primaryColor('#3377cc')
+            ->brandName('Lavertia')
+            ->brandSubtitle('Workspace')
+            ->brandLogo('/images/logo.svg')
+            ->primaryColor('#2563eb')
+            ->themeMode('system')
+            ->fontFamily('Inter')
+            ->borderRadius('lg')
+            ->contentWidth('full')
             ->sidebarVariant('inset')
+            ->sidebarWidth('18rem')
             ->sidebarCollapsible()
+            ->navigationPosition('sidebar')
+            ->topbar()
+            ->breadcrumbs()
+            ->stickyHeader()
+            ->mobileNavigation()
             ->pages([DashboardPage::class])
+            ->discoverPages(app_path('Lavertia/Pages'), 'App\\Lavertia\\Pages')
             ->navigationItems([
                 NavigationItem::make('dashboard', 'Dashboard'),
-            ]);
+                NavigationItem::make('invoices', 'Invoices')->group('Sales'),
+            ])
+            ->plugins([]);
     }
 }
 ```
 
-Provider settings are merged into existing \`config/lavertia.php\` Panels
-**during the provider registration phase** (before route mounting).
-The provider's explicit path/middleware/appearance override those config
-settings; Page classes and discovery directories are additive.
-Two differently configured navigation items with the same slug are rejected,
-so when migrating old navigation definitions, define each slug in exactly
-one place. Module-owned Pages continue to use \`PanelRegistry::discoverPages()\`.
+All values are validated before use. `PanelRegistry` keeps registered
+Provider definitions in memory, loads module-owned pages and widgets, builds
+named routes, and sends only JSON-safe theme/navigation metadata to Inertia.
+An unregistered Panel does not silently exist. Duplicate Panel IDs fail
+immediately. Route cache includes Panel routes, while `config:cache` does not
+serialize PHP Panel instances.
 
-For a Starter Kit host, share \`lavertiaPanel\` from Inertia middleware with
-\`PanelRegistry::appearance('admin')\` (after authenticating the visitor);
-React/Vue/Svelte Playground demonstrates how to apply the brand, logo,
-accent, sidebar variant and collapse setting to the existing sidebar.
-The legacy \`lavertiaSidebar\` prop remains supported.
+### Plugin API
 
-The feature does not replace Laravel Fortify, authorization policies, teams,
-authentication layouts or asset pipelines. Security-sensitive appearance
-inputs are validated, but no frontend visibility is an authorization
-boundary. The primary accent is a presentation token; adding a full custom
-theme CSS generator is a separate milestone.
-
-
-### Unified navigation inside an existing Starter Kit Sidebar
-
-Lavertia preserves your Starter Kit's own sidebar, mobile sheet, user
-menu and collapse state; it does not inject a second application shell.
-
-**Opt-in integration:** share a single named prop from the host app's
-`HandleInertiaRequests::share()`, with the same `PanelRegistry` links
-used by Lavertia Pages:
+Server-side plugins can register module-owned Pages, Navigation and Widgets.
+They do not inject arbitrary JavaScript or bypass server authorization:
 
 ```php
-'lavertiaSidebar' => fn (): array => $request->user()
-    ? app(\Lavertia\Panels\PanelRegistry::class)->navigation('admin', $request->route()?->getName())
-    : [],
-'lavertiaSidebarDirection' => fn (): string =>
-    in_array(app()->getLocale(), ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
-```
+use Lavertia\Panels\PanelRegistry;
+use Lavertia\Panels\Plugins\PanelPlugin;
+use Lavertia\Panels\Navigation\NavigationItem;
 
-Render `page.props.lavertiaSidebar` with the hosting app's existing
-React/Vue/Svelte SidebarMenu components. Use the server-provided
-`active`, `url`, `group`, and `label` fields. Apply the direction
-to the sidebar root and its mobile drawer's physical side (right for
-RTL, left for LTR). Never build URLs by concatenating slugs.
-
-The shipped `lavertia/page` templates check for the **presence** of
-`lavertiaSidebar` (including an empty array) and suppress their
-embedded navigation when the host integration is enabled. Hosts
-without the shared prop retain the previous inline navigation, so
-existing installations remain compatible.
-
-Navigation visibility **is not authorization**. Keep each Page's
-middleware, tenant isolation, authorization and role-aware navigation
-filtering on the backend. For multi-panel apps, choose the host panel
-explicitly rather than returning links from every panel.
-
-The implementation examples are kept in
-`lavertia/playground` for all three Starter Kit stacks.
-
-
-### Artisan Page generator (proposed CLI foundation)
-
-The \`lavertia:page\` command creates a real PHP-defined Page, without
-generating another React/Vue/Svelte page and without overwriting existing
-files unless \`--force\` is specified.
-
-```bash
-php artisan lavertia:page Invoices --panel=admin
-php artisan lavertia:page Billing/Invoices --panel=admin
-```
-
-It generates \`app/Lavertia/Pages/InvoicesPage.php\` or the corresponding
-nested namespace. It validates the selected Panel, derives a safe slug,
-rejects traversal and duplicate configured Page slugs, and reports the
-path of the generated PHP class.
-
-The command deliberately **does not mutate** \`config/lavertia.php\`.
-Register the generated Page under the selected Panel's \`pages\` array
-and optionally add a navigation item, or configure the existing
-\`discover_pages\` mechanism to discover a directory.
-
-```php
-'pages' => [
-    \App\Lavertia\Pages\InvoicesPage::class,
-],
-'navigation' => [
-    ['slug' => 'invoices', 'label' => 'Invoices', 'group' => 'Management'],
-],
-```
-
-Then run \`php artisan optimize:clear\` and
-\`php artisan route:list --path=admin\`. The existing route middleware
-still enforces authentication and all page data must remain scoped and
-authorized on the server.
-
-**Scope:** this adds \`lavertia:page\` only. The commands
-\`lavertia:resource\`, \`lavertia:panel\`, \`lavertia:form\`,
-\`lavertia:action\`, \`lavertia:infolist\`, \`lavertia:theme\`, and
-\`lavertia:component\` are not implemented by this change.
-
-
-### Laravel Modular support (module-owned Pages)
-
-Lavertia can discover PHP Pages from [InterNACHI/modular](https://github.com/InterNACHI/modular) `app-modules/*/src/` packages **without adding a hard dependency on Modular**. In the module's Laravel service provider, register the Pages belonging to a configured Panel:
-
-```php
-public function boot(\Lavertia\Panels\PanelRegistry $panels): void
+final class SalesPlugin implements PanelPlugin
 {
-    $panels->discoverPages(
-        panelId: 'admin',
-        in: dirname(__DIR__).'/Lavertia/Pages',
-        for: 'Modules\\Inventory\\Lavertia\\Pages',
-    );
+    public function register(PanelRegistry $registry, string $panelId): void
+    {
+        $registry->discoverPages(
+            $panelId,
+            __DIR__.'/Lavertia/Pages',
+            'Modules\\Sales\\Lavertia\\Pages',
+        );
+        $registry->navigationItem(
+            $panelId,
+            NavigationItem::make('sales/invoices', 'Invoices')->group('Sales'),
+        );
+    }
 }
 ```
 
-The host application's existing Panel middleware continues to protect these routes; module provider registrations are mounted during provider boot, preserving precedence over broad host routes. Alternatively use the Panel's `discover_pages` config or `Panel::discoverPages()` directly. This alpha feature discovers **Pages** (not Filament Resources/Widgets). See [Laravel Modular integration and Vite PHP refresh](docs/MODULAR_LARAVEL.md).
+Register using `->plugins([new SalesPlugin])` on the Panel.
 
-### v0.3 alpha: modular Navigation and Dashboard Widgets
+### Responsive, RTL and Starter Kit integration
 
-Register a Page in a configured Panel, then add a permission-filtered NavigationItem and optionally discover DashboardWidgets from a Composer PSR-4 module's Service Provider:
+The host shares `lavertiaPanel`, `lavertiaSidebar` and the initial
+locale direction from its existing `HandleInertiaRequests` middleware.
+These props drive the original Starter Kit components in React/Vue/Svelte:
+single Sidebar, mobile drawer, optional top navigation, breadcrumbs, sticky
+header, branding and width, typography and border-radius tokens.
 
-```php
-public function boot(\Lavertia\Panels\PanelRegistry $panels): void
-{
-    $panels->discoverWidgets(
-        panelId: 'admin',
-        in: dirname(__DIR__).'/Lavertia/Widgets',
-        for: 'Modules\\Inventory\\Lavertia\\Widgets',
-    );
+The `themeMode` value is a **preference** supplied to the shell; do not
+override a user's stored accessibility/theme selection from a post-mount
+effect. Existing starter-kit theme controls remain authoritative. The
+`header` remains accessible with a sidebar toggle even when `topbar(false)`
+is selected. UI component visibility is never authorization; protect all
+routes and data using policies and tenant scoping.
 
-    $panels->navigationItem(
-        panelId: 'admin',
-        item: \Lavertia\Panels\Navigation\NavigationItem::make('inventory/overview', 'Inventory')
-            ->group('Operations')
-            ->ability('inventory.view'),
-    );
-}
-```
+### Page generator
 
-The Module's Pages stay behind the Panel's Laravel middleware. The new opt-in `Lavertia\Panels\Pages\DashboardPage` renders all authorized Widgets registered for that Panel; it must not be registered alongside another Page with the same slug. Navigation is delivered as optional Inertia props and rendered by React, Vue and Svelte, including active state and RTL layout. Neither hiding links nor Widget `canView()` replaces server-side Policies and tenant scoping.
+`lavertia:page` checks the registered PanelProvider, generates a PHP Page
+class under `app/Lavertia/Pages`, and prints the class and route prefix.
+The Provider can discover generated Pages via `discoverPages()`, avoiding
+manual PHP config edits. Generated Pages remain fully composable and
+the React/Vue/Svelte adapters render a shared Component Protocol.
 
-See the [v0.3 Navigation and Widgets guide](docs/V03.md). Resources and Relation Managers remain future milestones.
+### Laravel Modular
+
+An `internachi/modular` module provider may add Pages before or after the
+Panels provider boots via `PanelRegistry::discoverPages()`. Plugins can
+register their own navigation and Dashboard Widgets. Module contributions
+are deduplicated; route names and middleware are controlled by the owning
+Panel, and module discovery is compatible with Laravel route caching.
+
 
 ### Local-first form interactions (experimental)
 

@@ -68,7 +68,7 @@ final class MakePanelCommand extends Command
         $this->info('Created: '.$path);
         $this->line('Register App\\Providers\\Lavertia\\'.$class.'::class in bootstrap/providers.php.');
         $this->comment('Use the existing Laravel Starter Kit layout and its auth/session system.');
-        $this->comment('Review config/lavertia.php to avoid duplicate navigation slugs.');
+        $this->comment('All Page, navigation, theme and plugin settings belong inside this PanelProvider.');
 
         return self::SUCCESS;
     }

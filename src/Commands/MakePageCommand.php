@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\PanelRegistry;
 
 final class MakePageCommand extends Command
 {
@@ -30,8 +31,8 @@ final class MakePageCommand extends Command
         }
 
         if (preg_match('/^[a-z][a-z0-9_-]*$/D', $panel) !== 1
-            || ! is_array(config('lavertia.panels.'.$panel))) {
-            $this->error('Panel ['.$panel.'] is not configured in config/lavertia.php.');
+            || ! app(PanelRegistry::class)->hasPanel($panel)) {
+            $this->error('Panel ['.$panel.'] has no registered PanelProvider.');
 
             return self::FAILURE;
         }
@@ -68,7 +69,7 @@ final class MakePageCommand extends Command
         $fqcn = $namespace.'\\'.$class;
 
         // Reject any class with an existing slug to avoid breaking Panel boot.
-        foreach (config('lavertia.panels.'.$panel.'.pages', []) as $page) {
+        foreach (app(PanelRegistry::class)->panel($panel)?->pageClasses() ?? [] as $page) {
             if (is_string($page) && class_exists($page) && is_subclass_of($page, Page::class)
                 && $page::slug() === $slug && $page !== $fqcn) {
                 $this->error('Panel ['.$panel.'] already has a Page using slug ['.$slug.'].');
@@ -93,10 +94,10 @@ final class MakePageCommand extends Command
         }
 
         $this->info('Created: '.$destination);
-        $this->line('To register this page, add '.$fqcn.'::class to');
-        $this->line("config/lavertia.php => 'panels' => '".$panel."' => 'pages'.");
+        $this->line('Register '.$fqcn.'::class in the '.$panel.' PanelProvider pages([...]),');
+        $this->line('or configure discoverPages(app_path(\'Lavertia/Pages\'), \'App\\\\Lavertia\\\\Pages\').');
         $this->line("Optional navigation item: ['slug' => '".$slug."', 'label' => '".$title."'].");
-        $this->comment('Then run: php artisan optimize:clear && php artisan route:list --path='.(string) config('lavertia.panels.'.$panel.'.path', $panel));
+        $this->comment('Then run: php artisan optimize:clear && php artisan route:list --path='.(string) (app(PanelRegistry::class)->panel($panel)?->configuration()['path'] ?? $panel));
         $this->comment('Existing pages and panel configuration are never modified automatically.');
 
         return self::SUCCESS;

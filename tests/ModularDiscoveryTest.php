@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\PanelsServiceProvider;
 use Modules\Inventory\Lavertia\Pages\InventoryOverview;
@@ -20,29 +21,7 @@ final class ModularDiscoveryTest extends TestCase
     protected function getPackageProviders($app): array
     {
         // The module must work even when it boots after Panels.
-        return [PanelsServiceProvider::class, FixtureInventoryModuleProvider::class, FixtureBroadHostRoutesProvider::class];
-    }
-
-    protected function getEnvironmentSetUp($app): void
-    {
-        $app['config']->set('lavertia.panels', [
-            'admin' => [
-                'path' => 'admin',
-                'middleware' => ['web', 'auth'],
-                'pages' => [ExplicitAdminPage::class],
-            ],
-            'reports' => [
-                'path' => 'reports',
-                'middleware' => ['web', 'auth'],
-                'pages' => [],
-                'discover_pages' => [
-                    [
-                        'in' => inventoryPagesPath(),
-                        'for' => 'Modules\\Inventory\\Lavertia\\Pages',
-                    ],
-                ],
-            ],
-        ]);
+        return [PanelsServiceProvider::class, FixtureConfiguredAdminPanelProvider::class, FixtureConfiguredReportsPanelProvider::class, FixtureInventoryModuleProvider::class, FixtureBroadHostRoutesProvider::class];
     }
 
     public function test_panel_routes_win_over_later_registered_dynamic_team_routes(): void
@@ -76,7 +55,7 @@ final class ModularDiscoveryTest extends TestCase
         self::assertNull($routes->getByName('lavertia.admin.abstract-module-page'));
     }
 
-    public function test_config_driven_discovery_supports_modular_pages_without_provider_registration(): void
+    public function test_provider_driven_discovery_supports_modular_pages_without_module_registration(): void
     {
         Route::getRoutes()->refreshNameLookups();
 
@@ -141,6 +120,26 @@ final class ModularDiscoveryTest extends TestCase
         Route::getRoutes()->refreshNameLookups();
 
         self::assertNotNull(Route::getRoutes()->getByName('lavertia.duplicate.inventory.overview'));
+    }
+}
+
+final class FixtureConfiguredAdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->pages([ExplicitAdminPage::class]);
+    }
+}
+
+final class FixtureConfiguredReportsPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('reports')
+            ->discoverPages(inventoryPagesPath(), 'Modules\\Inventory\\Lavertia\\Pages');
     }
 }
 

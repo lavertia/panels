@@ -7,6 +7,8 @@ namespace Lavertia\Panels\Tests;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\PanelsServiceProvider;
 use Modules\Inventory\Lavertia\Widgets\InventoryMetrics;
@@ -17,18 +19,7 @@ final class ModularEarlyProviderTest extends TestCase
     protected function getPackageProviders($app): array
     {
         // In Composer modular applications the provider order is not guaranteed.
-        return [FixtureEarlyInventoryModuleProvider::class, PanelsServiceProvider::class];
-    }
-
-    protected function getEnvironmentSetUp($app): void
-    {
-        $app['config']->set('lavertia.panels', [
-            'admin' => [
-                'path' => 'admin',
-                'middleware' => ['web', 'auth'],
-                'pages' => [],
-            ],
-        ]);
+        return [FixtureEarlyInventoryModuleProvider::class, PanelsServiceProvider::class, FixtureEarlyAdminPanelProvider::class];
     }
 
     public function test_module_booting_before_panels_contributes_navigation_and_widgets(): void
@@ -73,5 +64,13 @@ final class FixtureEarlyInventoryModuleProvider extends ServiceProvider
             in: __DIR__.'/Fixtures/app-modules/inventory/src/Lavertia/Widgets',
             for: 'Modules\\Inventory\\Lavertia\\Widgets',
         );
+    }
+}
+
+final class FixtureEarlyAdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel->id('admin');
     }
 }

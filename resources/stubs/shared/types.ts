@@ -24,6 +24,16 @@ export interface PanelAppearance {
     primaryForeground: string;
     sidebarCollapsible: boolean;
     sidebarVariant: 'inset' | 'sidebar' | 'floating';
+    themeMode: 'light' | 'dark' | 'system';
+    fontFamily: string;
+    borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+    contentWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+    sidebarWidth: string;
+    navigationPosition: 'sidebar' | 'top';
+    topbar: boolean;
+    breadcrumbs: boolean;
+    stickyHeader: boolean;
+    mobileNavigation: boolean;
 }
 
 export interface LavertiaPayload {

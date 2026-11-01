@@ -21,29 +21,61 @@ cp ../../panels/tests/integration/modular/InventoryServiceProvider.php \
 composer update modules/inventory --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
 php artisan package:discover --ansi
 
-# The host keeps its existing Admin dashboard and enables an Inventory Panel.
-# This temporary config is confined to the CI workspace.
-cat > config/lavertia.php <<'PHP'
+# Two Panels registered via real Laravel providers. No Panel config file.
+mkdir -p app/Providers/Lavertia
+cat > app/Providers/Lavertia/AdminPanelProvider.php <<'PHP'
 <?php
 
 declare(strict_types=1);
 
-return [
-    'panels' => [
-        'admin' => [
-            'path' => 'admin',
-            'middleware' => ['web', 'auth'],
-            'pages' => [\App\Lavertia\Pages\DashboardPage::class],
-        ],
-        'inventory' => [
-            'path' => 'inventory',
-            'middleware' => ['web', 'auth'],
-            'pages' => [\Lavertia\Panels\Pages\DashboardPage::class],
-            'navigation' => [['slug' => 'dashboard', 'label' => 'Inventory dashboard']],
-        ],
-    ],
-];
+namespace App\Providers\Lavertia;
+
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
+
+final class AdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->pages([\App\Lavertia\Pages\DashboardPage::class]);
+    }
+}
 PHP
+
+cat > app/Providers/Lavertia/InventoryPanelProvider.php <<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Providers\Lavertia;
+
+use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
+
+final class InventoryPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('inventory')
+            ->pages([\Lavertia\Panels\Pages\DashboardPage::class])
+            ->navigationItems([
+                NavigationItem::make('dashboard', 'Inventory dashboard'),
+            ]);
+    }
+}
+PHP
+
+php -r '
+    $file = "bootstrap/providers.php";
+    $text = file_get_contents($file);
+    $text = preg_replace("/\\];\\s*$/", "    \\\\App\\\\Providers\\\\Lavertia\\\\AdminPanelProvider::class,\n    \\\\App\\\\Providers\\\\Lavertia\\\\InventoryPanelProvider::class,\n];\n", $text);
+    if (!is_string($text)) { exit(1); }
+    file_put_contents($file, $text);
+'
 
 cp .env.example .env
 php artisan key:generate --force
