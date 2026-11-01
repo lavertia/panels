@@ -7,6 +7,7 @@ namespace Lavertia\Panels\Pages;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
@@ -25,6 +26,18 @@ abstract class Page
     public static function title(): string
     {
         return Str::headline(class_basename(static::class));
+    }
+
+    /** Override to restrict this Page to a subset of the Panel's supported locales. */
+    public static function locales(): ?array
+    {
+        return null;
+    }
+
+    /** Override to 'sidebar', 'top' or 'full'. Null inherits the Panel layout. */
+    public static function layout(): ?string
+    {
+        return null;
     }
 
     /** @return array<string, mixed> */
@@ -50,7 +63,7 @@ abstract class Page
                 'version' => ComponentProtocol::VERSION,
                 'title' => static::title(),
                 'locale' => $locale,
-                'direction' => in_array($locale, ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
+                'direction' => LocaleContext::direction($locale),
                 'tree' => $this->tree(),
                 'navigation' => $navigation,
             ],

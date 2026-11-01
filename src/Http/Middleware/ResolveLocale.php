@@ -7,23 +7,23 @@ namespace Lavertia\Panels\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Lavertia\Panels\Localization\LocaleContext;
+use Lavertia\Panels\PanelRegistry;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ResolveLocale
 {
-    /** @param Closure(Request): Response $next */
+    /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next): Response
     {
-        $supported = ['en', 'ar', 'fr'];
-        $candidate = $request->query('lang');
+        $registry = app(PanelRegistry::class);
+        $routeName = $request->route()?->getName();
+        $panelId = $registry->panelForRoute($routeName);
 
-        if (is_string($candidate) && in_array($candidate, $supported, true)) {
-            $request->session()->put('lavertia_locale', $candidate);
+        if ($panelId !== null) {
+            $context = LocaleContext::resolve($request, $registry, $panelId, true);
+            App::setLocale($context['locale']);
         }
-
-        $locale = $request->session()->get('lavertia_locale', config('app.locale', 'en'));
-
-        App::setLocale(is_string($locale) && in_array($locale, $supported, true) ? $locale : 'en');
 
         return $next($request);
     }

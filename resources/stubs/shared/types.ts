@@ -93,7 +93,12 @@ export interface PanelAppearance {
     borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'xl';
     contentWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     sidebarWidth: string;
-    navigationPosition: 'sidebar' | 'top';
+    navigationPosition: 'sidebar' | 'top' | 'none';
+    layout?: 'sidebar' | 'top' | 'full';
+    locale?: string;
+    direction?: 'ltr' | 'rtl';
+    supportedLocales?: string[];
+    languageSwitcher?: boolean;
     navigationGroups?: NavigationGroupConfig[];
     topbar: boolean;
     breadcrumbs: boolean;
@@ -223,6 +228,25 @@ export function headerLinks(value: unknown): HeaderLink[] {
         if (item.url !== null && url === null) return [];
         return [{ label: item.label, url, active: item.active === true }];
     });
+}
+
+/** Preserve the current Inertia URL while changing only the requested language. */
+export function localeUrl(currentUrl: string, locale: string): string {
+    const [withoutHash, hash] = currentUrl.split('#', 2);
+    const [pathname, query] = withoutHash.split('?', 2);
+    const params = new URLSearchParams(query ?? '');
+    params.set('lang', locale);
+
+    return (pathname.startsWith('/') ? pathname : '/') + '?' + params.toString() + (hash ? '#' + hash : '');
+}
+
+/** Localized display name; no hard-coded list of 120+ language names is needed. */
+export function localeLabel(code: string, activeLocale: string): string {
+    try {
+        return new Intl.DisplayNames([activeLocale], { type: 'language' }).of(code) ?? code;
+    } catch {
+        return code;
+    }
 }
 
 export function safeHref(value: unknown): string | null {
