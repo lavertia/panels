@@ -3,6 +3,8 @@ import LavertiaRenderer from '../../components/lavertia/renderer';
 import type { LavertiaPayload } from '../../components/lavertia/types';
 
 export default function LavertiaPage({ lavertia }: { lavertia: LavertiaPayload }) {
+    const page = usePage();
+
     if (lavertia.version !== 1) {
         return <p role="alert" className="p-6 text-sm text-rose-700">Unsupported Lavertia protocol version.</p>;
     }
@@ -10,7 +12,7 @@ export default function LavertiaPage({ lavertia }: { lavertia: LavertiaPayload }
     const navigation = lavertia.navigation ?? [];
     // The hosting Starter Kit owns the sidebar when it explicitly shares
     // lavertiaSidebar. Keep embedded navigation for existing integrations.
-    const hostSidebar = Object.prototype.hasOwnProperty.call(usePage().props, 'lavertiaSidebar');
+    const hostSidebar = Object.prototype.hasOwnProperty.call(page.props, 'lavertiaSidebar');
 
     return (
         <>
