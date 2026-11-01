@@ -82,6 +82,21 @@ final class PanelRegistry
         return $this->panels[$panelId] ?? null;
     }
 
+    public function panelForRoute(?string $routeName): ?string
+    {
+        if (is_string($routeName)
+            && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1
+            && isset($this->panels[$matches[1]])) {
+            return $matches[1];
+        }
+
+        // Starter Kit routes (e.g. profile/settings) remain attached to the
+        // default Panel when they do not belong to a Lavertia Page route.
+        return isset($this->panels['admin'])
+            ? 'admin'
+            : (array_key_first($this->panels) ?: null);
+    }
+
     /**
      * Return only validated, JSON-safe presentation metadata.
      * The host Starter Kit owns the actual sidebar and appearance controls.
