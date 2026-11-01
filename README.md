@@ -18,26 +18,17 @@ Repositories are public, but this remains an experimental, untagged version. Use
 composer require lavertia/panels:^0.1
 php artisan lavertia:install --stack=react
 # Or --stack=vue or --stack=svelte
-php artisan vendor:publish --tag=lavertia-config
+php artisan lavertia:panel Admin --id=admin
 ```
 
 The command creates five files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}`, `resources/js/components/lavertia/types.ts`, `resources/js/components/lavertia/form-state.ts` and `resources/js/components/lavertia/client-actions.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
-Add your Page class to `config/lavertia.php`:
-
-```php
-'panels' => [
-    'admin' => [
-        'path' => 'admin',
-        'middleware' => ['web', 'auth'],
-        'pages' => [App\Lavertia\Pages\DashboardPage::class],
-    ],
-],
-```
-
-Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
+Register the generated `App\\Providers\\Lavertia\\AdminPanelProvider::class` in
+`bootstrap/providers.php`, and configure Pages, navigation, and styling
+inside that Provider. No `config/lavertia.php` exists or is published.
+Run `php artisan route:list --path=admin` and `npm run build` to verify.
 
 ### PanelProvider is the only source of Panel configuration
 
