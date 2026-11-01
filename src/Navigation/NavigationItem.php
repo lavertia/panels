@@ -30,6 +30,9 @@ final class NavigationItem
 
     private ?string $badge = null;
 
+    /** Parent must be a registered, authorized top-level Page in the same group. */
+    private ?string $parent = null;
+
     private ?string $ability = null;
 
     private function __construct(
@@ -91,6 +94,14 @@ final class NavigationItem
             $item = $item->badge($config['badge']);
         }
 
+        if (array_key_exists('parent', $config) && $config['parent'] !== null) {
+            if (! is_string($config['parent'])) {
+                throw new InvalidArgumentException('Navigation parent must be a Page slug.');
+            }
+
+            $item = $item->parent($config['parent']);
+        }
+
         if (array_key_exists('ability', $config) && $config['ability'] !== null) {
             if (! is_string($config['ability'])) {
                 throw new InvalidArgumentException('Navigation ability must be a string.');
@@ -149,6 +160,24 @@ final class NavigationItem
         return $copy;
     }
 
+    public function parent(string $slug): self
+    {
+        if ($slug === $this->slug || preg_match('#^[a-z0-9][a-z0-9/-]*$#D', $slug) !== 1
+            || str_contains($slug, '//')) {
+            throw new InvalidArgumentException('Navigation parent must be a different, safe Page slug.');
+        }
+
+        $copy = clone $this;
+        $copy->parent = $slug;
+
+        return $copy;
+    }
+
+    public function parentSlug(): ?string
+    {
+        return $this->parent;
+    }
+
     /** Require a Laravel Gate / Policy ability before including this item. */
     public function ability(string $ability): self
     {
@@ -175,7 +204,8 @@ final class NavigationItem
             && $this->sort === $other->sort
             && $this->ability === $other->ability
             && $this->icon === $other->icon
-            && $this->badge === $other->badge;
+            && $this->badge === $other->badge
+            && $this->parent === $other->parent;
     }
 
     public function sortOrder(): int
@@ -183,7 +213,7 @@ final class NavigationItem
         return $this->sort;
     }
 
-    /** @return array{label: string, slug: string, group: string|null, url: string, active: bool, icon: string|null, badge: string|null}|null */
+    /** @return array{label: string, slug: string, group: string|null, url: string, active: bool, icon: string|null, badge: string|null, parentSlug: string|null}|null */
     public function forPanel(string $panelId, ?string $currentRoute): ?array
     {
         if ($this->ability !== null && ! Gate::allows($this->ability)) {
@@ -217,6 +247,7 @@ final class NavigationItem
             'active' => $currentRoute === $name,
             'icon' => $this->icon,
             'badge' => $this->badge,
+            'parentSlug' => $this->parent,
         ];
     }
 }
