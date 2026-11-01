@@ -7,6 +7,7 @@ namespace Lavertia\Panels;
 use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
+use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Widgets\DashboardWidget;
@@ -111,6 +112,21 @@ final class PanelRegistry
             return null;
         }
 
+        $routeName = request()->route()?->getName();
+        $currentPage = is_string($routeName) && str_starts_with($routeName, 'lavertia.'.$panelId.'.')
+            ? LocaleContext::pageClass(request())
+            : null;
+        $context = LocaleContext::resolve(request(), $this, $panelId);
+        $layout = $options['layout'] ?? 'sidebar';
+
+        if ($currentPage !== null && $currentPage::layout() !== null) {
+            $layout = $currentPage::layout();
+        }
+
+        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+            throw new InvalidArgumentException('Invalid Page or Panel layout.');
+        }
+
         $primary = is_string($options['primary_color'] ?? null)
             && preg_match('/^#[0-9a-fA-F]{6}$/D', $options['primary_color']) === 1
             ? strtolower($options['primary_color'])
@@ -154,7 +170,12 @@ final class PanelRegistry
             'borderRadius' => $options['border_radius'],
             'contentWidth' => $options['content_width'],
             'sidebarWidth' => $options['sidebar_width'],
-            'navigationPosition' => $options['navigation_position'],
+            'navigationPosition' => $layout === 'full' ? 'none' : ($layout === 'top' ? 'top' : 'sidebar'),
+            'layout' => $layout,
+            'locale' => $context['locale'],
+            'direction' => $context['direction'],
+            'supportedLocales' => $context['locales'],
+            'languageSwitcher' => count($context['locales']) > 1,
             'navigationGroups' => $options['navigation_groups'] ?? [],
             'topbar' => $options['topbar'],
             'breadcrumbs' => $options['breadcrumbs'],
