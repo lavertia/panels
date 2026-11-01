@@ -15,12 +15,27 @@ export interface NavigationLink {
     active: boolean;
     icon?: string | null;
     badge?: string | null;
+    parentSlug?: string | null;
+    descendantActive?: boolean;
 }
 
 export interface PanelMenuLink {
     label: string;
     url: string;
     external: boolean;
+}
+
+export interface NavigationGroupConfig {
+    label: string;
+    collapsible: boolean;
+    collapsedByDefault: boolean;
+    sort: number;
+}
+
+export interface HeaderLink {
+    label: string;
+    url: string | null;
+    active: boolean;
 }
 
 export interface PanelAppearance {
@@ -48,6 +63,7 @@ export interface PanelAppearance {
     contentWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     sidebarWidth: string;
     navigationPosition: 'sidebar' | 'top';
+    navigationGroups?: NavigationGroupConfig[];
     topbar: boolean;
     breadcrumbs: boolean;
     stickyHeader: boolean;
