@@ -587,7 +587,7 @@ final class Panel
 
     public function layout(string $layout): self
     {
-        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+        if (! in_array($layout, ['sidebar', 'top', 'full', 'workspace'], true)) {
             throw new InvalidArgumentException('Panel layout must be sidebar, top or full.');
         }
 
