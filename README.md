@@ -45,7 +45,7 @@ Lavertia preserves your Starter Kit's own sidebar, mobile sheet, user
 menu and collapse state; it does not inject a second application shell.
 
 **Opt-in integration:** share a single named prop from the host app's
-\`HandleInertiaRequests::share()\`, with the same \`PanelRegistry\` links
+`HandleInertiaRequests::share()`, with the same `PanelRegistry` links
 used by Lavertia Pages:
 
 ```php
@@ -56,14 +56,14 @@ used by Lavertia Pages:
     in_array(app()->getLocale(), ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
 ```
 
-Render \`page.props.lavertiaSidebar\` with the hosting app's existing
+Render `page.props.lavertiaSidebar` with the hosting app's existing
 React/Vue/Svelte SidebarMenu components. Use the server-provided
-\`active\`, \`url\`, \`group\`, and \`label\` fields. Apply the direction
+`active`, `url`, `group`, and `label` fields. Apply the direction
 to the sidebar root and its mobile drawer's physical side (right for
 RTL, left for LTR). Never build URLs by concatenating slugs.
 
-The shipped \`lavertia/page\` templates check for the **presence** of
-\`lavertiaSidebar\` (including an empty array) and suppress their
+The shipped `lavertia/page` templates check for the **presence** of
+`lavertiaSidebar` (including an empty array) and suppress their
 embedded navigation when the host integration is enabled. Hosts
 without the shared prop retain the previous inline navigation, so
 existing installations remain compatible.
@@ -74,7 +74,7 @@ filtering on the backend. For multi-panel apps, choose the host panel
 explicitly rather than returning links from every panel.
 
 The implementation examples are kept in
-\`lavertia/playground\` for all three Starter Kit stacks.
+`lavertia/playground` for all three Starter Kit stacks.
 
 
 ### Artisan Page generator (proposed CLI foundation)
