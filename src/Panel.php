@@ -7,8 +7,8 @@ namespace Lavertia\Panels;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
-use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Pages\Page;
 use ReflectionClass;
 
 final class Panel
