@@ -86,11 +86,11 @@ final class PanelRegistry
      * Return only validated, JSON-safe presentation metadata.
      * The host Starter Kit owns the actual sidebar and appearance controls.
      *
-     * @return array{id: string, brandName: string, brandSubtitle: string, brandLogo: string|null, primaryColor: string, primaryForeground: string, sidebarCollapsible: bool, sidebarVariant: string}|null
+     * @return array<string, bool|string|null>|null
      */
     public function appearance(string $panelId): ?array
     {
-        $options = $this->panels[$panelId]?->configuration();
+        $options = ($this->panels[$panelId] ?? null)?->configuration();
 
         if (! is_array($options)) {
             return null;
@@ -155,7 +155,7 @@ final class PanelRegistry
         // Register immediately when a module provider boots after Panels.
         // Deferring until app->booted() lets broad host routes shadow Page routes.
         if ($this->mounted && ! app()->routesAreCached()) {
-            $options = $this->panels[$panelId]?->configuration();
+            $options = ($this->panels[$panelId] ?? null)?->configuration();
 
             if (is_array($options)) {
                 $this->mountPages(
