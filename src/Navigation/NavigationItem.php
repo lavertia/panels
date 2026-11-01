@@ -140,7 +140,7 @@ final class NavigationItem extends AbstractComponent
             return ['visible' => false];
         }
 
-        foreach ($registry->navigation($panelId, $currentRoute) as $link) {
+        foreach ($registry->navigation($panelId, $currentRoute, true) as $link) {
             if ($link['slug'] === $this->slug) {
                 return ['visible' => true, ...$link];
             }
