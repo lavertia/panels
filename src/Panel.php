@@ -8,9 +8,9 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Plugins\PanelPlugin;
 use Lavertia\Panels\Widgets\DashboardWidget;
-use Lavertia\Panels\Pages\Page;
 use ReflectionClass;
 
 final class Panel
