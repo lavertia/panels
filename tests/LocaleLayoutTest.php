@@ -15,6 +15,14 @@ use Orchestra\Testbench\TestCase;
 
 final class LocaleLayoutTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('app.key', 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
+        config()->set('app.locale', 'en');
+    }
+
     protected function getPackageProviders($app): array
     {
         return [PanelsServiceProvider::class, LocaleExamplePanelProvider::class];
@@ -36,6 +44,8 @@ final class LocaleLayoutTest extends TestCase
 
     public function test_locale_codes_and_default_language_are_validated(): void
     {
+        $rejected = 0;
+
         foreach ([
             fn () => Panel::make()->locales([]),
             fn () => Panel::make()->locales(['en', 'EN']),
@@ -49,9 +59,11 @@ final class LocaleLayoutTest extends TestCase
                 $invalid();
                 self::fail('Unsupported locale or layout was accepted.');
             } catch (InvalidArgumentException) {
-                // Expected.
+                $rejected++;
             }
         }
+
+        self::assertSame(7, $rejected);
     }
 
     public function test_panel_language_switch_is_scoped_and_page_override_is_applied(): void
