@@ -11,8 +11,8 @@ use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Panel;
 use Lavertia\Panels\PanelProvider;
 use Lavertia\Panels\PanelRegistry;
-use Lavertia\Panels\Plugins\PanelPlugin;
 use Lavertia\Panels\PanelsServiceProvider;
+use Lavertia\Panels\Plugins\PanelPlugin;
 use Orchestra\Testbench\TestCase;
 
 final class PanelProviderTest extends TestCase
