@@ -19,8 +19,7 @@ final class PanelRoutingTest extends TestCase
             ->pages([RoutingFixturePage::class])
             ->registerRoutes();
 
-        // Routes registered after Testbench boots need their name lookup refreshed.
-        Route::getRoutes()->refreshNameLookups();
+        // The Panel itself must maintain Laravel's named-route lookup.
         $route = Route::getRoutes()->getByName('lavertia.portal.overview');
 
         self::assertNotNull($route);
