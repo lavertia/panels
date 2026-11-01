@@ -202,10 +202,10 @@ final class PanelRegistry
             'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
             'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
             'theme' => $options['theme'],
-            'shellSlots' => array_map(
-                static fn ($slot): array => $slot->toArray(),
+            'shellSlots' => array_values(array_filter(array_map(
+                fn ($slot): ?array => $this->visibleSlotNode($slot->toArray()),
                 $options['shell_slots'] ?? [],
-            ),
+            ))),
         ];
     }
 
@@ -363,11 +363,44 @@ final class PanelRegistry
 
             return array_values(array_filter(
                 $navigation,
-                static fn (array $link): bool => ! isset($slotted[$link['slug']]),
+                static fn (array $link): bool => ! isset($slotted[$link['slug']])
+                    && ! isset($slotted[$link['parentSlug'] ?? '']),
             ));
         }
 
         return $navigation;
+    }
+
+    /**
+     * Redact inaccessible widgets and empty Group labels before exposing any
+     * panel slot data. The frontend must never be a security filter.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>|null
+     */
+    private function visibleSlotNode(array $node): ?array
+    {
+        if ($node['type'] === 'navigation-item') {
+            return ($node['props']->visible ?? false) === true ? $node : null;
+        }
+
+        $children = [];
+
+        foreach ($node['components'] as $child) {
+            $visible = $this->visibleSlotNode($child);
+
+            if ($visible !== null) {
+                $children[] = $visible;
+            }
+        }
+
+        if ($children === []) {
+            return null;
+        }
+
+        $node['components'] = $children;
+
+        return $node;
     }
 
     /** @param class-string<DashboardWidget> $widget */
