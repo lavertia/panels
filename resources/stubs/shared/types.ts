@@ -69,6 +69,34 @@ export interface HeaderLink {
     active: boolean;
 }
 
+export interface ThemeManifest {
+    id: string;
+    tokens: Record<string, string>;
+}
+
+const THEME_TOKENS = new Set([
+    'background', 'foreground', 'card', 'card-foreground', 'primary', 'primary-foreground',
+    'secondary', 'secondary-foreground', 'accent', 'accent-foreground', 'muted',
+    'muted-foreground', 'border', 'input', 'ring', 'sidebar', 'sidebar-foreground',
+    'sidebar-primary', 'sidebar-primary-foreground', 'sidebar-accent',
+    'sidebar-accent-foreground', 'sidebar-border', 'sidebar-ring',
+]);
+
+/** A theme package controls presentation only, never routes or permissions. */
+export function themeVariables(panel: PanelAppearance | null | undefined): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(panel?.theme?.tokens ?? [])
+            .filter(([name, color]) => THEME_TOKENS.has(name) && typeof color === 'string'
+                && /^#[0-9a-f]{6}$/i.test(color))
+            .map(([name, color]) => [`--${name}`, color]),
+    );
+}
+
+export function shellNavigationSlots(panel: PanelAppearance | null | undefined, position: string): ComponentNode[] {
+    return (panel?.shellSlots ?? []).filter(node => node.type === 'navigation-slot'
+        && node.props.position === position);
+}
+
 export interface PanelAppearance {
     id: string;
     brandName: string;
@@ -94,12 +122,14 @@ export interface PanelAppearance {
     contentWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     sidebarWidth: string;
     navigationPosition: 'sidebar' | 'top' | 'none';
-    layout?: 'sidebar' | 'top' | 'full';
+    layout?: 'sidebar' | 'top' | 'full' | 'workspace';
     locale?: string;
     direction?: 'ltr' | 'rtl';
     supportedLocales?: string[];
     languageSwitcher?: boolean;
     navigationGroups?: NavigationGroupConfig[];
+    shellSlots?: ComponentNode[];
+    theme?: ThemeManifest;
     topbar: boolean;
     breadcrumbs: boolean;
     stickyHeader: boolean;
