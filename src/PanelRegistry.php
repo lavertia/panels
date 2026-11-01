@@ -141,7 +141,7 @@ final class PanelRegistry
             $layout = $currentPage::layout();
         }
 
-        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+        if (! in_array($layout, ['sidebar', 'top', 'full', 'workspace'], true)) {
             throw new InvalidArgumentException('Invalid Page or Panel layout.');
         }
 
