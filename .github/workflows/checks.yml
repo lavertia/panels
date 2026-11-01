@@ -87,7 +87,12 @@ jobs:
           composer test:smoke
           composer test
       - name: PSR style
-        run: composer lint
+        run: |
+          composer lint || {
+            vendor/bin/pint src/Panel.php
+            git --no-pager diff -- src/Panel.php
+            exit 1
+          }
 
   release-gate:
     name: v0 release verification
