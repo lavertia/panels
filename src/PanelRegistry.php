@@ -62,6 +62,24 @@ final class PanelRegistry
             $this->navigationItem($id, $item);
         }
 
+        // Slots and Groups may place a Page in several regions, but route
+        // registration and Gate checks remain single-source in this registry.
+        foreach ($panel->getShellSlots() as $slot) {
+            foreach ($slot->getComponents() as $child) {
+                if ($child instanceof NavigationItem) {
+                    $this->navigationItem($id, $child);
+
+                    continue;
+                }
+
+                foreach ($child->getComponents() as $item) {
+                    if ($item instanceof NavigationItem) {
+                        $this->navigationItem($id, $item);
+                    }
+                }
+            }
+        }
+
         foreach ($panel->getPlugins() as $plugin) {
             $plugin->register($this, $id);
         }
@@ -183,6 +201,11 @@ final class PanelRegistry
             'mobileNavigation' => $options['mobile_navigation'],
             'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
             'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
+            'theme' => $options['theme'],
+            'shellSlots' => array_map(
+                static fn ($slot): array => $slot->toArray(),
+                $options['shell_slots'] ?? [],
+            ),
         ];
     }
 
