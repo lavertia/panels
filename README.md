@@ -152,6 +152,44 @@ at a non-existent file. Footer and custom user menu links are validated;
 external links must use HTTPS and open with `rel="noopener noreferrer"`.
 The built-in Logout action always remains a server POST with CSRF protection.
 
+### Navigation icons and badges (P0)
+
+A registered Page navigation item may specify one validated Lucide icon and a compact
+status badge. The server resolves the Page route and Gate ability before serializing
+either field. React, Vue, and Svelte render icons from an explicit allowlist.
+
+```php
+->navigationItems([
+    NavigationItem::make('dashboard', 'Dashboard')
+        ->icon('layout-dashboard'),
+    NavigationItem::make('invoices', 'Invoices')
+        ->icon('receipt')
+        ->group('Management')
+        ->sort(10),
+    NavigationItem::make('reports', 'Reports')
+        ->icon('chart-column')
+        ->badge('New')
+        ->group('Management')
+        ->ability('viewReports'),
+])
+```
+
+When omitted, `icon` and `badge` serialize as `null`, preserving existing
+navigation entries and client fallbacks. Badge text is limited to 20 Unicode
+characters and cannot contain HTML or control characters. It is presentation
+metadata, **not** a permission or a tenant-scoped live record count; resolve
+sensitive counts on the server with the current tenant and authorization first.
+The current adapter fixtures demonstrate static badges only.
+
+Supported icon values: `bell`, `book-open`, `briefcase`, `calendar`,
+`chart-column`, `file-chart-column`, `file-text`, `folder`, `house`,
+`layout-dashboard`, `list`, `receipt`, `settings`, `shield`,
+`users`, `wallet`.
+
+This is the first P0 navigation slice. Collapsible groups, nested items,
+Page Header actions, and record Search Providers are tracked separately;
+none are implemented by these APIs.
+
 ### Plugin API
 
 Server-side plugins can register module-owned Pages, Navigation and Widgets.

@@ -216,7 +216,7 @@ final class PanelRegistry
     }
 
     /**
-     * @return list<array{label: string, slug: string, group: string|null, url: string, active: bool}>
+     * @return list<array{label: string, slug: string, group: string|null, url: string, active: bool, icon: string|null, badge: string|null}>
      */
     public function navigation(string $panelId, ?string $currentRoute = null): array
     {

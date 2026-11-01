@@ -13,6 +13,8 @@ export interface NavigationLink {
     group: string | null;
     url: string;
     active: boolean;
+    icon?: string | null;
+    badge?: string | null;
 }
 
 export interface PanelMenuLink {
