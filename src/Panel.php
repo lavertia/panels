@@ -12,10 +12,10 @@ use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\Navigation\NavigationGroup;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Navigation\NavigationSlot;
-use Lavertia\Panels\Themes\PanelTheme;
-use Lavertia\Panels\Themes\ThemeManifest;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Plugins\PanelPlugin;
+use Lavertia\Panels\Themes\PanelTheme;
+use Lavertia\Panels\Themes\ThemeManifest;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use ReflectionClass;
 
