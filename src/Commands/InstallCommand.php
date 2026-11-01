@@ -67,8 +67,8 @@ final class InstallCommand extends Command
         }
 
         $this->info('Lavertia '.$stack.' components installed.');
-        $this->comment('Publish config: php artisan vendor:publish --tag=lavertia-config');
-        $this->comment('Add your Page classes to config/lavertia.php and run npm run build.');
+        $this->comment('Register App\\Providers\\Lavertia\\AdminPanelProvider::class in bootstrap/providers.php.');
+        $this->comment('Configure all Pages and navigation in the PanelProvider; run npm run build.');
 
         return self::SUCCESS;
     }
