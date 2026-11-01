@@ -32,6 +32,37 @@ export interface NavigationGroupConfig {
     sort: number;
 }
 
+export interface NavigationGroupView extends NavigationGroupConfig {
+    items: NavigationLink[];
+    active: boolean;
+}
+
+export function panelNavigationGroups(
+    links: NavigationLink[],
+    config: NavigationGroupConfig[] = [],
+): NavigationGroupView[] {
+    const groups: NavigationGroupView[] = [];
+    for (const link of links) {
+        const label = link.group || 'Lavertia';
+        let group = groups.find(item => item.label === label);
+        if (!group) {
+            const options = config.find(item => item.label === label);
+            group = {
+                label,
+                collapsible: options?.collapsible ?? false,
+                collapsedByDefault: options?.collapsedByDefault ?? false,
+                sort: options?.sort ?? 0,
+                active: false,
+                items: [],
+            };
+            groups.push(group);
+        }
+        group.items.push(link);
+        group.active ||= link.active || link.descendantActive === true;
+    }
+    return groups;
+}
+
 export interface HeaderLink {
     label: string;
     url: string | null;
