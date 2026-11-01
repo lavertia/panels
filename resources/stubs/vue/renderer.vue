@@ -16,6 +16,7 @@ import {
 import { runClientAction } from './client-actions';
 import {
     badgeClass,
+    headerLinks,
     columnBadgeTone,
     safeHref,
     statAccentClass,
@@ -226,22 +227,33 @@ watch(() => props.node.props.value, (next) => {
         <LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" />
     </div>
 
-    <header v-else-if="node.type === 'page-header'" class="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
-        <div class="min-w-0">
-            <p v-if="node.props.eyebrow" class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
-                {{ String(node.props.eyebrow) }}
-            </p>
-            <h1 class="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">
-                {{ title || 'Overview' }}
-            </h1>
-            <p v-if="node.props.description" class="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
-                {{ String(node.props.description) }}
-            </p>
-        </div>
-        <div v-if="node.components.length" class="flex shrink-0 flex-wrap items-center gap-2">
-            <LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" />
-        </div>
-    </header>
+    <div v-else-if="node.type === 'page-header'" class="space-y-4">
+        <nav v-if="headerLinks(node.props.breadcrumbs).length" aria-label="Breadcrumbs">
+            <ol class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <li v-for="(crumb, index) in headerLinks(node.props.breadcrumbs)" :key="index" class="flex items-center gap-2">
+                    <span v-if="index > 0" aria-hidden="true">/</span>
+                    <Link v-if="crumb.url" :href="crumb.url" class="hover:underline">{{ crumb.label }}</Link>
+                    <span v-else aria-current="page">{{ crumb.label }}</span>
+                </li>
+            </ol>
+        </nav>
+        <header class="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
+            <div class="min-w-0">
+                <p v-if="node.props.eyebrow" class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{{ String(node.props.eyebrow) }}</p>
+                <h1 class="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{{ title || 'Overview' }}</h1>
+                <p v-if="node.props.description" class="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{{ String(node.props.description) }}</p>
+            </div>
+            <div v-if="node.components.length" class="flex shrink-0 flex-wrap items-center gap-2">
+                <LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" />
+            </div>
+        </header>
+        <nav v-if="headerLinks(node.props.tabs).length" aria-label="Page tabs" class="flex gap-4 overflow-x-auto border-b border-border">
+            <Link v-for="tab in headerLinks(node.props.tabs).filter(tab => tab.url !== null)" :key="tab.url!" :href="tab.url!"
+                :aria-current="tab.active ? 'page' : undefined"
+                :class="tab.active ? 'border-primary font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                class="shrink-0 border-b-2 px-1 pb-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">{{ tab.label }}</Link>
+        </nav>
+    </div>
 
     <div v-else-if="node.type === 'stats-grid'" class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <LavertiaRenderer v-for="child in node.components" :key="child.key" :node="child" />

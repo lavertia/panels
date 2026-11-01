@@ -15,12 +15,58 @@ export interface NavigationLink {
     active: boolean;
     icon?: string | null;
     badge?: string | null;
+    parentSlug?: string | null;
+    descendantActive?: boolean;
 }
 
 export interface PanelMenuLink {
     label: string;
     url: string;
     external: boolean;
+}
+
+export interface NavigationGroupConfig {
+    label: string;
+    collapsible: boolean;
+    collapsedByDefault: boolean;
+    sort: number;
+}
+
+export interface NavigationGroupView extends NavigationGroupConfig {
+    items: NavigationLink[];
+    active: boolean;
+}
+
+export function panelNavigationGroups(
+    links: NavigationLink[],
+    config: NavigationGroupConfig[] = [],
+): NavigationGroupView[] {
+    const groups: NavigationGroupView[] = [];
+    for (const link of links) {
+        const label = link.group || 'Lavertia';
+        let group = groups.find(item => item.label === label);
+        if (!group) {
+            const options = config.find(item => item.label === label);
+            group = {
+                label,
+                collapsible: options?.collapsible ?? false,
+                collapsedByDefault: options?.collapsedByDefault ?? false,
+                sort: options?.sort ?? 0,
+                active: false,
+                items: [],
+            };
+            groups.push(group);
+        }
+        group.items.push(link);
+        group.active ||= link.active || link.descendantActive === true;
+    }
+    return groups;
+}
+
+export interface HeaderLink {
+    label: string;
+    url: string | null;
+    active: boolean;
 }
 
 export interface PanelAppearance {
@@ -48,6 +94,7 @@ export interface PanelAppearance {
     contentWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     sidebarWidth: string;
     navigationPosition: 'sidebar' | 'top';
+    navigationGroups?: NavigationGroupConfig[];
     topbar: boolean;
     breadcrumbs: boolean;
     stickyHeader: boolean;
@@ -163,6 +210,19 @@ export function columnBadgeTone(column: TableColumn, value: Scalar): Tone {
         || candidate === 'info' || candidate === 'neutral'
         ? candidate
         : 'neutral';
+}
+
+/** Validate protocol header links again before rendering in a host adapter. */
+export function headerLinks(value: unknown): HeaderLink[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((item): HeaderLink[] => {
+        if (!item || typeof item !== 'object' || typeof item.label !== 'string') return [];
+        const url = item.url === null ? null : safeHref(item.url);
+        if (url !== null && !url.startsWith('/')) return [];
+        if (item.url !== null && url === null) return [];
+        return [{ label: item.label, url, active: item.active === true }];
+    });
 }
 
 export function safeHref(value: unknown): string | null {

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Tests;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Components\Action;
+use Lavertia\Panels\Components\PageHeader;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Panel;
@@ -106,6 +109,118 @@ final class PanelProviderTest extends TestCase
             try {
                 $invalid();
                 self::fail('Unsafe navigation metadata was accepted.');
+            } catch (InvalidArgumentException) {
+                // Expected.
+            }
+        }
+    }
+
+    public function test_collapsible_groups_sort_and_reject_unsafe_configuration(): void
+    {
+        $groups = Panel::make('admin')->navigationGroups([
+            ['label' => 'Billing', 'sort' => 20, 'collapsible' => true, 'collapsedByDefault' => true],
+            ['label' => 'Management', 'sort' => 10],
+        ])->configuration()['navigation_groups'];
+
+        self::assertSame('Management', $groups[0]['label']);
+        self::assertSame('Billing', $groups[1]['label']);
+        self::assertTrue($groups[1]['collapsedByDefault']);
+        self::assertJson(json_encode($groups, JSON_THROW_ON_ERROR));
+
+        foreach ([
+            fn () => Panel::make()->navigationGroups([['label' => 'Duplicate'], ['label' => 'Duplicate']]),
+            fn () => Panel::make()->navigationGroups([['label' => 'Bad', 'collapsedByDefault' => true]]),
+            fn () => Panel::make()->navigationGroups([['label' => '<script>']]),
+            fn () => Panel::make()->navigationGroups([['label' => 'Bad', 'collapsible' => 'yes']]),
+        ] as $invalid) {
+            try {
+                $invalid();
+                self::fail('Invalid group configuration was accepted.');
+            } catch (InvalidArgumentException) {
+                // Expected.
+            }
+        }
+    }
+
+    public function test_child_navigation_requires_an_authorized_registered_parent(): void
+    {
+        $registry = app(PanelRegistry::class);
+
+        Route::get('admin/child-example', ProviderExamplePage::class)
+            ->name('lavertia.admin.child-example');
+        Route::get('admin/private-parent', ProviderExamplePage::class)
+            ->name('lavertia.admin.private-parent');
+        Route::get('admin/private-child', ProviderExamplePage::class)
+            ->name('lavertia.admin.private-child');
+        Route::getRoutes()->refreshNameLookups();
+
+        Gate::define('private-navigation', static fn (): bool => false);
+
+        $registry->navigationItem('admin',
+            NavigationItem::make('child-example', 'Child')->parent('provider-example')->sort(10));
+        $registry->navigationItem('admin',
+            NavigationItem::make('private-parent', 'Private')->ability('private-navigation'));
+        $registry->navigationItem('admin',
+            NavigationItem::make('private-child', 'Private child')->parent('private-parent'));
+
+        $links = $registry->navigation('admin', 'lavertia.admin.child-example');
+
+        self::assertCount(2, $links);
+        self::assertSame('provider-example', $links[0]['slug']);
+        self::assertTrue($links[0]['descendantActive']);
+        self::assertSame('provider-example', $links[1]['parentSlug']);
+        self::assertTrue($links[1]['active']);
+        self::assertSame('child-example', $links[1]['slug']);
+
+        foreach ([
+            fn () => NavigationItem::make('child', 'Child')->parent('child'),
+            fn () => NavigationItem::make('child', 'Child')->parent('//evil'),
+            fn () => NavigationItem::fromArray(['slug' => 'child', 'label' => 'Child', 'parent' => 123]),
+        ] as $invalid) {
+            try {
+                $invalid();
+                self::fail('Invalid parent slug was accepted.');
+            } catch (InvalidArgumentException) {
+                // Expected.
+            }
+        }
+    }
+
+    public function test_page_header_tabs_breadcrumbs_and_actions_serialize_safely(): void
+    {
+        $header = PageHeader::make('Reports')
+            ->breadcrumbs([
+                ['label' => 'Home', 'url' => '/admin/dashboard'],
+                ['label' => 'Reports'],
+            ])
+            ->tabs([
+                ['label' => 'Overview', 'url' => '/admin/reports', 'active' => true],
+                ['label' => 'Billing', 'url' => '/admin/billing/reports'],
+            ])
+            ->actions([
+                Action::make('billing-reports')->label('Billing reports')->url('/admin/billing/reports'),
+            ]);
+
+        $data = $header->toArray();
+
+        self::assertSame('/admin/dashboard', $data['props']->breadcrumbs[0]->url);
+        self::assertNull($data['props']->breadcrumbs[1]->url);
+        self::assertTrue($data['props']->tabs[0]->active);
+        self::assertCount(1, $data['components']);
+        self::assertJson(json_encode($data, JSON_THROW_ON_ERROR));
+
+        foreach ([
+            fn () => PageHeader::make('Bad')->tabs([['label' => 'X', 'url' => '//evil.test']]),
+            fn () => PageHeader::make('Bad')->tabs([['label' => 'X', 'url' => 'javascript:alert(1)']]),
+            fn () => PageHeader::make('Bad')->tabs([
+                ['label' => 'A', 'url' => '/a', 'active' => true],
+                ['label' => 'B', 'url' => '/b', 'active' => true],
+            ]),
+            fn () => PageHeader::make('Bad')->breadcrumbs([['label' => '<script>']]),
+        ] as $invalid) {
+            try {
+                $invalid();
+                self::fail('Unsafe Page Header configuration was accepted.');
             } catch (InvalidArgumentException) {
                 // Expected.
             }

@@ -155,6 +155,7 @@ final class PanelRegistry
             'contentWidth' => $options['content_width'],
             'sidebarWidth' => $options['sidebar_width'],
             'navigationPosition' => $options['navigation_position'],
+            'navigationGroups' => $options['navigation_groups'] ?? [],
             'topbar' => $options['topbar'],
             'breadcrumbs' => $options['breadcrumbs'],
             'stickyHeader' => $options['sticky_header'],
@@ -216,7 +217,10 @@ final class PanelRegistry
     }
 
     /**
-     * @return list<array{label: string, slug: string, group: string|null, url: string, active: bool, icon: string|null, badge: string|null}>
+     * Only registered, Gate-authorized Pages appear in navigation. A nested
+     * item is visible only when its top-level parent is also authorized.
+     *
+     * @return list<array<string, mixed>>
      */
     public function navigation(string $panelId, ?string $currentRoute = null): array
     {
@@ -224,20 +228,73 @@ final class PanelRegistry
             return [];
         }
 
+        $groups = $this->panels[$panelId]->configuration()['navigation_groups'] ?? [];
+        $groupRanks = [];
+
+        foreach ($groups as $index => $group) {
+            $groupRanks[$group['label']] = $index;
+        }
+
         $items = array_values($this->navigationItems[$panelId] ?? []);
 
-        usort($items, static fn (NavigationItem $a, NavigationItem $b): int => ($a->groupName() <=> $b->groupName())
+        // Ungrouped Pages render in the Starter Kit's "Lavertia" group.
+        $visibleGroup = static fn (NavigationItem $item): string => $item->groupName() === ''
+            ? 'Lavertia'
+            : $item->groupName();
+
+        usort($items, static fn (NavigationItem $a, NavigationItem $b): int => (($groupRanks[$visibleGroup($a)] ?? PHP_INT_MAX) <=> ($groupRanks[$visibleGroup($b)] ?? PHP_INT_MAX))
+            ?: ($visibleGroup($a) <=> $visibleGroup($b))
             ?: ($a->sortOrder() <=> $b->sortOrder())
             ?: ($a->slug <=> $b->slug));
 
         $currentRoute ??= request()->route()?->getName();
-        $navigation = [];
+        $visible = [];
+        $itemBySlug = [];
 
         foreach ($items as $item) {
+            $itemBySlug[$item->slug] = $item;
             $payload = $item->forPanel($panelId, $currentRoute);
 
             if ($payload !== null) {
-                $navigation[] = $payload;
+                $visible[$item->slug] = $payload;
+            }
+        }
+
+        $children = [];
+
+        foreach ($items as $item) {
+            $parentSlug = $item->parentSlug();
+
+            if ($parentSlug === null || ! isset($visible[$item->slug])) {
+                continue;
+            }
+
+            // Reject cycles, multi-level nesting, and cross-group children.
+            if (! isset($visible[$parentSlug]) || ($itemBySlug[$parentSlug] ?? null)?->parentSlug() !== null
+                || $item->groupName() !== $itemBySlug[$parentSlug]->groupName()) {
+                unset($visible[$item->slug]);
+
+                continue;
+            }
+
+            $children[$parentSlug][] = $visible[$item->slug];
+        }
+
+        $navigation = [];
+
+        foreach ($items as $item) {
+            if ($item->parentSlug() !== null || ! isset($visible[$item->slug])) {
+                continue;
+            }
+
+            $root = $visible[$item->slug];
+            $descendants = $children[$item->slug] ?? [];
+            $root['descendantActive'] = in_array(true, array_column($descendants, 'active'), true);
+            $navigation[] = $root;
+
+            foreach ($descendants as $child) {
+                $child['descendantActive'] = false;
+                $navigation[] = $child;
             }
         }
 

@@ -16,6 +16,7 @@ import {
 import { runClientAction } from './client-actions';
 import {
     badgeClass,
+    headerLinks,
     columnBadgeTone,
     safeHref,
     statAccentClass,
@@ -434,17 +435,42 @@ export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
         case 'row':
             return <div className="flex min-w-0 flex-wrap items-start gap-4">{children}</div>;
 
-        case 'page-header':
+        case 'page-header': {
+            const crumbs = headerLinks(node.props.breadcrumbs);
+            const tabs = headerLinks(node.props.tabs).filter(tab => tab.url !== null);
+
             return (
-                <header className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
-                    <div className="min-w-0">
-                        {typeof node.props.eyebrow === 'string' && node.props.eyebrow.length > 0 && <p className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>}
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{String(node.props.title ?? 'Overview')}</h1>
-                        {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
-                    </div>
-                    {children.length > 0 && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
-                </header>
+                <div className="space-y-4">
+                    {crumbs.length > 0 && (
+                        <nav aria-label="Breadcrumbs">
+                            <ol className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                {crumbs.map((crumb, index) => (
+                                    <li key={index} className="flex items-center gap-2">
+                                        {index > 0 && <span aria-hidden="true">/</span>}
+                                        {crumb.url ? <Link href={crumb.url} className="hover:underline">{crumb.label}</Link>
+                                            : <span aria-current="page">{crumb.label}</span>}
+                                    </li>
+                                ))}
+                            </ol>
+                        </nav>
+                    )}
+                    <header className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/10">
+                        <div className="min-w-0">
+                            {typeof node.props.eyebrow === 'string' && node.props.eyebrow.length > 0 && <p className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{String(node.props.eyebrow)}</p>}
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white">{String(node.props.title ?? 'Overview')}</h1>
+                            {typeof node.props.description === 'string' && node.props.description.length > 0 && <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{String(node.props.description)}</p>}
+                        </div>
+                        {children.length > 0 && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
+                    </header>
+                    {tabs.length > 0 && (
+                        <nav aria-label="Page tabs" className="flex gap-4 overflow-x-auto border-b border-border">
+                            {tabs.map(tab => <Link key={tab.url} href={tab.url!} aria-current={tab.active ? 'page' : undefined}
+                                className={`shrink-0 border-b-2 px-1 pb-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${tab.active ? 'border-primary font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{tab.label}</Link>)}
+                        </nav>
+                    )}
+                </div>
             );
+        }
 
         case 'stats-grid':
             return <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{children}</div>;
