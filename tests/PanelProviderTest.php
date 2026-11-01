@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Tests;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use InvalidArgumentException;
 use Lavertia\Panels\Components\Action;
 use Lavertia\Panels\Components\PageHeader;
-use InvalidArgumentException;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Panel;
