@@ -21,6 +21,7 @@ export interface PanelAppearance {
     brandSubtitle: string;
     brandLogo: string | null;
     primaryColor: string;
+    primaryForeground: string;
     sidebarCollapsible: boolean;
     sidebarVariant: 'inset' | 'sidebar' | 'floating';
 }
