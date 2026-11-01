@@ -46,7 +46,7 @@ final class PageHeader extends AbstractComponent implements ComposesComponents
     }
 
     /**
-     * @param list<array{label: string, url?: string|null}> $crumbs
+     * @param  list<array{label: string, url?: string|null}>  $crumbs
      */
     public function breadcrumbs(array $crumbs): static
     {
@@ -54,7 +54,7 @@ final class PageHeader extends AbstractComponent implements ComposesComponents
     }
 
     /**
-     * @param list<array{label: string, url: string, active?: bool}> $tabs
+     * @param  list<array{label: string, url: string, active?: bool}>  $tabs
      */
     public function tabs(array $tabs): static
     {
@@ -68,7 +68,7 @@ final class PageHeader extends AbstractComponent implements ComposesComponents
     }
 
     /**
-     * @param array<mixed> $links
+     * @param  array<mixed>  $links
      * @return list<array{label: string, url: string|null, active: bool}>
      */
     private function normalizeLinks(array $links, bool $tabs): array
