@@ -164,5 +164,9 @@ final class Panel
                     Route::get($slug, $page)->name(str_replace('/', '.', $slug));
                 }
             });
+
+        // Laravel may not refresh its route-name lookup when Pages are mounted
+        // dynamically during provider boot (including module registration).
+        Route::getRoutes()->refreshNameLookups();
     }
 }
