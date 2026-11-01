@@ -266,7 +266,7 @@ final class PanelRegistry
      *
      * @return list<array<string, mixed>>
      */
-    public function navigation(string $panelId, ?string $currentRoute = null): array
+    public function navigation(string $panelId, ?string $currentRoute = null, bool $includeSlotItems = false): array
     {
         if (! isset($this->panels[$panelId])) {
             return [];
@@ -340,6 +340,31 @@ final class PanelRegistry
                 $child['descendantActive'] = false;
                 $navigation[] = $child;
             }
+        }
+
+        if (! $includeSlotItems) {
+            $slotted = [];
+
+            foreach ($this->panels[$panelId]->getShellSlots() as $slot) {
+                foreach ($slot->getComponents() as $child) {
+                    if ($child instanceof NavigationItem) {
+                        $slotted[$child->slug] = true;
+
+                        continue;
+                    }
+
+                    foreach ($child->getComponents() as $item) {
+                        if ($item instanceof NavigationItem) {
+                            $slotted[$item->slug] = true;
+                        }
+                    }
+                }
+            }
+
+            return array_values(array_filter(
+                $navigation,
+                static fn (array $link): bool => ! isset($slotted[$link['slug']]),
+            ));
         }
 
         return $navigation;
