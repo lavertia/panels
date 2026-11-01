@@ -7,6 +7,7 @@ namespace Lavertia\Panels\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
+use Lavertia\Panels\Pages\Page;
 
 final class MakePageCommand extends Command
 {
@@ -68,7 +69,7 @@ final class MakePageCommand extends Command
 
         // Reject any class with an existing slug to avoid breaking Panel boot.
         foreach (config('lavertia.panels.'.$panel.'.pages', []) as $page) {
-            if (is_string($page) && class_exists($page) && is_subclass_of($page, \Lavertia\Panels\Pages\Page::class)
+            if (is_string($page) && class_exists($page) && is_subclass_of($page, Page::class)
                 && $page::slug() === $slug && $page !== $fqcn) {
                 $this->error('Panel ['.$panel.'] already has a Page using slug ['.$slug.'].');
 
