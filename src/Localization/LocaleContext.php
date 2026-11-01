@@ -47,7 +47,7 @@ final class LocaleContext
         $codes = $options['locales'] ?? [];
 
         if ($codes === []) {
-            $codes = [(string) config('app.locale', 'en')];
+            $codes = [(string) ($options['default_locale'] ?? config('app.locale', 'en'))];
         }
 
         $codes = self::validate($codes);
