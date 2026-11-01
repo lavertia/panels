@@ -19,6 +19,9 @@ use ReflectionClass;
  */
 final class PanelRegistry
 {
+    /** @var array<string, Panel> */
+    private array $panels = [];
+
     /** @var array<string, list<array{in: string, for: string}>> */
     private array $pageDirectories = [];
 
@@ -39,10 +42,7 @@ final class PanelRegistry
 
     private bool $mounted = false;
 
-    /**
-     * Provider definitions augment legacy config-based Panels. Registration must
-     * occur during Laravel's service-provider register phase, before routes mount.
-     */
+    /** Register the only authoritative Panel definition, before route mounting. */
     public function registerPanel(Panel $panel): void
     {
         if ($this->mounted) {
@@ -50,46 +50,47 @@ final class PanelRegistry
         }
 
         $id = $panel->getId();
-        $configured = config('lavertia.panels.'.$id, []);
 
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException('Existing Panel configuration must be an array.');
+        if (isset($this->panels[$id])) {
+            throw new InvalidArgumentException('Panel ['.$id.'] has already been registered.');
         }
 
-        $definition = $panel->configuration();
-        $pages = array_values(array_unique([
-            ...($configured['pages'] ?? []),
-            ...$definition['pages'],
-        ]));
-
-        $discovery = $configured['discover_pages'] ?? [];
-
-        foreach ($definition['discover_pages'] as $entry) {
-            if (! in_array($entry, $discovery, true)) {
-                $discovery[] = $entry;
-            }
-        }
-
-        $options = array_replace($configured, $definition);
-        $options['pages'] = $pages;
-        $options['discover_pages'] = $discovery;
-
-        config()->set('lavertia.panels.'.$id, $options);
+        $this->panels[$id] = $panel;
 
         foreach ($panel->getNavigationItems() as $item) {
             $this->navigationItem($id, $item);
         }
+
+        foreach ($panel->getPlugins() as $plugin) {
+            $plugin->register($this, $id);
+        }
+    }
+
+    public function hasPanel(string $panelId): bool
+    {
+        return isset($this->panels[$panelId]);
+    }
+
+    /** @return list<string> */
+    public function panelIds(): array
+    {
+        return array_keys($this->panels);
+    }
+
+    public function panel(string $panelId): ?Panel
+    {
+        return $this->panels[$panelId] ?? null;
     }
 
     /**
-     * Return only serializable, validated presentation metadata.
+     * Return only validated, JSON-safe presentation metadata.
      * The host Starter Kit owns the actual sidebar and appearance controls.
      *
      * @return array{id: string, brandName: string, brandSubtitle: string, brandLogo: string|null, primaryColor: string, primaryForeground: string, sidebarCollapsible: bool, sidebarVariant: string}|null
      */
     public function appearance(string $panelId): ?array
     {
-        $options = config('lavertia.panels.'.$panelId);
+        $options = $this->panels[$panelId]?->configuration();
 
         if (! is_array($options)) {
             return null;
@@ -123,6 +124,16 @@ final class PanelRegistry
             'brandLogo' => is_string($options['brand_logo'] ?? null) ? $options['brand_logo'] : null,
             'primaryColor' => $primary,
             'primaryForeground' => $foreground,
+            'themeMode' => $options['theme_mode'],
+            'fontFamily' => $options['font_family'],
+            'borderRadius' => $options['border_radius'],
+            'contentWidth' => $options['content_width'],
+            'sidebarWidth' => $options['sidebar_width'],
+            'navigationPosition' => $options['navigation_position'],
+            'topbar' => $options['topbar'],
+            'breadcrumbs' => $options['breadcrumbs'],
+            'stickyHeader' => $options['sticky_header'],
+            'mobileNavigation' => $options['mobile_navigation'],
             'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
             'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
         ];
@@ -144,7 +155,7 @@ final class PanelRegistry
         // Register immediately when a module provider boots after Panels.
         // Deferring until app->booted() lets broad host routes shadow Page routes.
         if ($this->mounted && ! app()->routesAreCached()) {
-            $options = config('lavertia.panels.'.$panelId);
+            $options = $this->panels[$panelId]?->configuration();
 
             if (is_array($options)) {
                 $this->mountPages(
@@ -184,7 +195,7 @@ final class PanelRegistry
      */
     public function navigation(string $panelId, ?string $currentRoute = null): array
     {
-        if (! is_array(config('lavertia.panels.'.$panelId))) {
+        if (! isset($this->panels[$panelId])) {
             return [];
         }
 
@@ -243,7 +254,7 @@ final class PanelRegistry
     /** @return list<class-string<DashboardWidget>> */
     public function widgetClasses(string $panelId): array
     {
-        if (! is_array(config('lavertia.panels.'.$panelId))) {
+        if (! isset($this->panels[$panelId])) {
             return [];
         }
 
@@ -293,7 +304,7 @@ final class PanelRegistry
         return $components;
     }
 
-    public function mountConfiguredPanels(): void
+    public function mountRegisteredPanels(): void
     {
         if ($this->mounted) {
             return;
@@ -301,34 +312,14 @@ final class PanelRegistry
 
         $this->mounted = true;
 
-        foreach (config('lavertia.panels', []) as $id => $options) {
-            if (! is_string($id) || ! is_array($options)) {
-                continue;
-            }
+        foreach ($this->panels as $id => $panel) {
+            $options = $panel->configuration();
 
-            foreach ($options['navigation'] ?? [] as $item) {
-                if (! is_array($item)) {
-                    throw new InvalidArgumentException('Panel config navigation must contain arrays for config:cache compatibility.');
-                }
-
-                $this->navigationItem($id, NavigationItem::fromArray($item));
-            }
-
-            foreach ($options['dashboard_widgets'] ?? [] as $widget) {
-                if (! is_string($widget)) {
-                    throw new InvalidArgumentException('Panel dashboard widgets must be class names.');
-                }
-
+            foreach ($options['dashboard_widgets'] as $widget) {
                 $this->dashboardWidget($id, $widget);
             }
 
-            foreach ($options['discover_widgets'] ?? [] as $discovery) {
-                if (! is_array($discovery)
-                    || ! is_string($discovery['in'] ?? null)
-                    || ! is_string($discovery['for'] ?? null)) {
-                    throw new InvalidArgumentException('Panel discover_widgets entries require in and for strings.');
-                }
-
+            foreach ($options['discover_widgets'] as $discovery) {
                 $this->discoverWidgets($id, $discovery['in'], $discovery['for']);
             }
 
@@ -336,24 +327,15 @@ final class PanelRegistry
                 continue;
             }
 
-            $panel = Panel::make($id)
-                ->pages($options['pages'] ?? []);
-
-            foreach ($options['discover_pages'] ?? [] as $discovery) {
-                if (! is_array($discovery)
-                    || ! is_string($discovery['in'] ?? null)
-                    || ! is_string($discovery['for'] ?? null)) {
-                    throw new InvalidArgumentException('Panel discover_pages entries require in and for strings.');
-                }
-
-                $panel = $panel->discoverPages(in: $discovery['in'], for: $discovery['for']);
-            }
+            $pages = $panel->pageClasses();
 
             foreach ($this->pageDirectories($id) as $discovery) {
-                $panel = $panel->discoverPages(in: $discovery['in'], for: $discovery['for']);
+                $pages = array_merge($pages, Panel::make($id)
+                    ->discoverPages(in: $discovery['in'], for: $discovery['for'])
+                    ->pageClasses());
             }
 
-            $this->mountPages($id, $options, $panel->pageClasses());
+            $this->mountPages($id, $options, array_values(array_unique($pages)));
         }
     }
 
