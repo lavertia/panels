@@ -231,6 +231,58 @@ native Inertia links and does not bypass HTTP authorization. Group and
 item collapse state is UI-only. Authorization is always resolved on the
 server, and navigation search must never expose hidden children.
 
+### Zero-config locales and Page layout overrides (P0-03)
+
+By default **no localization configuration is required**. The Panel uses Laravel's
+configured application locale and renders no language selector. For multilingual
+Panels, provide only a list of supported locale codes:
+
+```php
+return $panel
+    ->id('admin')
+    ->locales(['en', 'ar', 'fr', 'pt-BR'])
+    ->defaultLocale('en')
+    ->layout('sidebar');
+```
+
+Only codes in the allowlist are accepted from the `?lang=ar` query, with a
+preference stored under a **Panel-specific session key**. Invalid codes do not
+change that preference. The page's HTML and Inertia payload resolve language
+and writing direction server-side for the first response. Locales use
+case-sensitive BCP-47-style tags (e.g. `pt-BR`, `zh-Hans`).
+
+A Page may override layout and restrict its eligible language subset:
+
+```php
+final class PrintableReportPage extends Page
+{
+    public static function layout(): ?string
+    {
+        return 'full'; // also supports 'sidebar' and 'top'
+    }
+
+    public static function locales(): ?array
+    {
+        return ['en', 'ar'];
+    }
+
+    protected function components(): array
+    {
+        return [];
+    }
+}
+```
+
+A Page cannot introduce locales its Panel did not allow. Invalid or
+nonoverlapping subsets are rejected. A `full` Page hides the Panel Sidebar
+and Topbar but **does not** remove middleware, authorization or tenancy scope.
+The host React/Vue/Svelte Starter Kit controls actual shell rendering.
+
+**Important:** Setting locales determines which language is active and when
+the switcher appears; it does *not* automatically translate static Page text,
+Form labels, Resource data or validation messages. Translation catalogs and
+multilingual form persistence are tracked separately in #22.
+
 ### Plugin API
 
 Server-side plugins can register module-owned Pages, Navigation and Widgets.
