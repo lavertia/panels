@@ -77,7 +77,7 @@ final class ShellWidgetThemeTest extends TestCase
             fn () => Panel::make()->theme($badTheme),
             fn () => Panel::make()->shellSlots([$slot, $slot]),
             fn () => Panel::make()->shellSlots([NavigationSlot::make('bad')->components([
-                new \Lavertia\Support\Components\Column,
+                \Lavertia\Panels\Components\PageHeader::make('Bad child'),
             ])]),
             fn () => NavigationSlot::make('x')->position('javascript:alert(1)'),
             fn () => NavigationGroup::make('<script>'),
