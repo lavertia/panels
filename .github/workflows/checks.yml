@@ -89,8 +89,8 @@ jobs:
       - name: PSR style
         run: |
           composer lint || {
-            vendor/bin/pint src/Panel.php tests/MakePageCommandTest.php tests/ModularDiscoveryTest.php tests/ModularEarlyProviderTest.php tests/ModularNavigationWidgetsTest.php tests/PanelProviderTest.php
-            git --no-pager diff -- src/Panel.php tests/
+            vendor/bin/pint src/Panel.php src/PanelRegistry.php src/Components/PageHeader.php tests/MakePageCommandTest.php tests/ModularDiscoveryTest.php tests/ModularEarlyProviderTest.php tests/ModularNavigationWidgetsTest.php tests/PanelProviderTest.php
+            git --no-pager diff -- src/Panel.php src/PanelRegistry.php src/Components/PageHeader.php tests/
             exit 1
           }
 
