@@ -639,6 +639,11 @@ final class Panel
      */
     public function configuration(): array
     {
+        if ($this->defaultLocale !== null && $this->locales !== []
+            && ! in_array($this->defaultLocale, $this->locales, true)) {
+            throw new InvalidArgumentException('Default locale must belong to the Panel supported locales.');
+        }
+
         return [
             'path' => $this->path,
             'middleware' => $this->middleware,
