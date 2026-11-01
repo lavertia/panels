@@ -190,6 +190,47 @@ This is the first P0 navigation slice. Collapsible groups, nested items,
 Page Header actions, and record Search Providers are tracked separately;
 none are implemented by these APIs.
 
+### Collapsible navigation and page header controls (P0-02)
+
+Panels support configured group ordering, optional collapse behavior, and **one
+nested level** of registered Page links. A child is omitted if its parent is
+not authorized or registered, or if it belongs to a different group. There
+are no arbitrary URLs or client-side authorization shortcuts.
+
+```php
+->navigationGroups([
+    ['label' => 'Management', 'sort' => 10, 'collapsible' => true, 'collapsedByDefault' => true],
+    ['label' => 'Billing', 'sort' => 20, 'collapsible' => true],
+])
+->navigationItems([
+    NavigationItem::make('reports', 'Reports')->group('Management')->icon('chart-column'),
+    NavigationItem::make('billing/reports', 'Billing Reports')
+        ->group('Management')->parent('reports')->icon('file-chart-column'),
+]);
+```
+
+`PageHeader` keeps Action components in the existing component protocol:
+```php
+PageHeader::make('Reports')
+    ->description('Review your workspace reports.')
+    ->breadcrumbs([
+        ['label' => 'Dashboard', 'url' => '/admin/dashboard'],
+        ['label' => 'Reports'],
+    ])
+    ->tabs([
+        ['label' => 'Overview', 'url' => '/admin/reports', 'active' => true],
+        ['label' => 'Billing', 'url' => '/admin/billing/reports'],
+    ])
+    ->actions([
+        Action::make('open-billing')->label('Billing reports')->url('/admin/billing/reports'),
+    ]);
+```
+
+Header links accept only safe same-origin paths. Client rendering uses
+native Inertia links and does not bypass HTTP authorization. Group and
+item collapse state is UI-only. Authorization is always resolved on the
+server, and navigation search must never expose hidden children.
+
 ### Plugin API
 
 Server-side plugins can register module-owned Pages, Navigation and Widgets.
