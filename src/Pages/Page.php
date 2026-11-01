@@ -34,7 +34,7 @@ abstract class Page
         return null;
     }
 
-    /** Override to 'sidebar', 'top' or 'full'. Null inherits the Panel layout. */
+    /** Override to 'sidebar', 'top', 'full' or 'workspace'. Null inherits the Panel layout. */
     public static function layout(): ?string
     {
         return null;
