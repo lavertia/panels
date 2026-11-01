@@ -364,7 +364,7 @@ final class Panel
     }
 
     /**
-     * @param list<array{label: string, collapsible?: bool, collapsedByDefault?: bool, sort?: int}> $groups
+     * @param  list<array{label: string, collapsible?: bool, collapsedByDefault?: bool, sort?: int}>  $groups
      */
     public function navigationGroups(array $groups): self
     {
