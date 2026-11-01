@@ -203,9 +203,9 @@ final class PanelProviderTest extends TestCase
 
         $data = $header->toArray();
 
-        self::assertSame('/admin/dashboard', $data['props']['breadcrumbs'][0]['url']);
-        self::assertNull($data['props']['breadcrumbs'][1]['url']);
-        self::assertTrue($data['props']['tabs'][0]['active']);
+        self::assertSame('/admin/dashboard', $data['props']->breadcrumbs[0]->url);
+        self::assertNull($data['props']->breadcrumbs[1]->url);
+        self::assertTrue($data['props']->tabs[0]->active);
         self::assertCount(1, $data['components']);
         self::assertJson(json_encode($data, JSON_THROW_ON_ERROR));
 
