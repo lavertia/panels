@@ -84,6 +84,9 @@ final class Panel
     /** @var list<array{in: string, for: string}> */
     private array $widgetDirectories = [];
 
+    /** @var list<array{label: string, collapsible: bool, collapsedByDefault: bool, sort: int}> */
+    private array $navigationGroups = [];
+
     /** @var list<NavigationItem> */
     private array $navigationItems = [];
 
@@ -360,6 +363,67 @@ final class Panel
         return $copy;
     }
 
+    /**
+     * @param list<array{label: string, collapsible?: bool, collapsedByDefault?: bool, sort?: int}> $groups
+     */
+    public function navigationGroups(array $groups): self
+    {
+        if (! array_is_list($groups)) {
+            throw new InvalidArgumentException('Navigation groups must be a list.');
+        }
+
+        $seen = [];
+        $normalized = [];
+
+        foreach ($groups as $group) {
+            if (! is_array($group) || ! is_string($group['label'] ?? null)
+                || trim($group['label']) === '' || mb_strlen($group['label']) > 80
+                || preg_match('/[<>\\x00-\\x1F\\x7F]/u', $group['label']) !== 0) {
+                throw new InvalidArgumentException('Invalid navigation group label.');
+            }
+
+            $label = $group['label'];
+
+            if (isset($seen[$label])) {
+                throw new InvalidArgumentException('Duplicate navigation group.');
+            }
+
+            $seen[$label] = true;
+
+            foreach (['collapsible', 'collapsedByDefault'] as $key) {
+                if (array_key_exists($key, $group) && ! is_bool($group[$key])) {
+                    throw new InvalidArgumentException('Navigation group flags must be boolean.');
+                }
+            }
+
+            if (array_key_exists('sort', $group) && ! is_int($group['sort'])) {
+                throw new InvalidArgumentException('Navigation group sort must be an integer.');
+            }
+
+            $collapsible = $group['collapsible'] ?? false;
+            $collapsed = $group['collapsedByDefault'] ?? false;
+
+            if ($collapsed && ! $collapsible) {
+                throw new InvalidArgumentException('Only collapsible groups may start collapsed.');
+            }
+
+            $normalized[] = [
+                'label' => $label,
+                'collapsible' => $collapsible,
+                'collapsedByDefault' => $collapsed,
+                'sort' => $group['sort'] ?? 0,
+            ];
+        }
+
+        usort($normalized, static fn (array $a, array $b): int => ($a['sort'] <=> $b['sort'])
+            ?: ($a['label'] <=> $b['label']));
+
+        $copy = clone $this;
+        $copy->navigationGroups = $normalized;
+
+        return $copy;
+    }
+
     public function themeMode(string $mode): self
     {
         if (! in_array($mode, ['light', 'dark', 'system'], true)) {
@@ -557,6 +621,7 @@ final class Panel
             'content_width' => $this->contentWidth,
             'sidebar_width' => $this->sidebarWidth,
             'navigation_position' => $this->navigationPosition,
+            'navigation_groups' => $this->navigationGroups,
             'topbar' => $this->topbar,
             'breadcrumbs' => $this->breadcrumbs,
             'sticky_header' => $this->stickyHeader,
