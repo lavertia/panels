@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Providers\Lavertia;
+
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
+
+final class {{ class }} extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('{{ id }}')
+            ->path('{{ id }}')
+            ->brandName(config('app.name', 'Lavertia'))
+            ->brandSubtitle('Administration')
+            ->primaryColor('#f59e0b')
+            ->sidebarVariant('inset')
+            ->sidebarCollapsible();
+    }
+}

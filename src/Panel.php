@@ -7,12 +7,32 @@ namespace Lavertia\Panels;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
 use ReflectionClass;
 
 final class Panel
 {
     private string $path;
+
+    private bool $explicitPath = false;
+
+    private bool $explicitMiddleware = false;
+
+    private ?string $brandName = null;
+
+    private ?string $brandSubtitle = null;
+
+    private ?string $brandLogo = null;
+
+    private ?string $primaryColor = null;
+
+    private ?bool $sidebarCollapsible = null;
+
+    private ?string $sidebarVariant = null;
+
+    /** @var list<NavigationItem> */
+    private array $navigationItems = [];
 
     /** @var list<string> */
     private array $middleware = ['web', 'auth'];
@@ -23,7 +43,7 @@ final class Panel
     /** @var list<array{in: string, for: string}> */
     private array $pageDirectories = [];
 
-    private function __construct(private readonly string $id)
+    private function __construct(private string $id)
     {
         if (preg_match('/^[a-z][a-z0-9_-]*$/D', $id) !== 1) {
             throw new InvalidArgumentException('Invalid panel ID.');
@@ -32,9 +52,162 @@ final class Panel
         $this->path = $id;
     }
 
-    public static function make(string $id): self
+    public static function make(string $id = 'admin'): self
     {
         return new self($id);
+    }
+
+    public function id(string $id): self
+    {
+        if (preg_match('/^[a-z][a-z0-9_-]*$/D', $id) !== 1) {
+            throw new InvalidArgumentException('Invalid panel ID.');
+        }
+
+        $copy = clone $this;
+
+        if (! $copy->explicitPath) {
+            $copy->path = $id;
+        }
+
+        $copy->id = $id;
+
+        return $copy;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function brandName(string $name): self
+    {
+        if (trim($name) === '' || mb_strlen($name) > 120) {
+            throw new InvalidArgumentException('Invalid panel brand name.');
+        }
+
+        $copy = clone $this;
+        $copy->brandName = $name;
+
+        return $copy;
+    }
+
+    public function brandSubtitle(string $subtitle): self
+    {
+        if (mb_strlen($subtitle) > 120) {
+            throw new InvalidArgumentException('Invalid panel brand subtitle.');
+        }
+
+        $copy = clone $this;
+        $copy->brandSubtitle = $subtitle;
+
+        return $copy;
+    }
+
+    public function brandLogo(string $logo): self
+    {
+        if (! str_starts_with($logo, '/') || str_starts_with($logo, '//')
+            || str_contains($logo, '..') || preg_match('/[\s\\\\?#<>]/', $logo) === 1) {
+            throw new InvalidArgumentException('Panel logo must use a safe same-origin absolute path.');
+        }
+
+        $copy = clone $this;
+        $copy->brandLogo = $logo;
+
+        return $copy;
+    }
+
+    public function primaryColor(string $hex): self
+    {
+        if (preg_match('/^#[0-9a-fA-F]{6}$/D', $hex) !== 1) {
+            throw new InvalidArgumentException('Panel primary color must be a six-digit hex value.');
+        }
+
+        $copy = clone $this;
+        $copy->primaryColor = strtolower($hex);
+
+        return $copy;
+    }
+
+    public function sidebarCollapsible(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->sidebarCollapsible = $enabled;
+
+        return $copy;
+    }
+
+    public function sidebarVariant(string $variant): self
+    {
+        if (! in_array($variant, ['inset', 'sidebar', 'floating'], true)) {
+            throw new InvalidArgumentException('Unsupported Starter Kit sidebar variant.');
+        }
+
+        $copy = clone $this;
+        $copy->sidebarVariant = $variant;
+
+        return $copy;
+    }
+
+    /** @param list<NavigationItem> $items */
+    public function navigationItems(array $items): self
+    {
+        if (! array_is_list($items)) {
+            throw new InvalidArgumentException('Panel navigation items must be a list.');
+        }
+
+        foreach ($items as $item) {
+            if (! $item instanceof NavigationItem) {
+                throw new InvalidArgumentException('Expected NavigationItem instances.');
+            }
+        }
+
+        $copy = clone $this;
+        $copy->navigationItems = $items;
+
+        return $copy;
+    }
+
+    /** @return list<NavigationItem> */
+    public function getNavigationItems(): array
+    {
+        return $this->navigationItems;
+    }
+
+    /**
+     * Provider-owned settings are merged with the existing config Panel.
+     * Explicit settings override config; registered pages are additive.
+     *
+     * @return array<string, mixed>
+     */
+    public function configuration(): array
+    {
+        $config = [
+            'pages' => $this->pages,
+            'discover_pages' => $this->pageDirectories,
+        ];
+
+        if ($this->explicitPath) {
+            $config['path'] = $this->path;
+        }
+
+        if ($this->explicitMiddleware) {
+            $config['middleware'] = $this->middleware;
+        }
+
+        foreach ([
+            'brand_name' => $this->brandName,
+            'brand_subtitle' => $this->brandSubtitle,
+            'brand_logo' => $this->brandLogo,
+            'primary_color' => $this->primaryColor,
+            'sidebar_collapsible' => $this->sidebarCollapsible,
+            'sidebar_variant' => $this->sidebarVariant,
+        ] as $key => $value) {
+            if ($value !== null) {
+                $config[$key] = $value;
+            }
+        }
+
+        return $config;
     }
 
     public function path(string $path): self
@@ -45,6 +218,7 @@ final class Panel
 
         $copy = clone $this;
         $copy->path = $path;
+        $copy->explicitPath = true;
 
         return $copy;
     }
@@ -58,6 +232,7 @@ final class Panel
 
         $copy = clone $this;
         $copy->middleware = $middleware;
+        $copy->explicitMiddleware = true;
 
         return $copy;
     }

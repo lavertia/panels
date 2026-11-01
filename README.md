@@ -39,6 +39,79 @@ Add your Page class to `config/lavertia.php`:
 
 Then run `php artisan route:list --path=admin` and `npm run build`. Pages are mounted at `/admin/{page-slug}`. Each panel can register multiple pages.
 
+### Laravel Starter Kit PanelProvider (experimental)
+
+Lavertia now supports a PHP-first \`PanelProvider\` patterned after Filament,
+while **reusing the actual React/Vue/Svelte Laravel Starter Kit layout**.
+There is no duplicate authentication stack, second sidebar, or separate SPA
+router.
+
+Generate a provider:
+
+```bash
+php artisan lavertia:panel Admin --id=admin
+```
+
+The generated class lives at
+\`app/Providers/Lavertia/AdminPanelProvider.php\`. Register it once in
+\`bootstrap/providers.php\`:
+
+```php
+App\Providers\Lavertia\AdminPanelProvider::class,
+```
+
+Configure the Panel in the generated provider (without replacing the
+Starter Kit's shell):
+
+```php
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
+use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Http\Middleware\ResolveLocale;
+
+final class AdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->path('admin')
+            ->middleware(['web', 'auth', ResolveLocale::class])
+            ->brandName('Fenix Admin')
+            ->brandSubtitle('Management')
+            ->brandLogo('/images/fenix.svg')
+            ->primaryColor('#3377cc')
+            ->sidebarVariant('inset')
+            ->sidebarCollapsible()
+            ->pages([DashboardPage::class])
+            ->navigationItems([
+                NavigationItem::make('dashboard', 'Dashboard'),
+            ]);
+    }
+}
+```
+
+Provider settings are merged into existing \`config/lavertia.php\` Panels
+**during the provider registration phase** (before route mounting).
+The provider's explicit path/middleware/appearance override those config
+settings; Page classes and discovery directories are additive.
+Two differently configured navigation items with the same slug are rejected,
+so when migrating old navigation definitions, define each slug in exactly
+one place. Module-owned Pages continue to use \`PanelRegistry::discoverPages()\`.
+
+For a Starter Kit host, share \`lavertiaPanel\` from Inertia middleware with
+\`PanelRegistry::appearance('admin')\` (after authenticating the visitor);
+React/Vue/Svelte Playground demonstrates how to apply the brand, logo,
+accent, sidebar variant and collapse setting to the existing sidebar.
+The legacy \`lavertiaSidebar\` prop remains supported.
+
+The feature does not replace Laravel Fortify, authorization policies, teams,
+authentication layouts or asset pipelines. Security-sensitive appearance
+inputs are validated, but no frontend visibility is an authorization
+boundary. The primary accent is a presentation token; adding a full custom
+theme CSS generator is a separate milestone.
+
+
 ### Unified navigation inside an existing Starter Kit Sidebar
 
 Lavertia preserves your Starter Kit's own sidebar, mobile sheet, user
