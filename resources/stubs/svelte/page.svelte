@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import LavertiaRenderer from '../../components/lavertia/renderer.svelte';
     import type { LavertiaPayload } from '../../components/lavertia/types';
 
     let { lavertia }: { lavertia: LavertiaPayload } = $props();
     let navigation = $derived(lavertia.navigation ?? []);
+    let hostSidebar = $derived(Object.prototype.hasOwnProperty.call(page.props, 'lavertiaSidebar'));
 </script>
 
 <svelte:head>
@@ -13,7 +14,7 @@
 
 <main lang={lavertia.locale ?? 'en'} dir={lavertia.direction ?? 'ltr'} class="min-h-[calc(100vh-8rem)] bg-gray-50/70 px-4 py-6 sm:px-6 lg:px-8 dark:bg-gray-950/40">
     <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-6 lg:flex-row">
-        {#if lavertia.version === 1 && navigation.length > 0}
+        {#if lavertia.version === 1 && !hostSidebar && navigation.length > 0}
             <aside class="w-full shrink-0 lg:w-60">
                 <nav aria-label="Panel navigation" class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900/70">
                     <ul class="space-y-1">
