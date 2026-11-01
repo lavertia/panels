@@ -89,10 +89,12 @@ final class LocaleContext
         $sessionKey = 'lavertia_locales.'.$panelId;
         $candidate = count($available) > 1 ? $request->query('lang') : null;
 
-        if (! is_string($candidate) || ! in_array($candidate, $available, true)) {
+        if (is_string($candidate) && in_array($candidate, $available, true)) {
+            if ($persist && $request->hasSession()) {
+                $request->session()->put($sessionKey, $candidate);
+            }
+        } else {
             $candidate = $request->hasSession() ? $request->session()->get($sessionKey) : null;
-        } elseif ($persist && $request->hasSession()) {
-            $request->session()->put($sessionKey, $candidate);
         }
 
         // A Page-specific subset must not modify the user's Panel-wide preference.
