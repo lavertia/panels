@@ -39,6 +39,73 @@ final class PanelRegistry
 
     private bool $mounted = false;
 
+    /**
+     * Provider definitions augment legacy config-based Panels. Registration must
+     * occur during Laravel's service-provider register phase, before routes mount.
+     */
+    public function registerPanel(Panel $panel): void
+    {
+        if ($this->mounted) {
+            throw new InvalidArgumentException('Register PanelProviders before Lavertia routes are mounted.');
+        }
+
+        $id = $panel->getId();
+        $configured = config('lavertia.panels.'.$id, []);
+
+        if (! is_array($configured)) {
+            throw new InvalidArgumentException('Existing Panel configuration must be an array.');
+        }
+
+        $definition = $panel->configuration();
+        $pages = array_values(array_unique([
+            ...($configured['pages'] ?? []),
+            ...$definition['pages'],
+        ]));
+
+        $discovery = $configured['discover_pages'] ?? [];
+
+        foreach ($definition['discover_pages'] as $entry) {
+            if (! in_array($entry, $discovery, true)) {
+                $discovery[] = $entry;
+            }
+        }
+
+        $options = array_replace($configured, $definition);
+        $options['pages'] = $pages;
+        $options['discover_pages'] = $discovery;
+
+        config()->set('lavertia.panels.'.$id, $options);
+
+        foreach ($panel->getNavigationItems() as $item) {
+            $this->navigationItem($id, $item);
+        }
+    }
+
+    /**
+     * Return only serializable, validated presentation metadata.
+     * The host Starter Kit owns the actual sidebar and appearance controls.
+     *
+     * @return array{id: string, brandName: string, brandSubtitle: string, brandLogo: string|null, primaryColor: string, sidebarCollapsible: bool, sidebarVariant: string}|null
+     */
+    public function appearance(string $panelId): ?array
+    {
+        $options = config('lavertia.panels.'.$panelId);
+
+        if (! is_array($options)) {
+            return null;
+        }
+
+        return [
+            'id' => $panelId,
+            'brandName' => (string) ($options['brand_name'] ?? config('app.name', 'Lavertia')),
+            'brandSubtitle' => (string) ($options['brand_subtitle'] ?? ''),
+            'brandLogo' => is_string($options['brand_logo'] ?? null) ? $options['brand_logo'] : null,
+            'primaryColor' => (string) ($options['primary_color'] ?? '#f59e0b'),
+            'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
+            'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
+        ];
+    }
+
     public function discoverPages(string $panelId, string $in, string $for): void
     {
         // Validate inputs even when the selected Panel is not yet configured.
