@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import LavertiaRenderer from '../../components/lavertia/renderer.vue';
 import type { LavertiaPayload } from '../../components/lavertia/types';
 
 defineProps<{ lavertia: LavertiaPayload }>();
+
+const page = usePage();
+const hostSidebar = computed(() => Object.prototype.hasOwnProperty.call(page.props, 'lavertiaSidebar'));
 </script>
 
 <template>
     <Head :title="lavertia.title ?? 'Lavertia'" />
     <main :lang="lavertia.locale ?? 'en'" :dir="lavertia.direction ?? 'ltr'" class="min-h-[calc(100vh-8rem)] bg-gray-50/70 px-4 py-6 sm:px-6 lg:px-8 dark:bg-gray-950/40">
         <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-6 lg:flex-row">
-            <aside v-if="lavertia.version === 1 && lavertia.navigation?.length" class="w-full shrink-0 lg:w-60">
+            <aside v-if="lavertia.version === 1 && !hostSidebar && lavertia.navigation?.length" class="w-full shrink-0 lg:w-60">
                 <nav aria-label="Panel navigation" class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900/70">
                     <ul class="space-y-1">
                         <li v-for="(item, index) in lavertia.navigation" :key="item.slug">
