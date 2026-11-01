@@ -101,7 +101,7 @@ final class PanelRegistry
      * Return only validated, JSON-safe presentation metadata.
      * The host Starter Kit owns the actual sidebar and appearance controls.
      *
-     * @return array<string, bool|string|null>|null
+     * @return array<string, mixed>|null
      */
     public function appearance(string $panelId): ?array
     {
@@ -137,6 +137,16 @@ final class PanelRegistry
             'brandName' => (string) ($options['brand_name'] ?? config('app.name', 'Lavertia')),
             'brandSubtitle' => (string) ($options['brand_subtitle'] ?? ''),
             'brandLogo' => is_string($options['brand_logo'] ?? null) ? $options['brand_logo'] : null,
+            'brandLogoDisplay' => $options['brand_logo_display'],
+            'brandLogoPlacement' => $options['brand_logo_placement'],
+            'tenantSwitcher' => $options['tenant_switcher'],
+            'tenantSwitcherPlacement' => $options['tenant_switcher_placement'],
+            'globalSearch' => $options['global_search'],
+            'notifications' => $options['notifications'],
+            'footerLinks' => $options['footer_links'],
+            'userMenuLinks' => $options['user_menu_links'],
+            'userMenuSettings' => $options['user_menu_settings'],
+            'userMenuLogout' => $options['user_menu_logout'],
             'primaryColor' => $primary,
             'primaryForeground' => $foreground,
             'themeMode' => $options['theme_mode'],

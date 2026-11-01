@@ -97,6 +97,61 @@ An unregistered Panel does not silently exist. Duplicate Panel IDs fail
 immediately. Route cache includes Panel routes, while `config:cache` does not
 serialize PHP Panel instances.
 
+### Complete native Panel shell controls
+
+All of these settings belong in the `AdminPanelProvider`; no
+`config/lavertia.php` file is needed:
+
+```php
+return $panel
+    ->id('admin')
+    ->brandName('Lavertia')
+    ->brandLogo('/images/logo.svg')
+    ->brandLogoDisplay('full') // full | icon | hidden
+    ->brandLogoPlacement('sidebar') // sidebar | topbar | both
+    ->tenantSwitcher()
+    ->tenantSwitcherPlacement('sidebar') // sidebar | topbar
+    ->sidebarCollapsible()
+    ->navigationPosition('sidebar') // sidebar | top
+    ->topbar()
+    ->globalSearch()
+    ->notifications()
+    ->footerLinks([
+        ['label' => 'Documentation', 'url' => 'https://example.com/docs', 'external' => true],
+        ['label' => 'Home', 'url' => '/'],
+    ])
+    ->userMenuSettings()
+    ->userMenuLogout()
+    ->userMenuLinks([
+        ['label' => 'Help', 'url' => 'https://example.com/help', 'external' => true],
+    ]);
+```
+
+The existing Starter Kit remains the implementation for Team Switcher,
+authentication, profile settings, and responsive sidebar. Tenant switcher
+configuration only controls **where the existing Team Switcher appears**;
+it does not replace team membership middleware, policy/tenant scoping, or
+authorization. Implement those in the host application.
+
+Global search v1 searches **authorized, registered Page navigation entries**
+using the shared PanelRegistry navigation; it does not yet search Eloquent
+records or arbitrary models. The Playground shows Ctrl/Cmd+K search.
+
+Notifications v1 uses Laravel database notifications. The Playground
+includes a `notifications` migration, an authenticated user-scoped
+Mark-As-Read route and a dropdown. The host application must run
+`php artisan migrate` before enabling `->notifications()`.
+No cross-user notifications or hidden record URLs are exposed by the
+notification presenter; notifications containing a `url` must use
+a same-origin absolute path.
+
+Logo paths must be same-origin, as in `/images/logo.svg`. The existing
+Starter Kit icon is used when no logo image is supplied. For custom brand
+logos, store the actual asset under `public/images` rather than pointing
+at a non-existent file. Footer and custom user menu links are validated;
+external links must use HTTPS and open with `rel="noopener noreferrer"`.
+The built-in Logout action always remains a server POST with CSRF protection.
+
 ### Plugin API
 
 Server-side plugins can register module-owned Pages, Navigation and Widgets.

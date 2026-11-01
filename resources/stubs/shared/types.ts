@@ -15,11 +15,27 @@ export interface NavigationLink {
     active: boolean;
 }
 
+export interface PanelMenuLink {
+    label: string;
+    url: string;
+    external: boolean;
+}
+
 export interface PanelAppearance {
     id: string;
     brandName: string;
     brandSubtitle: string;
     brandLogo: string | null;
+    brandLogoDisplay: 'full' | 'icon' | 'hidden';
+    brandLogoPlacement: 'sidebar' | 'topbar' | 'both';
+    tenantSwitcher: boolean;
+    tenantSwitcherPlacement: 'sidebar' | 'topbar';
+    globalSearch: boolean;
+    notifications: boolean;
+    footerLinks: PanelMenuLink[];
+    userMenuLinks: PanelMenuLink[];
+    userMenuSettings: boolean;
+    userMenuLogout: boolean;
     primaryColor: string;
     primaryForeground: string;
     sidebarCollapsible: boolean;

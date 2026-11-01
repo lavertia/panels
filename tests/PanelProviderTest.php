@@ -42,6 +42,13 @@ final class PanelProviderTest extends TestCase
         self::assertSame('lg', $appearance['borderRadius']);
         self::assertSame('2xl', $appearance['contentWidth']);
         self::assertFalse($appearance['mobileNavigation']);
+        self::assertSame('both', $appearance['brandLogoPlacement']);
+        self::assertSame('full', $appearance['brandLogoDisplay']);
+        self::assertSame('topbar', $appearance['tenantSwitcherPlacement']);
+        self::assertTrue($appearance['globalSearch']);
+        self::assertTrue($appearance['notifications']);
+        self::assertSame('Help', $appearance['footerLinks'][0]['label']);
+        self::assertSame('Account', $appearance['userMenuLinks'][0]['label']);
         self::assertNull(config('lavertia.panels.admin'));
 
         $route = Route::getRoutes()->getByName('lavertia.admin.provider-example');
@@ -76,6 +83,11 @@ final class PanelProviderTest extends TestCase
             fn () => Panel::make()->sidebarWidth('100vw'),
             fn () => Panel::make()->contentWidth('<iframe>'),
             fn () => Panel::make()->navigationPosition('hidden'),
+            fn () => Panel::make()->brandLogoDisplay('large-script'),
+            fn () => Panel::make()->brandLogoPlacement('footer'),
+            fn () => Panel::make()->tenantSwitcherPlacement('hidden'),
+            fn () => Panel::make()->footerLinks([['label' => 'Bad', 'url' => 'javascript:alert(1)']]),
+            fn () => Panel::make()->userMenuLinks([['label' => 'Bad', 'url' => '//evil.test']]),
         ] as $invalid) {
             try {
                 $invalid();
@@ -85,7 +97,7 @@ final class PanelProviderTest extends TestCase
             }
         }
 
-        self::assertSame(10, $rejected);
+        self::assertSame(15, $rejected);
     }
 }
 
@@ -109,6 +121,13 @@ final class ExampleAdminPanelProvider extends PanelProvider
             ->borderRadius('lg')
             ->contentWidth('2xl')
             ->mobileNavigation(false)
+            ->brandLogoPlacement('both')
+            ->brandLogoDisplay('full')
+            ->tenantSwitcherPlacement('topbar')
+            ->globalSearch()
+            ->notifications()
+            ->footerLinks([['label' => 'Help', 'url' => 'https://example.com/help', 'external' => true]])
+            ->userMenuLinks([['label' => 'Account', 'url' => '/account']])
             ->plugins([new ExamplePanelPlugin])
             ->pages([ProviderExamplePage::class])
             ->navigationItems([
