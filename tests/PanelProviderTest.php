@@ -53,6 +53,8 @@ final class PanelProviderTest extends TestCase
 
         self::assertJson(json_encode($appearance, JSON_THROW_ON_ERROR));
 
+        $rejected = 0;
+
         foreach ([
             fn () => Panel::make()->primaryColor('red'),
             fn () => Panel::make()->brandLogo('//untrusted.example/logo.svg'),
@@ -65,9 +67,11 @@ final class PanelProviderTest extends TestCase
                 $invalid();
                 self::fail('Expected an invalid Panel option to be rejected.');
             } catch (InvalidArgumentException) {
-                // Expected.
+                $rejected++;
             }
         }
+
+        self::assertSame(6, $rejected);
     }
 }
 
