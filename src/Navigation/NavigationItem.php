@@ -19,6 +19,17 @@ final class NavigationItem
 
     private int $sort = 0;
 
+    /** @var list<string> */
+    private const ICONS = [
+        'bell', 'book-open', 'briefcase', 'calendar', 'chart-column', 'file-chart-column',
+        'file-text', 'folder', 'house', 'layout-dashboard', 'list', 'receipt',
+        'settings', 'shield', 'users', 'wallet',
+    ];
+
+    private ?string $icon = null;
+
+    private ?string $badge = null;
+
     private ?string $ability = null;
 
     private function __construct(
@@ -64,6 +75,22 @@ final class NavigationItem
             $item = $item->sort($config['sort']);
         }
 
+        if (array_key_exists('icon', $config) && $config['icon'] !== null) {
+            if (! is_string($config['icon'])) {
+                throw new InvalidArgumentException('Navigation icon must be a string.');
+            }
+
+            $item = $item->icon($config['icon']);
+        }
+
+        if (array_key_exists('badge', $config) && $config['badge'] !== null) {
+            if (! is_string($config['badge'])) {
+                throw new InvalidArgumentException('Navigation badge must be a string.');
+            }
+
+            $item = $item->badge($config['badge']);
+        }
+
         if (array_key_exists('ability', $config) && $config['ability'] !== null) {
             if (! is_string($config['ability'])) {
                 throw new InvalidArgumentException('Navigation ability must be a string.');
@@ -95,6 +122,33 @@ final class NavigationItem
         return $copy;
     }
 
+    /** Known Lucide icons only; adapters never resolve arbitrary component names. */
+    public function icon(string $icon): self
+    {
+        if (! in_array($icon, self::ICONS, true)) {
+            throw new InvalidArgumentException('Unsupported navigation icon.');
+        }
+
+        $copy = clone $this;
+        $copy->icon = $icon;
+
+        return $copy;
+    }
+
+    /** Compact status text. Never accept HTML or control characters. */
+    public function badge(string $badge): self
+    {
+        if (trim($badge) === '' || mb_strlen($badge) > 20
+            || preg_match('/[<>\\x00-\\x1F\\x7F]/u', $badge) === 1) {
+            throw new InvalidArgumentException('Invalid navigation badge.');
+        }
+
+        $copy = clone $this;
+        $copy->badge = $badge;
+
+        return $copy;
+    }
+
     /** Require a Laravel Gate / Policy ability before including this item. */
     public function ability(string $ability): self
     {
@@ -119,7 +173,9 @@ final class NavigationItem
             && $this->label === $other->label
             && $this->group === $other->group
             && $this->sort === $other->sort
-            && $this->ability === $other->ability;
+            && $this->ability === $other->ability
+            && $this->icon === $other->icon
+            && $this->badge === $other->badge;
     }
 
     public function sortOrder(): int
@@ -127,7 +183,7 @@ final class NavigationItem
         return $this->sort;
     }
 
-    /** @return array{label: string, slug: string, group: string|null, url: string, active: bool}|null */
+    /** @return array{label: string, slug: string, group: string|null, url: string, active: bool, icon: string|null, badge: string|null}|null */
     public function forPanel(string $panelId, ?string $currentRoute): ?array
     {
         if ($this->ability !== null && ! Gate::allows($this->ability)) {
@@ -159,6 +215,8 @@ final class NavigationItem
             'group' => $this->group,
             'url' => $url,
             'active' => $currentRoute === $name,
+            'icon' => $this->icon,
+            'badge' => $this->badge,
         ];
     }
 }
