@@ -7,6 +7,8 @@ namespace Lavertia\Panels\Tests;
 use Illuminate\Filesystem\Filesystem;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\PanelsServiceProvider;
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
 use Orchestra\Testbench\TestCase;
 
 final class MakePageCommandTest extends TestCase
@@ -17,7 +19,7 @@ final class MakePageCommandTest extends TestCase
 
     protected function getPackageProviders($app): array
     {
-        return [PanelsServiceProvider::class];
+        return [PanelsServiceProvider::class, FixturePageGeneratorPanelProvider::class];
     }
 
     protected function setUp(): void
@@ -31,12 +33,6 @@ final class MakePageCommandTest extends TestCase
         $files->ensureDirectoryExists($this->temporaryAppPath);
         $this->app->useAppPath($this->temporaryAppPath);
 
-        config()->set('lavertia.panels.admin', [
-            'path' => 'admin',
-            'middleware' => ['web', 'auth'],
-            'pages' => [],
-            'navigation' => [],
-        ]);
     }
 
     protected function tearDown(): void
@@ -107,8 +103,6 @@ final class MakePageCommandTest extends TestCase
 
     public function test_rejects_duplicate_slugs_before_writing(): void
     {
-        config()->set('lavertia.panels.admin.pages', [ExistingInvoicesPage::class]);
-
         $this->artisan('lavertia:page', ['name' => 'Invoices'])->assertExitCode(1);
 
         self::assertFileDoesNotExist($this->temporaryAppPath.'/Lavertia/Pages/InvoicesPage.php');
@@ -125,5 +119,13 @@ final class ExistingInvoicesPage extends Page
     protected function components(): array
     {
         return [];
+    }
+}
+
+final class FixturePageGeneratorPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel->id('admin')->pages([ExistingInvoicesPage::class]);
     }
 }
