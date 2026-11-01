@@ -18,6 +18,14 @@ final class {{ class }} extends PanelProvider
             ->brandSubtitle('Administration')
             ->primaryColor('#f59e0b')
             ->sidebarVariant('inset')
-            ->sidebarCollapsible();
+            ->sidebarCollapsible()
+            ->sidebarWidth('18rem')
+            ->themeMode('system')
+            ->contentWidth('full')
+            ->navigationPosition('sidebar')
+            ->topbar()
+            ->breadcrumbs()
+            ->mobileNavigation()
+            ->discoverPages(app_path('Lavertia/Pages'), 'App\\Lavertia\\Pages');
     }
 }
