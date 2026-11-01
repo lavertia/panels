@@ -95,7 +95,7 @@ final class MakePageCommand extends Command
         $this->line('To register this page, add '.$fqcn.'::class to');
         $this->line("config/lavertia.php => 'panels' => '".$panel."' => 'pages'.");
         $this->line("Optional navigation item: ['slug' => '".$slug."', 'label' => '".$title."'].");
-        $this->comment('Then run: php artisan optimize:clear && php artisan route:list --path=admin');
+        $this->comment('Then run: php artisan optimize:clear && php artisan route:list --path='.(string) config('lavertia.panels.'.$panel.'.path', $panel));
         $this->comment('Existing pages and panel configuration are never modified automatically.');
 
         return self::SUCCESS;
