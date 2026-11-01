@@ -181,6 +181,19 @@ export function columnBadgeTone(column: TableColumn, value: Scalar): Tone {
         : 'neutral';
 }
 
+/** Validate protocol header links again before rendering in a host adapter. */
+export function headerLinks(value: unknown): HeaderLink[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((item): HeaderLink[] => {
+        if (!item || typeof item !== 'object' || typeof item.label !== 'string') return [];
+        const url = item.url === null ? null : safeHref(item.url);
+        if (url !== null && !url.startsWith('/')) return [];
+        if (item.url !== null && url === null) return [];
+        return [{ label: item.label, url, active: item.active === true }];
+    });
+}
+
 export function safeHref(value: unknown): string | null {
     if (typeof value !== 'string') {
         return null;
