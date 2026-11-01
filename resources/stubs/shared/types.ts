@@ -15,6 +15,16 @@ export interface NavigationLink {
     active: boolean;
 }
 
+export interface PanelAppearance {
+    id: string;
+    brandName: string;
+    brandSubtitle: string;
+    brandLogo: string | null;
+    primaryColor: string;
+    sidebarCollapsible: boolean;
+    sidebarVariant: 'inset' | 'sidebar' | 'floating';
+}
+
 export interface LavertiaPayload {
     navigation?: NavigationLink[];
     version: number;
