@@ -44,6 +44,7 @@ final class ShellWidgetThemeTest extends TestCase
 
         $widget = $top['components'][0]['components'][0];
 
+        self::assertCount(1, $top['components'][0]['components']);
         self::assertSame('navigation-item', $widget['type']);
         self::assertTrue($widget['props']->visible);
         self::assertSame('/admin/widget-example', $widget['props']->url);
@@ -89,12 +90,15 @@ final class ShellExamplePanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         $item = NavigationItem::make('widget-example', 'Example')->icon('house');
-        $group = NavigationGroup::make('Work')->components([$item]);
+        $group = NavigationGroup::make('Work')->components([
+            $item,
+            NavigationItem::make('secret-example', 'Sensitive internal page')->ability('never-allow'),
+        ]);
 
         return $panel->id('admin')
             ->middleware(['web'])
             ->theme(new ExampleShellTheme)
-            ->pages([ShellExamplePage::class])
+            ->pages([ShellExamplePage::class, ShellPrivatePage::class])
             ->shellSlots([
                 NavigationSlot::make('primary')->position('topbar')->components([$group]),
                 NavigationSlot::make('quick')->position('footer')->components([$group]),
@@ -138,5 +142,18 @@ final class InvalidShellTheme implements PanelTheme
     public function tokens(): array
     {
         return ['primary' => 'url(javascript:alert(1))'];
+    }
+}
+
+final class ShellPrivatePage extends Page
+{
+    public static function slug(): string
+    {
+        return 'secret-example';
+    }
+
+    protected function components(): array
+    {
+        return [];
     }
 }
