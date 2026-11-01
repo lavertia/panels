@@ -26,9 +26,7 @@ final class LocaleLayoutTest extends TestCase
         $registry = app(PanelRegistry::class);
 
         self::assertSame([], $panel->configuration()['locales']);
-        self::assertSame(['en'], LocaleContext::allowed($registry, 'demo', null) === []
-            ? []
-            : ['en']);
+        self::assertSame(['en', 'ar', 'fr'], LocaleContext::allowed($registry, 'demo'));
         self::assertSame('rtl', LocaleContext::direction('ar-LB'));
         self::assertSame('ltr', LocaleContext::direction('fr-CA'));
 
@@ -86,8 +84,9 @@ final class LocaleLayoutTest extends TestCase
         $registry = app(PanelRegistry::class);
         $this->withHeader('X-Inertia', 'true')->get('/demo/french')->assertOk();
 
-        self::assertSame(['en', 'ar', 'fr'], $registry->appearance('demo')['supportedLocales']);
-        self::assertSame('sidebar', $registry->appearance('demo')['layout']);
+        self::assertSame('full', LocaleFrenchPage::layout());
+        self::assertSame(['fr'], LocaleContext::allowed($registry, 'demo', LocaleFrenchPage::class));
+        self::assertSame('sidebar', $registry->panel('demo')->configuration()['layout']);
     }
 }
 
