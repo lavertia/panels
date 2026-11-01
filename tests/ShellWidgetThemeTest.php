@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lavertia\Panels\Tests;
 
 use InvalidArgumentException;
+use Lavertia\Panels\Components\PageHeader;
 use Lavertia\Panels\Navigation\NavigationGroup;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Navigation\NavigationSlot;
@@ -58,18 +59,7 @@ final class ShellWidgetThemeTest extends TestCase
         $link = NavigationItem::make('widget-example', 'Example');
         $slot = NavigationSlot::make('top')->position('topbar')->components([$link]);
 
-        $badTheme = new class implements PanelTheme
-        {
-            public function id(): string
-            {
-                return 'danger';
-            }
-
-            public function tokens(): array
-            {
-                return ['primary' => 'url(javascript:alert(1))'];
-            }
-        };
+        $badTheme = new InvalidShellTheme;
 
         $rejected = 0;
 
@@ -77,7 +67,7 @@ final class ShellWidgetThemeTest extends TestCase
             fn () => Panel::make()->theme($badTheme),
             fn () => Panel::make()->shellSlots([$slot, $slot]),
             fn () => Panel::make()->shellSlots([NavigationSlot::make('bad')->components([
-                \Lavertia\Panels\Components\PageHeader::make('Bad child'),
+                PageHeader::make('Bad child'),
             ])]),
             fn () => NavigationSlot::make('x')->position('javascript:alert(1)'),
             fn () => NavigationGroup::make('<script>'),
@@ -103,18 +93,7 @@ final class ShellExamplePanelProvider extends PanelProvider
 
         return $panel->id('admin')
             ->middleware(['web'])
-            ->theme(new class implements PanelTheme
-            {
-                public function id(): string
-                {
-                    return 'example';
-                }
-
-                public function tokens(): array
-                {
-                    return ['primary' => '#b45309'];
-                }
-            })
+            ->theme(new ExampleShellTheme)
             ->pages([ShellExamplePage::class])
             ->shellSlots([
                 NavigationSlot::make('primary')->position('topbar')->components([$group]),
@@ -133,5 +112,31 @@ final class ShellExamplePage extends Page
     protected function components(): array
     {
         return [];
+    }
+}
+
+final class ExampleShellTheme implements PanelTheme
+{
+    public function id(): string
+    {
+        return 'example';
+    }
+
+    public function tokens(): array
+    {
+        return ['primary' => '#b45309'];
+    }
+}
+
+final class InvalidShellTheme implements PanelTheme
+{
+    public function id(): string
+    {
+        return 'danger';
+    }
+
+    public function tokens(): array
+    {
+        return ['primary' => 'url(javascript:alert(1))'];
     }
 }
