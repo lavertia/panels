@@ -85,7 +85,7 @@ final class PanelRegistry
      * Return only serializable, validated presentation metadata.
      * The host Starter Kit owns the actual sidebar and appearance controls.
      *
-     * @return array{id: string, brandName: string, brandSubtitle: string, brandLogo: string|null, primaryColor: string, sidebarCollapsible: bool, sidebarVariant: string}|null
+     * @return array{id: string, brandName: string, brandSubtitle: string, brandLogo: string|null, primaryColor: string, primaryForeground: string, sidebarCollapsible: bool, sidebarVariant: string}|null
      */
     public function appearance(string $panelId): ?array
     {
@@ -95,12 +95,34 @@ final class PanelRegistry
             return null;
         }
 
+        $primary = is_string($options['primary_color'] ?? null)
+            && preg_match('/^#[0-9a-fA-F]{6}$/D', $options['primary_color']) === 1
+            ? strtolower($options['primary_color'])
+            : '#f59e0b';
+
+        $channels = [
+            hexdec(substr($primary, 1, 2)) / 255,
+            hexdec(substr($primary, 3, 2)) / 255,
+            hexdec(substr($primary, 5, 2)) / 255,
+        ];
+
+        $linear = array_map(
+            static fn (float $channel): float => $channel <= 0.04045
+                ? $channel / 12.92
+                : (($channel + 0.055) / 1.055) ** 2.4,
+            $channels,
+        );
+
+        $luminance = 0.2126 * $linear[0] + 0.7152 * $linear[1] + 0.0722 * $linear[2];
+        $foreground = $luminance > 0.179 ? '#111827' : '#ffffff';
+
         return [
             'id' => $panelId,
             'brandName' => (string) ($options['brand_name'] ?? config('app.name', 'Lavertia')),
             'brandSubtitle' => (string) ($options['brand_subtitle'] ?? ''),
             'brandLogo' => is_string($options['brand_logo'] ?? null) ? $options['brand_logo'] : null,
-            'primaryColor' => (string) ($options['primary_color'] ?? '#f59e0b'),
+            'primaryColor' => $primary,
+            'primaryForeground' => $foreground,
             'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
             'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
         ];
