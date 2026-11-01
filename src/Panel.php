@@ -8,6 +8,8 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Plugins\PanelPlugin;
+use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Panels\Pages\Page;
 use ReflectionClass;
 
@@ -30,6 +32,36 @@ final class Panel
     private ?bool $sidebarCollapsible = null;
 
     private ?string $sidebarVariant = null;
+
+    private string $themeMode = 'system';
+
+    private string $fontFamily = 'inherit';
+
+    private string $radius = 'md';
+
+    private string $contentWidth = 'full';
+
+    private string $sidebarWidth = '18rem';
+
+    private string $navigationPosition = 'sidebar';
+
+    private bool $topbar = true;
+
+    private bool $breadcrumbs = true;
+
+    private bool $stickyHeader = false;
+
+    private bool $mobileNavigation = true;
+
+    /** @var list<PanelPlugin> */
+    private array $plugins = [];
+
+    /** @var list<class-string<DashboardWidget>> */
+    private array $dashboardWidgets = [];
+
+    /** @var list<array{in: string, for: string}> */
+    private array $widgetDirectories = [];
+
 
     /** @var list<NavigationItem> */
     private array $navigationItems = [];
@@ -167,6 +199,162 @@ final class Panel
         return $copy;
     }
 
+    public function themeMode(string $mode): self
+    {
+        if (! in_array($mode, ['light', 'dark', 'system'], true)) {
+            throw new InvalidArgumentException('Theme mode must be light, dark, or system.');
+        }
+
+        $copy = clone $this;
+        $copy->themeMode = $mode;
+
+        return $copy;
+    }
+
+    public function fontFamily(string $font): self
+    {
+        if (preg_match('/^[A-Za-z0-9 ,_-]{1,80}$/D', $font) !== 1) {
+            throw new InvalidArgumentException('Invalid font family token.');
+        }
+
+        $copy = clone $this;
+        $copy->fontFamily = $font;
+
+        return $copy;
+    }
+
+    public function borderRadius(string $radius): self
+    {
+        if (! in_array($radius, ['none', 'sm', 'md', 'lg', 'xl'], true)) {
+            throw new InvalidArgumentException('Unsupported border radius.');
+        }
+
+        $copy = clone $this;
+        $copy->radius = $radius;
+
+        return $copy;
+    }
+
+    public function contentWidth(string $width): self
+    {
+        if (! in_array($width, ['sm', 'md', 'lg', 'xl', '2xl', 'full'], true)) {
+            throw new InvalidArgumentException('Unsupported content width.');
+        }
+
+        $copy = clone $this;
+        $copy->contentWidth = $width;
+
+        return $copy;
+    }
+
+    public function sidebarWidth(string $width): self
+    {
+        if (preg_match('/^(?:1[4-9]|2[0-8])rem$/D', $width) !== 1) {
+            throw new InvalidArgumentException('Sidebar width must be between 14rem and 28rem.');
+        }
+
+        $copy = clone $this;
+        $copy->sidebarWidth = $width;
+
+        return $copy;
+    }
+
+    public function navigationPosition(string $position): self
+    {
+        if (! in_array($position, ['sidebar', 'top'], true)) {
+            throw new InvalidArgumentException('Navigation position must be sidebar or top.');
+        }
+
+        $copy = clone $this;
+        $copy->navigationPosition = $position;
+
+        return $copy;
+    }
+
+    public function topbar(bool $visible = true): self
+    {
+        $copy = clone $this;
+        $copy->topbar = $visible;
+
+        return $copy;
+    }
+
+    public function breadcrumbs(bool $visible = true): self
+    {
+        $copy = clone $this;
+        $copy->breadcrumbs = $visible;
+
+        return $copy;
+    }
+
+    public function stickyHeader(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->stickyHeader = $enabled;
+
+        return $copy;
+    }
+
+    public function mobileNavigation(bool $enabled = true): self
+    {
+        $copy = clone $this;
+        $copy->mobileNavigation = $enabled;
+
+        return $copy;
+    }
+
+    /** @param list<PanelPlugin> $plugins */
+    public function plugins(array $plugins): self
+    {
+        if (! array_is_list($plugins)) {
+            throw new InvalidArgumentException('Panel plugins must be a list.');
+        }
+
+        foreach ($plugins as $plugin) {
+            if (! $plugin instanceof PanelPlugin) {
+                throw new InvalidArgumentException('Expected PanelPlugin instances.');
+            }
+        }
+
+        $copy = clone $this;
+        $copy->plugins = $plugins;
+
+        return $copy;
+    }
+
+    /** @return list<PanelPlugin> */
+    public function getPlugins(): array
+    {
+        return $this->plugins;
+    }
+
+    /** @param list<class-string<DashboardWidget>> $widgets */
+    public function dashboardWidgets(array $widgets): self
+    {
+        foreach ($widgets as $widget) {
+            if (! is_string($widget) || ! is_subclass_of($widget, DashboardWidget::class)) {
+                throw new InvalidArgumentException('Dashboard widgets must extend DashboardWidget.');
+            }
+        }
+
+        $copy = clone $this;
+        $copy->dashboardWidgets = $widgets;
+
+        return $copy;
+    }
+
+    public function discoverWidgets(string $in, string $for): self
+    {
+        if (trim($in) === '' || preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\]*$/D', trim($for, '\\')) !== 1) {
+            throw new InvalidArgumentException('Widget discovery requires a directory and namespace.');
+        }
+
+        $copy = clone $this;
+        $copy->widgetDirectories[] = ['in' => $in, 'for' => trim($for, '\\')];
+
+        return $copy;
+    }
+
     /** @return list<NavigationItem> */
     public function getNavigationItems(): array
     {
@@ -174,40 +362,37 @@ final class Panel
     }
 
     /**
-     * Provider-owned settings are merged with the existing config Panel.
-     * Explicit settings override config; registered pages are additive.
+     * Internal route and shell metadata; all values originate in this Panel,
+     * never in config/lavertia.php.
      *
      * @return array<string, mixed>
      */
     public function configuration(): array
     {
-        $config = [
+        return [
+            'path' => $this->path,
+            'middleware' => $this->middleware,
             'pages' => $this->pages,
             'discover_pages' => $this->pageDirectories,
-        ];
-
-        if ($this->explicitPath) {
-            $config['path'] = $this->path;
-        }
-
-        if ($this->explicitMiddleware) {
-            $config['middleware'] = $this->middleware;
-        }
-
-        foreach ([
             'brand_name' => $this->brandName,
             'brand_subtitle' => $this->brandSubtitle,
             'brand_logo' => $this->brandLogo,
             'primary_color' => $this->primaryColor,
             'sidebar_collapsible' => $this->sidebarCollapsible,
             'sidebar_variant' => $this->sidebarVariant,
-        ] as $key => $value) {
-            if ($value !== null) {
-                $config[$key] = $value;
-            }
-        }
-
-        return $config;
+            'theme_mode' => $this->themeMode,
+            'font_family' => $this->fontFamily,
+            'border_radius' => $this->radius,
+            'content_width' => $this->contentWidth,
+            'sidebar_width' => $this->sidebarWidth,
+            'navigation_position' => $this->navigationPosition,
+            'topbar' => $this->topbar,
+            'breadcrumbs' => $this->breadcrumbs,
+            'sticky_header' => $this->stickyHeader,
+            'mobile_navigation' => $this->mobileNavigation,
+            'dashboard_widgets' => $this->dashboardWidgets,
+            'discover_widgets' => $this->widgetDirectories,
+        ];
     }
 
     public function path(string $path): self
