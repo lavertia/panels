@@ -242,8 +242,7 @@ final class PanelRegistry
             ? 'Lavertia'
             : $item->groupName();
 
-        usort($items, static fn (NavigationItem $a, NavigationItem $b): int =>
-            (($groupRanks[$visibleGroup($a)] ?? PHP_INT_MAX) <=> ($groupRanks[$visibleGroup($b)] ?? PHP_INT_MAX))
+        usort($items, static fn (NavigationItem $a, NavigationItem $b): int => (($groupRanks[$visibleGroup($a)] ?? PHP_INT_MAX) <=> ($groupRanks[$visibleGroup($b)] ?? PHP_INT_MAX))
             ?: ($visibleGroup($a) <=> $visibleGroup($b))
             ?: ($a->sortOrder() <=> $b->sortOrder())
             ?: ($a->slug <=> $b->slug));
