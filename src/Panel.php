@@ -246,7 +246,7 @@ final class Panel
     }
 
     /**
-     * @param list<array{label: string, url: string, external?: bool}> $links
+     * @param  list<array{label: string, url: string, external?: bool}>  $links
      */
     public function footerLinks(array $links): self
     {
@@ -257,7 +257,7 @@ final class Panel
     }
 
     /**
-     * @param list<array{label: string, url: string, external?: bool}> $links
+     * @param  list<array{label: string, url: string, external?: bool}>  $links
      */
     public function userMenuLinks(array $links): self
     {
@@ -268,7 +268,7 @@ final class Panel
     }
 
     /**
-     * @param list<array{label: string, url: string, external?: bool}> $links
+     * @param  list<array{label: string, url: string, external?: bool}>  $links
      * @return list<array{label: string, url: string, external: bool}>
      */
     private function normalizeLinks(array $links): array
