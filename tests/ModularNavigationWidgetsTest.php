@@ -13,6 +13,8 @@ use InvalidArgumentException;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\DashboardPage;
 use Lavertia\Panels\PanelRegistry;
+use Lavertia\Panels\Panel;
+use Lavertia\Panels\PanelProvider;
 use Lavertia\Panels\PanelsServiceProvider;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Components\Text;
@@ -25,37 +27,7 @@ final class ModularNavigationWidgetsTest extends TestCase
     protected function getPackageProviders($app): array
     {
         // Module boots AFTER Panels (also supported for Pages in v0.2).
-        return [PanelsServiceProvider::class, FixtureNavigationModuleProvider::class];
-    }
-
-    protected function getEnvironmentSetUp($app): void
-    {
-        $app['config']->set('lavertia.panels', [
-            'admin' => [
-                'path' => 'admin',
-                'middleware' => ['web', 'auth'],
-                'pages' => [DashboardPage::class],
-                'navigation' => [
-                    ['slug' => 'dashboard', 'label' => 'Dashboard', 'sort' => 0],
-                ],
-                'dashboard_widgets' => [InventoryMetrics::class],
-                'discover_widgets' => [
-                    [
-                        'in' => inventoryWidgetPath(),
-                        'for' => 'Modules\\Inventory\\Lavertia\\Widgets',
-                    ],
-                ],
-            ],
-            'branch' => [
-                'path' => 'branch',
-                'middleware' => ['web', 'auth'],
-                'pages' => [DashboardPage::class],
-                'navigation' => [
-                    ['slug' => 'dashboard', 'label' => 'Branch dashboard'],
-                ],
-                'dashboard_widgets' => [BranchDashboardWidget::class],
-            ],
-        ]);
+        return [PanelsServiceProvider::class, FixtureWidgetsAdminPanelProvider::class, FixtureWidgetsBranchPanelProvider::class, FixtureNavigationModuleProvider::class];
     }
 
     public function test_navigation_resolves_real_panel_routes_and_is_deterministic(): void
@@ -179,6 +151,36 @@ final class ModularNavigationWidgetsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         NavigationItem::make('../private', 'Invalid');
+    }
+}
+
+final class FixtureWidgetsAdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->pages([DashboardPage::class])
+            ->navigationItems([
+                NavigationItem::make('dashboard', 'Dashboard')->sort(0),
+            ])
+            ->dashboardWidgets([InventoryMetrics::class])
+            ->discoverWidgets(
+                inventoryWidgetPath(),
+                'Modules\\Inventory\\Lavertia\\Widgets',
+            );
+    }
+}
+
+final class FixtureWidgetsBranchPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('branch')
+            ->pages([DashboardPage::class])
+            ->navigationItems([NavigationItem::make('dashboard', 'Branch dashboard')])
+            ->dashboardWidgets([BranchDashboardWidget::class]);
     }
 }
 
