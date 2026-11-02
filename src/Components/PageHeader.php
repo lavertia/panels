@@ -54,7 +54,7 @@ final class PageHeader extends AbstractComponent implements ComposesComponents
     }
 
     /**
-     * @param  list<array{label: string, url: string, active?: bool}>  $tabs
+     * @param  list<array<string, mixed>>  $tabs
      */
     public function tabs(array $tabs): static
     {
@@ -101,11 +101,34 @@ final class PageHeader extends AbstractComponent implements ComposesComponents
                 throw new InvalidArgumentException('Header tab active flag must be boolean.');
             }
 
-            $normalized[] = [
+            $entry = [
                 'label' => $link['label'],
                 'url' => $url,
                 'active' => $tabs && ($link['active'] ?? false),
             ];
+
+            if ($tabs) {
+                $icon = $link['icon'] ?? null;
+                $badge = $link['badge'] ?? null;
+                $position = $link['iconPosition'] ?? 'before';
+                $color = $link['badgeColor'] ?? 'neutral';
+
+                if (($icon !== null && (! is_string($icon)
+                        || preg_match('/^[a-z][a-z0-9-]{0,59}$/D', $icon) !== 1))
+                    || ($badge !== null && (! is_string($badge)
+                        || mb_strlen($badge) > 30))
+                    || ! in_array($position, ['before', 'after'], true)
+                    || ! in_array($color, ['neutral', 'primary', 'success', 'warning', 'danger', 'info'], true)) {
+                    throw new InvalidArgumentException('Invalid Page Header tab metadata.');
+                }
+
+                $entry['icon'] = $icon;
+                $entry['iconPosition'] = $position;
+                $entry['badge'] = $badge;
+                $entry['badgeColor'] = $color;
+            }
+
+            $normalized[] = $entry;
         }
 
         return $normalized;
