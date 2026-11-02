@@ -41,7 +41,6 @@ final class CleanReactInstallCommandTest extends TestCase
 
         $this->app->setBasePath($this->root);
         $this->app->useAppPath($this->root.'/app');
-        $this->app->useResourcePath($this->root.'/resources');
     }
 
     protected function tearDown(): void
