@@ -25,6 +25,10 @@ final class ResourcePropertiesTest extends TestCase
             ['mode' => 'published'],
             ResourceRoutes::definitions(PropertyConfiguredResource::class)['published']['parameters'],
         );
+        self::assertSame(
+            'list',
+            ResourceRoutes::definitions(PropertyConfiguredResource::class)['published']['action'],
+        );
         self::assertInstanceOf(Builder::class, PropertyConfiguredResource::query());
 
         ResourceRoutes::validate(PropertyConfiguredResource::class);
@@ -87,7 +91,6 @@ final class PropertyConfiguredResource extends Resource
         'published' => [
             'page' => PropertyListPage::class,
             'route' => '/published',
-            'action' => 'list',
             'parameters' => ['mode' => 'published'],
         ],
     ];
