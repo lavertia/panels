@@ -402,9 +402,13 @@ function ActionLink({ node }: { node: ComponentNode }) {
     }
 
     if (!href) return <span className="text-sm text-gray-500">{label}</span>;
-    if (href.startsWith('/')) return <Link href={href} className={classes}>{label}</Link>;
+    if (href.startsWith('/') && node.props.openInNewTab !== true) {
+        return <Link href={href} className={classes}>{label}</Link>;
+    }
 
-    return <a href={href} className={classes} rel="noopener noreferrer">{label}</a>;
+    return <a href={href} className={classes}
+        target={node.props.openInNewTab === true ? '_blank' : undefined}
+        rel="noopener noreferrer">{label}</a>;
 }
 
 export default function LavertiaRenderer({ node }: { node: ComponentNode }) {
