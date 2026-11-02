@@ -95,8 +95,9 @@ final class ResourceAuthPagesTest extends TestCase
 
         $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.edit');
         self::assertCount(2, $nav);
-        self::assertSame('/demo/entries', $nav[0]['url']);
-        self::assertTrue($nav[0]['active']);
+        $links = array_column($nav, null, 'slug');
+        self::assertSame('/demo/entries', $links['entries']['url']);
+        self::assertTrue($links['entries']['active']);
     }
 
     public function test_cross_tenant_record_is_not_found_and_unpermitted_edit_is_forbidden(): void
@@ -147,13 +148,15 @@ final class ResourceAuthPagesTest extends TestCase
 
         $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.active');
         self::assertCount(2, $nav);
-        self::assertTrue($nav[1]['active']);
+        $links = array_column($nav, null, 'slug');
+        self::assertTrue($links['active-entries']['active']);
     }
 
     public function test_reused_page_keeps_policy_scope_for_record_aliases(): void
     {
         $this->be(new GenericUser(['id' => 7]));
-        $this->withSession(['tenant_id' => 1]);
+        $this->withSession(['tenant_id' => 1])
+            ->withHeader('X-Inertia', 'true');
 
         $this->get('/demo/entries/2/history/2026')->assertNotFound();
         $this->get('/demo/entries/1/history/2026?action=edit')->assertOk();
