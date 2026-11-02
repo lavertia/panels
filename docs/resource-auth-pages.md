@@ -47,6 +47,12 @@ Route naming: lavertia.admin.resources.projects.list / create / view / edit.
 Paths: /admin/projects, /admin/projects/create, /admin/projects/{record},
 /admin/projects/{record}/edit. All GET routes inherit the Panel middleware.
 
+To place a Resource in the universal Panel navigation, use:
+`NavigationItem::make('projects', 'Projects')->resource('projects')`.
+It points to the registered Resource list route, stays active on View/Edit
+children, and appears only if the current user passes `viewAny`.
+The item can be reused in the same Shell slots as ordinary Page links.
+
 Authorization: viewAny on model for list, create on model for create,
 view on scoped record for view, update on scoped record for edit. If a record
 is not in Resource::query()'s scope, Laravel returns 404 before the Policy
