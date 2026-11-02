@@ -493,9 +493,11 @@ watch(() => props.node.props.value, (next) => {
         <span v-if="clientActionError" role="alert" class="text-xs text-rose-600">{{ clientActionError }}</span>
     </span>
 
-    <Link v-else-if="node.type === 'action' && href?.startsWith('/')" :href="href" :class="actionClass">{{ label }}</Link>
+    <Link v-else-if="node.type === 'action' && href?.startsWith('/') && node.props.openInNewTab !== true" :href="href" :class="actionClass">{{ label }}</Link>
 
-    <a v-else-if="node.type === 'action' && href" :href="href" :class="actionClass" rel="noopener noreferrer">{{ label }}</a>
+    <a v-else-if="node.type === 'action' && href" :href="href" :class="actionClass"
+        :target="node.props.openInNewTab === true ? '_blank' : undefined"
+        rel="noopener noreferrer">{{ label }}</a>
 
     <span v-else-if="node.type === 'action'" class="text-sm text-gray-500">{{ label }}</span>
 
