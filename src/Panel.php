@@ -13,6 +13,8 @@ use Lavertia\Panels\Navigation\NavigationGroup;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Navigation\NavigationSlot;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\Resource;
+use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Panels\Plugins\PanelPlugin;
 use Lavertia\Panels\Themes\PanelTheme;
 use Lavertia\Panels\Themes\ThemeManifest;
@@ -113,6 +115,9 @@ final class Panel
 
     /** @var list<class-string<Page>> */
     private array $pages = [];
+
+    /** @var list<class-string<Resource>> */
+    private array $resources = [];
 
     /** @var list<array{in: string, for: string}> */
     private array $pageDirectories = [];
@@ -716,6 +721,7 @@ final class Panel
             'path' => $this->path,
             'middleware' => $this->middleware,
             'pages' => $this->pages,
+            'resources' => $this->resources,
             'discover_pages' => $this->pageDirectories,
             'brand_name' => $this->brandName,
             'brand_subtitle' => $this->brandSubtitle,
@@ -779,6 +785,46 @@ final class Panel
         $copy->explicitMiddleware = true;
 
         return $copy;
+    }
+
+    /**
+     * Register Eloquent Resources; route security and model queries stay in
+     * Laravel instead of the React/Vue/Svelte presentation adapters.
+     *
+     * @param  list<class-string<Resource>>  $resources
+     */
+    public function resources(array $resources): self
+    {
+        if (! array_is_list($resources)) {
+            throw new InvalidArgumentException('Panel Resources must be an ordered list.');
+        }
+
+        $slugs = [];
+
+        foreach ($resources as $resource) {
+            if (! is_string($resource)) {
+                throw new InvalidArgumentException('Resource must be a PHP class.');
+            }
+
+            ResourceRoutes::validate($resource);
+
+            if (isset($slugs[$resource::slug()])) {
+                throw new InvalidArgumentException('Duplicate Resource slug.');
+            }
+
+            $slugs[$resource::slug()] = true;
+        }
+
+        $copy = clone $this;
+        $copy->resources = $resources;
+
+        return $copy;
+    }
+
+    /** @return list<class-string<Resource>> */
+    public function resourceClasses(): array
+    {
+        return $this->resources;
     }
 
     /** @param list<class-string<Page>> $pages */
