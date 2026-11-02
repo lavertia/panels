@@ -17,6 +17,7 @@ use Lavertia\Panels\Auth\AuthPageContract;
 use Lavertia\Panels\Auth\AuthPages;
 use Lavertia\Panels\Auth\AuthRoute;
 use Lavertia\Panels\Components\Section;
+use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\CardPage;
 use Lavertia\Panels\Pages\FlatPage;
 use Lavertia\Panels\Pages\SplitPage;
@@ -91,6 +92,11 @@ final class ResourceAuthPagesTest extends TestCase
 
         self::assertSame('lavertia.demo.resources.entries.view', app('router')->getRoutes()
             ->match(\Illuminate\Http\Request::create('/demo/entries/1', 'GET'))->getName());
+
+        $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.edit');
+        self::assertCount(1, $nav);
+        self::assertSame('/demo/entries', $nav[0]['url']);
+        self::assertTrue($nav[0]['active']);
     }
 
     public function test_cross_tenant_record_is_not_found_and_unpermitted_edit_is_forbidden(): void
@@ -164,7 +170,10 @@ final class ResourceAuthPanelProvider extends PanelProvider
         return $panel->id('demo')
             ->middleware(['web'])
             ->locales(['en', 'ar'])
-            ->resources([EntryResource::class]);
+            ->resources([EntryResource::class])
+            ->navigationItems([
+                NavigationItem::make('entries', 'Entries')->resource('entries'),
+            ]);
     }
 }
 
