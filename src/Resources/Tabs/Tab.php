@@ -6,8 +6,8 @@ namespace Lavertia\Panels\Resources\Tabs;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
-use InvalidArgumentException;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Server-owned filter tab. Callbacks never enter the Inertia payload.
