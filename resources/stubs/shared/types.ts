@@ -152,6 +152,7 @@ export interface PageSeo {
 
 export interface LavertiaPayload {
     navigation?: NavigationLink[];
+    panel?: PanelAppearance | null;
     version: number;
     title?: string;
     tree: ComponentNode;
