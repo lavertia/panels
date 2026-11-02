@@ -45,6 +45,32 @@ explicit query scope must both protect tenant data.
 Legacy `slug()`, `model()`, `query()` and `pages()` method overrides remain
 supported and take precedence over the protected static properties.
 
+## Property-only configuration with Page parameters
+
+Custom page definitions can also be written as **literal arrays** in
+`protected static array $pages`, avoiding a `pages()` method entirely:
+
+```php
+protected static array $pages = [
+    'list' => Pages\ListTickets::class,
+    'published' => [
+        'page' => Pages\ListTickets::class,
+        'route' => '/published',
+        'action' => 'list',
+        'parameters' => ['status' => 'published'],
+    ],
+    'drafts' => [
+        'page' => Pages\ListTickets::class,
+        'route' => '/drafts',
+        'action' => 'list',
+        'parameters' => ['status' => 'draft'],
+    ],
+];
+```
+
+Array keys are validated strictly; unknown keys fail before routes mount.
+The same Page class can be used in both entries. The fluent builder below
+is an alternative for developers who prefer methods over properties.
 ## Choice 2: same Page class under multiple names
 
 ```php
