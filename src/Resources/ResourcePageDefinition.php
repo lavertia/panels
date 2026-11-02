@@ -40,6 +40,46 @@ final class ResourcePageDefinition
         return new self($page);
     }
 
+    /**
+     * Property-friendly syntax: arrays are usable as PHP static defaults,
+     * unlike objects/closures created at runtime in pages() methods.
+     *
+     * @param array<string, mixed> $configuration
+     */
+    public static function fromArray(array $configuration): self
+    {
+        if (array_diff(array_keys($configuration), ['page', 'route', 'action', 'parameters']) !== []
+            || ! is_string($configuration['page'] ?? null)) {
+            throw new InvalidArgumentException('Resource Page arrays require a class and supported options only.');
+        }
+
+        $page = self::make($configuration['page']);
+
+        foreach (['route', 'action'] as $key) {
+            if (! array_key_exists($key, $configuration)) {
+                continue;
+            }
+
+            if (! is_string($configuration[$key])) {
+                throw new InvalidArgumentException('Resource Page route and action must be strings.');
+            }
+
+            $page = $key === 'route'
+                ? $page->route($configuration[$key])
+                : $page->action($configuration[$key]);
+        }
+
+        if (array_key_exists('parameters', $configuration)) {
+            if (! is_array($configuration['parameters'])) {
+                throw new InvalidArgumentException('Resource Page parameters must be an array.');
+            }
+
+            $page = $page->parameters($configuration['parameters']);
+        }
+
+        return $page;
+    }
+
     /** Paths include placeholders such as /{record}/history/{year}. */
     public function route(string $path): self
     {
