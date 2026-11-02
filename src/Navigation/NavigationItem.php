@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\PanelRegistry;
+use Lavertia\Panels\Resources\Resource;
 use Lavertia\Support\Components\AbstractComponent;
 
 /**
@@ -36,6 +37,9 @@ final class NavigationItem extends AbstractComponent
     private ?string $parent = null;
 
     private ?string $ability = null;
+
+    /** Optional Panel Resource slug; defaults to an ordinary Page slug. */
+    private ?string $resource = null;
 
     private function __construct(
         public readonly string $slug,
@@ -112,6 +116,14 @@ final class NavigationItem extends AbstractComponent
             $item = $item->ability($config['ability']);
         }
 
+        if (array_key_exists('resource', $config) && $config['resource'] !== null) {
+            if (! is_string($config['resource'])) {
+                throw new InvalidArgumentException('Navigation Resource target must be a string.');
+            }
+
+            $item = $item->resource($config['resource']);
+        }
+
         return $item;
     }
 
@@ -147,6 +159,19 @@ final class NavigationItem extends AbstractComponent
         }
 
         return ['visible' => false];
+    }
+
+    /** Link to a registered Resource index rather than an ordinary Page. */
+    public function resource(string $slug): self
+    {
+        if (preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $slug) !== 1) {
+            throw new InvalidArgumentException('Navigation Resource slug is invalid.');
+        }
+
+        $copy = clone $this;
+        $copy->resource = $slug;
+
+        return $copy;
     }
 
     public function group(string $group): self
@@ -239,6 +264,7 @@ final class NavigationItem extends AbstractComponent
             && $this->group === $other->group
             && $this->sort === $other->sort
             && $this->ability === $other->ability
+            && $this->resource === $other->resource
             && $this->icon === $other->icon
             && $this->badge === $other->badge
             && $this->parent === $other->parent;
@@ -256,7 +282,23 @@ final class NavigationItem extends AbstractComponent
             return null;
         }
 
-        $name = 'lavertia.'.$panelId.'.'.str_replace('/', '.', $this->slug);
+        if ($this->resource !== null) {
+            $registered = app(PanelRegistry::class)->panel($panelId)?->resourceClasses() ?? [];
+            $matched = array_values(array_filter(
+                $registered,
+                fn (string $class): bool => is_subclass_of($class, Resource::class)
+                    && $class::slug() === $this->resource,
+            ));
+
+            if (count($matched) !== 1 || ! Gate::allows('viewAny', $matched[0]::model())) {
+                return null;
+            }
+
+            $name = 'lavertia.'.$panelId.'.resources.'.$this->resource.'.list';
+        } else {
+            $name = 'lavertia.'.$panelId.'.'.str_replace('/', '.', $this->slug);
+        }
+
         $route = Route::getRoutes()->getByName($name);
 
         // Do not expose an unregistered or unrelated Laravel route via module nav.
@@ -288,7 +330,9 @@ final class NavigationItem extends AbstractComponent
             'slug' => $this->slug,
             'group' => $this->group,
             'url' => $url,
-            'active' => $currentRoute === $name,
+            'active' => $currentRoute === $name || ($this->resource !== null
+                && is_string($currentRoute)
+                && str_starts_with($currentRoute, 'lavertia.'.$panelId.'.resources.'.$this->resource.'.')),
             'icon' => $this->icon,
             'badge' => $this->badge,
             'parentSlug' => $this->parent,
