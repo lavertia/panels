@@ -116,8 +116,8 @@ final class ResourceRoutes
      * Register Page routes with fixed server-owned metadata. Route literals
      * and longer paths precede catch-all record placeholders.
      *
-     * @param class-string<LavertiaResource> $resource
-     * @param list<string> $middleware
+     * @param  class-string<LavertiaResource>  $resource
+     * @param  list<string>  $middleware
      */
     public static function mount(string $panelId, string $prefix, array $middleware, string $resource): void
     {
