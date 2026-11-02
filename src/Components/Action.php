@@ -66,6 +66,15 @@ final class Action extends AbstractComponent implements ActionComponent
     }
 
     /**
+     * Open a navigation action in a new browser tab, bypassing Inertia links.
+     * Useful for full-page documents, downloads and standalone HTML previews.
+     */
+    public function openUrlInNewTab(bool $enabled = true): static
+    {
+        return $this->withProp('openInNewTab', $enabled);
+    }
+
+    /**
      * Invoke a client-side handler registered by the host frontend.
      *
      * JavaScript is never sent over the component protocol. Only the
