@@ -20,7 +20,11 @@ final class ResourcePropertiesTest extends TestCase
     {
         self::assertSame('property-example', PropertyConfiguredResource::slug());
         self::assertSame(PropertyConfiguredModel::class, PropertyConfiguredResource::model());
-        self::assertSame(['list' => PropertyListPage::class], PropertyConfiguredResource::pages());
+        self::assertSame(PropertyListPage::class, PropertyConfiguredResource::pages()['list']);
+        self::assertSame(
+            ['mode' => 'published'],
+            ResourceRoutes::definitions(PropertyConfiguredResource::class)['published']['parameters'],
+        );
         self::assertInstanceOf(Builder::class, PropertyConfiguredResource::query());
 
         ResourceRoutes::validate(PropertyConfiguredResource::class);
@@ -38,6 +42,13 @@ final class ResourcePropertiesTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         ResourceRoutes::validate(CollidingPropertyResource::class);
+    }
+
+    public function test_invalid_property_array_options_are_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        ResourceRoutes::validate(InvalidArrayResource::class);
     }
 
     public function test_old_class_string_page_mappings_are_still_supported(): void
@@ -73,6 +84,12 @@ final class PropertyConfiguredResource extends Resource
 
     protected static array $pages = [
         'list' => PropertyListPage::class,
+        'published' => [
+            'page' => PropertyListPage::class,
+            'route' => '/published',
+            'action' => 'list',
+            'parameters' => ['mode' => 'published'],
+        ],
     ];
 }
 
@@ -154,4 +171,22 @@ final class CollidingPropertyListPage extends ResourcePage
     {
         return [];
     }
+}
+
+
+final class InvalidArrayResource extends Resource
+{
+    protected static ?string $slug = 'invalid-array';
+
+    protected static ?string $model = PropertyConfiguredModel::class;
+
+    protected static array $pages = [
+        'list' => PropertyListPage::class,
+        'invalid' => [
+            'page' => PropertyListPage::class,
+            'route' => '/safe',
+            'action' => 'list',
+            'callback' => 'unsafe-unknown-option',
+        ],
+    ];
 }
