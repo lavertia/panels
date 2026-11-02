@@ -13,6 +13,8 @@ use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\Resources\ResourceContext;
 use Lavertia\Panels\Resources\ResourcePageContract;
+use Lavertia\Panels\Resources\ResourcePageDefinition;
+use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -43,6 +45,37 @@ abstract class Page
     public static function canView(): bool
     {
         return true;
+    }
+
+    /**
+     * Register this Page under any named Resource key with an individual
+     * route path, policy type and fixed server-side configuration.
+     */
+    public static function route(string $path): ResourcePageDefinition
+    {
+        return ResourcePageDefinition::make(static::class)->route($path);
+    }
+
+    /** @return array<string, scalar|null> */
+    protected function pageParameters(): array
+    {
+        $metadata = request()->route()?->defaults[ResourceRoutes::REGISTRATION_KEY] ?? [];
+
+        return is_array($metadata) && is_array($metadata['parameters'] ?? null)
+            ? $metadata['parameters']
+            : [];
+    }
+
+    /** Read a fixed per-registration setting, never a client query parameter. */
+    protected function pageParameter(string $key, mixed $default = null): mixed
+    {
+        return $this->pageParameters()[$key] ?? $default;
+    }
+
+    /** Read a dynamic Laravel URL placeholder, independently of fixed settings. */
+    protected function routeParameter(string $key, mixed $default = null): mixed
+    {
+        return request()->route()?->parameter($key) ?? $default;
     }
 
     /** Runs after route middleware, before serialization, once per request. */
