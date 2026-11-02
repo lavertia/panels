@@ -173,7 +173,7 @@ final class InstallCommand extends Command
 
         $this->newLine();
         $this->info('Lavertia '.$stack.' installed. Panel: /'.$panelId.'/dashboard');
-        $this->line('Next: php artisan optimize:clear && npm run build');
+        $this->line('Next: php artisan config:clear && php artisan route:clear && php artisan view:clear && npm run build');
 
         if ($demo) {
             $this->warn('Demo route is accessible ONLY in APP_ENV=local. Never remove its environment guard.');
