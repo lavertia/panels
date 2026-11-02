@@ -57,7 +57,7 @@ final class ResourceListTabsTest extends TestCase
 
         $this->withSession(['tenant_id' => 1])
             ->withHeader('X-Inertia', 'true')
-            ->get('/tab-test/items?activeTab=published&lvt_items_page=900')
+            ->get('/tab-test/items?activeTab=published')
             ->assertOk()
             ->assertJsonPath('props.lavertia.tree.components.0.props.tabs.0.label', 'All records')
             ->assertJsonPath('props.lavertia.tree.components.0.props.tabs.1.label', 'Published')
@@ -96,18 +96,23 @@ final class ResourceListTabsTest extends TestCase
 
     public function test_tab_builder_rejects_invalid_labels_and_badge_colors(): void
     {
-        foreach ([
+        $invalid = [
             static fn () => Tab::make(''),
             static fn () => Tab::make()->badgeColor('javascript'),
             static fn () => Tab::make()->icon('../../unsafe'),
-        ] as $invalid) {
+        ];
+        $rejected = 0;
+
+        foreach ($invalid as $callback) {
             try {
-                $invalid();
+                $callback();
                 self::fail('Unsafe Tab configuration accepted.');
             } catch (InvalidArgumentException) {
-                // Expected.
+                $rejected++;
             }
         }
+
+        self::assertSame(count($invalid), $rejected);
     }
 }
 
