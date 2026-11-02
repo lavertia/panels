@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Lavertia\Panels\Components\PageHeader;
+use Lavertia\Panels\Components\Section;
+use Lavertia\Panels\Pages\SplitPage;
+use Lavertia\Support\Contracts\Component;
+
+final class {{ class }} extends SplitPage
+{
+    public static function slug(): string
+    {
+        return '{{ slug }}';
+    }
+
+    public static function title(): string
+    {
+        return '{{ title }}';
+    }
+
+    protected function splitRatio(): string
+    {
+        return 'balanced';
+    }
+
+    /** @return list<Component> */
+    protected function leftComponents(): array
+    {
+        return [
+            PageHeader::make('{{ title }}'),
+            Section::make('Main content')->description('Place your primary widgets here.'),
+        ];
+    }
+
+    /** @return list<Component> */
+    protected function rightComponents(): array
+    {
+        return [
+            Section::make('Secondary content')->description('Place your supporting widgets here.'),
+        ];
+    }
+}

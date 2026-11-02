@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Lavertia\Panels\Components\PageHeader;
+use Lavertia\Panels\Components\Section;
+use Lavertia\Panels\Pages\CardPage;
+use Lavertia\Support\Contracts\Component;
+
+final class {{ class }} extends CardPage
+{
+    public static function slug(): string
+    {
+        return '{{ slug }}';
+    }
+
+    public static function title(): string
+    {
+        return '{{ title }}';
+    }
+
+    protected function cardWidth(): string
+    {
+        return 'md';
+    }
+
+    /** @return list<Component> */
+    protected function components(): array
+    {
+        return [
+            PageHeader::make('{{ title }}'),
+            Section::make('Content')->description('Compose your widgets here.'),
+        ];
+    }
+}
