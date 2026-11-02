@@ -8,12 +8,14 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\PanelRegistry;
+use Lavertia\Support\Components\AbstractComponent;
 
 /**
  * Navigation items resolve to registered Lavertia Page routes in the same Panel.
  * No arbitrary external URLs or javascript: schemes are accepted.
  */
-final class NavigationItem
+final class NavigationItem extends AbstractComponent
 {
     private ?string $group = null;
 
@@ -111,6 +113,40 @@ final class NavigationItem
         }
 
         return $item;
+    }
+
+    /**
+     * Navigation items use the standard Component protocol, so the same
+     * instance can be placed in a shell slot, a navigation group or a Page.
+     * Never expose a hidden/unauthorized route's label or slug in props.
+     */
+    public function getType(): string
+    {
+        return 'navigation-item';
+    }
+
+    /** @return array<string, mixed> */
+    public function getProps(): array
+    {
+        if (! app()->bound(PanelRegistry::class)) {
+            return ['visible' => false];
+        }
+
+        $registry = app(PanelRegistry::class);
+        $currentRoute = request()->route()?->getName();
+        $panelId = $registry->panelForRoute($currentRoute);
+
+        if ($panelId === null) {
+            return ['visible' => false];
+        }
+
+        foreach ($registry->navigation($panelId, $currentRoute, true) as $link) {
+            if ($link['slug'] === $this->slug) {
+                return ['visible' => true, ...$link];
+            }
+        }
+
+        return ['visible' => false];
     }
 
     public function group(string $group): self

@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
 use Lavertia\Panels\Localization\LocaleContext;
+use Lavertia\Panels\Navigation\NavigationGroup;
 use Lavertia\Panels\Navigation\NavigationItem;
+use Lavertia\Panels\Navigation\NavigationSlot;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Plugins\PanelPlugin;
+use Lavertia\Panels\Themes\PanelTheme;
+use Lavertia\Panels\Themes\ThemeManifest;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use ReflectionClass;
 
@@ -98,6 +102,11 @@ final class Panel
 
     /** @var list<NavigationItem> */
     private array $navigationItems = [];
+
+    /** @var list<NavigationSlot> */
+    private array $shellSlots = [];
+
+    private ?PanelTheme $theme = null;
 
     /** @var list<string> */
     private array $middleware = ['web', 'auth'];
@@ -353,6 +362,65 @@ final class Panel
         return $copy;
     }
 
+    /**
+     * Install a theme from any compatible Composer package. Panel does not
+     * depend on the theme's package or on a specific React/Vue/Svelte UI kit.
+     */
+    public function theme(PanelTheme $theme): self
+    {
+        ThemeManifest::fromTheme($theme);
+
+        $copy = clone $this;
+        $copy->theme = $theme;
+
+        return $copy;
+    }
+
+    /** @param  list<NavigationSlot>  $slots */
+    public function shellSlots(array $slots): self
+    {
+        if (! array_is_list($slots)) {
+            throw new InvalidArgumentException('Shell slots must be an ordered list.');
+        }
+
+        $names = [];
+
+        foreach ($slots as $slot) {
+            if (! $slot instanceof NavigationSlot || isset($names[$slot->name()])) {
+                throw new InvalidArgumentException('Invalid or duplicate shell navigation slot.');
+            }
+
+            $names[$slot->name()] = true;
+
+            foreach ($slot->getComponents() as $child) {
+                if ($child instanceof NavigationItem) {
+                    continue;
+                }
+
+                if (! $child instanceof NavigationGroup) {
+                    throw new InvalidArgumentException('A navigation slot supports NavigationItem and NavigationGroup children.');
+                }
+
+                foreach ($child->getComponents() as $item) {
+                    if (! $item instanceof NavigationItem) {
+                        throw new InvalidArgumentException('Navigation groups currently support NavigationItem children only.');
+                    }
+                }
+            }
+        }
+
+        $copy = clone $this;
+        $copy->shellSlots = $slots;
+
+        return $copy;
+    }
+
+    /** @return list<NavigationSlot> */
+    public function getShellSlots(): array
+    {
+        return $this->shellSlots;
+    }
+
     /** @param list<NavigationItem> $items */
     public function navigationItems(array $items): self
     {
@@ -519,7 +587,7 @@ final class Panel
 
     public function layout(string $layout): self
     {
-        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+        if (! in_array($layout, ['sidebar', 'top', 'full', 'workspace'], true)) {
             throw new InvalidArgumentException('Panel layout must be sidebar, top or full.');
         }
 
@@ -675,6 +743,8 @@ final class Panel
             'locales' => $this->locales,
             'default_locale' => $this->defaultLocale,
             'navigation_groups' => $this->navigationGroups,
+            'shell_slots' => $this->shellSlots,
+            'theme' => $this->theme === null ? ThemeManifest::default() : ThemeManifest::fromTheme($this->theme),
             'topbar' => $this->topbar,
             'breadcrumbs' => $this->breadcrumbs,
             'sticky_header' => $this->stickyHeader,

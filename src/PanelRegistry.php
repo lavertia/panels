@@ -62,6 +62,24 @@ final class PanelRegistry
             $this->navigationItem($id, $item);
         }
 
+        // Slots and Groups may place a Page in several regions, but route
+        // registration and Gate checks remain single-source in this registry.
+        foreach ($panel->getShellSlots() as $slot) {
+            foreach ($slot->getComponents() as $child) {
+                if ($child instanceof NavigationItem) {
+                    $this->navigationItem($id, $child);
+
+                    continue;
+                }
+
+                foreach ($child->getComponents() as $item) {
+                    if ($item instanceof NavigationItem) {
+                        $this->navigationItem($id, $item);
+                    }
+                }
+            }
+        }
+
         foreach ($panel->getPlugins() as $plugin) {
             $plugin->register($this, $id);
         }
@@ -123,7 +141,7 @@ final class PanelRegistry
             $layout = $currentPage::layout();
         }
 
-        if (! in_array($layout, ['sidebar', 'top', 'full'], true)) {
+        if (! in_array($layout, ['sidebar', 'top', 'full', 'workspace'], true)) {
             throw new InvalidArgumentException('Invalid Page or Panel layout.');
         }
 
@@ -183,6 +201,11 @@ final class PanelRegistry
             'mobileNavigation' => $options['mobile_navigation'],
             'sidebarCollapsible' => $options['sidebar_collapsible'] ?? true,
             'sidebarVariant' => (string) ($options['sidebar_variant'] ?? 'inset'),
+            'theme' => $options['theme'],
+            'shellSlots' => array_values(array_filter(array_map(
+                fn ($slot): ?array => $this->visibleSlotNode($slot->toArray()),
+                $options['shell_slots'] ?? [],
+            ))),
         ];
     }
 
@@ -243,7 +266,7 @@ final class PanelRegistry
      *
      * @return list<array<string, mixed>>
      */
-    public function navigation(string $panelId, ?string $currentRoute = null): array
+    public function navigation(string $panelId, ?string $currentRoute = null, bool $includeSlotItems = false): array
     {
         if (! isset($this->panels[$panelId])) {
             return [];
@@ -319,7 +342,65 @@ final class PanelRegistry
             }
         }
 
+        if (! $includeSlotItems) {
+            $slotted = [];
+
+            foreach ($this->panels[$panelId]->getShellSlots() as $slot) {
+                foreach ($slot->getComponents() as $child) {
+                    if ($child instanceof NavigationItem) {
+                        $slotted[$child->slug] = true;
+
+                        continue;
+                    }
+
+                    foreach ($child->getComponents() as $item) {
+                        if ($item instanceof NavigationItem) {
+                            $slotted[$item->slug] = true;
+                        }
+                    }
+                }
+            }
+
+            return array_values(array_filter(
+                $navigation,
+                static fn (array $link): bool => ! isset($slotted[$link['slug']])
+                    && ! isset($slotted[$link['parentSlug'] ?? '']),
+            ));
+        }
+
         return $navigation;
+    }
+
+    /**
+     * Redact inaccessible widgets and empty Group labels before exposing any
+     * panel slot data. The frontend must never be a security filter.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>|null
+     */
+    private function visibleSlotNode(array $node): ?array
+    {
+        if ($node['type'] === 'navigation-item') {
+            return ($node['props']->visible ?? false) === true ? $node : null;
+        }
+
+        $children = [];
+
+        foreach ($node['components'] as $child) {
+            $visible = $this->visibleSlotNode($child);
+
+            if ($visible !== null) {
+                $children[] = $visible;
+            }
+        }
+
+        if ($children === []) {
+            return null;
+        }
+
+        $node['components'] = $children;
+
+        return $node;
     }
 
     /** @param class-string<DashboardWidget> $widget */
