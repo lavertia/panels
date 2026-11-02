@@ -129,7 +129,7 @@ final class InstallCommand extends Command
 
         if (! str_contains($providerContents, $registration)) {
             $updated = preg_replace(
-                '/\n\];[ \t]*\z/',
+                '/\R\];[ \t]*\R?\z/',
                 "    {$registration},\n];\n",
                 $providerContents,
                 1,
