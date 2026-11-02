@@ -569,7 +569,9 @@ points exist, run:
 
 ```bash
 php artisan lavertia:install --stack=react --panel=admin --demo
-php artisan optimize:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 npm run build
 php artisan route:list --path=admin
 ```
