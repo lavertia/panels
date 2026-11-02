@@ -37,7 +37,7 @@ final class {{ class }} extends Page
                 ->description('Your PHP-first administration workspace is ready.'),
 
             StatsGrid::make([
-                Stat::make('Laravel', '13.x')
+                Stat::make('Laravel', app()->version())
                     ->description('Backend framework')
                     ->tone('primary'),
                 Stat::make('Inertia', '3.x')
