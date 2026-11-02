@@ -48,9 +48,7 @@ abstract class ListRecords extends ResourcePage
     }
 
     /** Per-list customization; always receives a scoped query. */
-    protected function modifyTableQuery(Builder $query): void
-    {
-    }
+    protected function modifyTableQuery(Builder $query): void {}
 
     protected function components(): array
     {
