@@ -15,6 +15,8 @@ final class StarterKitAssetsTest extends TestCase
             self::assertFileExists(__DIR__.'/../resources/stubs/'.$stack.'/page.'.$extension);
         }
 
+        self::assertFileExists(__DIR__.'/../resources/stubs/react/table.tsx');
+        self::assertFileExists(__DIR__.'/../resources/stubs/react/table-ui.tsx');
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/types.ts');
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/form-state.ts');
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/client-actions.ts');
