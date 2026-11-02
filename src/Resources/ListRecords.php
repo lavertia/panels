@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Lavertia\Panels\Components\Action;
 use Lavertia\Panels\Components\PageHeader;
+use Lavertia\Panels\Components\Section;
 use Lavertia\Tables\Components\Table;
 
 /**
@@ -30,6 +31,16 @@ abstract class ListRecords extends ResourcePage
         return static::title();
     }
 
+    protected function listDescription(): ?string
+    {
+        return null;
+    }
+
+    protected function listSectionTitle(): string
+    {
+        return $this->listTitle();
+    }
+
     /** @return list<Action> */
     protected function getHeaderActions(): array
     {
@@ -45,6 +56,11 @@ abstract class ListRecords extends ResourcePage
     {
         $resource = static::resource();
         $header = PageHeader::make($this->listTitle());
+
+        if ($this->listDescription() !== null) {
+            $header = $header->description($this->listDescription());
+        }
+
         $tabs = $this->resourceTabLinks();
 
         if ($tabs !== []) {
@@ -66,6 +82,6 @@ abstract class ListRecords extends ResourcePage
                 static fn (): bool => Gate::allows('viewAny', $resource::model()),
             );
 
-        return [$header, $table];
+        return [$header, Section::make($this->listSectionTitle())->components([$table])];
     }
 }
