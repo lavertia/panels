@@ -58,6 +58,8 @@ final class CleanReactInstallCommandTest extends TestCase
         $this->assertFileExists($this->root.'/resources/js/pages/lavertia/page.tsx');
         $this->assertFileExists($this->root.'/resources/js/pages/lavertia/standalone.tsx');
         $this->assertFileExists($this->root.'/resources/js/components/lavertia/panel-shell.tsx');
+        $this->assertFileExists($this->root.'/resources/js/components/lavertia/table.tsx');
+        $this->assertFileExists($this->root.'/resources/js/components/lavertia/table-ui.tsx');
         $this->assertFileExists($this->root.'/resources/js/components/lavertia/form-state.ts');
         $this->assertFileExists($this->root.'/app/Lavertia/Pages/DashboardPage.php');
 
