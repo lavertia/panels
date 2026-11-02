@@ -131,8 +131,8 @@ final class InstallCommand extends Command
 
         $dashboardPath = app_path('Lavertia/Pages/DashboardPage.php');
         $planned[$dashboardPath] = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ slug }}', '{{ title }}'],
-            ['App\\Lavertia\\Pages', 'DashboardPage', 'dashboard', 'Dashboard'],
+            ['{{ namespace }}', '{{ class }}', '{{ slug }}', '{{ title }}', '{{ stack }}'],
+            ['App\\Lavertia\\Pages', 'DashboardPage', 'dashboard', 'Dashboard', ucfirst($stack)],
             $files->get($dashboardStub),
         );
 
