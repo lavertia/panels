@@ -88,6 +88,7 @@ final class PageVariantsTest extends TestCase
     {
         Route::get('standalone/invalid-presentation', InvalidPresentationPage::class);
 
+        $this->withoutExceptionHandling();
         $this->expectException(InvalidArgumentException::class);
 
         $this->withHeader('X-Inertia', 'true')->get('/standalone/invalid-presentation');
