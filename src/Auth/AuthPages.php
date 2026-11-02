@@ -23,7 +23,7 @@ final class AuthPages
     }
 
     /**
-     * The Panel supplies locale/branding scope, but the auth route deliberately
+     * The Panel supplies locale scope, but the auth route deliberately
      * does not inherit the Panel's default 'auth' middleware or sidebar.
      *
      * @param  list<AuthRoute>  $routes
