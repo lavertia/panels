@@ -11,6 +11,4 @@ use Lavertia\Panels\Pages\Page;
  * CardPage/FlatPage/SplitPage instead. Authentication is always owned by
  * the host's Fortify/SSO controllers, not a view or theme.
  */
-abstract class AuthPage extends Page implements AuthPageContract
-{
-}
+abstract class AuthPage extends Page implements AuthPageContract {}
