@@ -77,7 +77,7 @@ abstract class Resource
      * Generate a URL for a registered named Resource Page.
      * Pass the Panel ID explicitly when outside a mounted Panel.
      *
-     * @param array<string, mixed> $parameters
+     * @param  array<string, mixed>  $parameters
      */
     public static function getUrl(string $page = 'list', array $parameters = [], ?string $panelId = null): string
     {
