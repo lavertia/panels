@@ -89,8 +89,8 @@ jobs:
       - name: PSR style
         run: |
           composer lint || {
-            vendor/bin/pint src/Auth src/Resources src/Pages/Page.php src/Panel.php src/PanelRegistry.php tests/ResourceAuthPagesTest.php
-            git --no-pager diff -- src/Auth src/Resources src/Pages/Page.php src/Panel.php src/PanelRegistry.php tests/ResourceAuthPagesTest.php
+            vendor/bin/pint src/Auth src/Resources src/Pages/Page.php src/Navigation/NavigationItem.php src/Panel.php src/PanelRegistry.php tests/ResourceAuthPagesTest.php tests/ResourcePropertiesTest.php
+            git --no-pager diff -- src/Auth src/Resources src/Pages/Page.php src/Navigation/NavigationItem.php src/Panel.php src/PanelRegistry.php tests/ResourceAuthPagesTest.php tests/ResourcePropertiesTest.php
             exit 1
           }
 

@@ -17,7 +17,18 @@ final class ResourceContext
     public static function authorize(ResourcePageContract $page): void
     {
         $resource = $page::resource();
-        $action = $page::resourceAction();
+        $metadata = request()->route()?->defaults[ResourceRoutes::REGISTRATION_KEY] ?? null;
+
+        if ($metadata !== null && (! is_array($metadata)
+            || ($metadata['resource'] ?? null) !== $resource
+            || ($metadata['page'] ?? null) !== $page::class
+            || ! is_string($metadata['action'] ?? null))) {
+            throw new InvalidArgumentException('Resource registration does not match the current Page.');
+        }
+
+        // Authorization follows the registered route, NOT the Page class:
+        // one class may serve multiple named pages with different policies.
+        $action = $metadata['action'] ?? $page::resourceAction();
 
         if (! is_subclass_of($resource, Resource::class)
             || ! in_array($action, ['list', 'create', 'view', 'edit'], true)) {

@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\Resources\Resource;
+use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Support\Components\AbstractComponent;
 
 /**
@@ -40,6 +41,8 @@ final class NavigationItem extends AbstractComponent
 
     /** Optional Panel Resource slug; defaults to an ordinary Page slug. */
     private ?string $resource = null;
+
+    private string $resourcePage = 'list';
 
     private function __construct(
         public readonly string $slug,
@@ -121,7 +124,13 @@ final class NavigationItem extends AbstractComponent
                 throw new InvalidArgumentException('Navigation Resource target must be a string.');
             }
 
-            $item = $item->resource($config['resource']);
+            $resourcePage = $config['resourcePage'] ?? 'list';
+
+            if (! is_string($resourcePage)) {
+                throw new InvalidArgumentException('Resource Page navigation key must be a string.');
+            }
+
+            $item = $item->resource($config['resource'], $resourcePage);
         }
 
         return $item;
@@ -162,14 +171,16 @@ final class NavigationItem extends AbstractComponent
     }
 
     /** Link to a registered Resource index rather than an ordinary Page. */
-    public function resource(string $slug): self
+    public function resource(string $slug, string $page = 'list'): self
     {
-        if (preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $slug) !== 1) {
+        if (preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $slug) !== 1
+            || preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $page) !== 1) {
             throw new InvalidArgumentException('Navigation Resource slug is invalid.');
         }
 
         $copy = clone $this;
         $copy->resource = $slug;
+        $copy->resourcePage = $page;
 
         return $copy;
     }
@@ -265,6 +276,7 @@ final class NavigationItem extends AbstractComponent
             && $this->sort === $other->sort
             && $this->ability === $other->ability
             && $this->resource === $other->resource
+            && $this->resourcePage === $other->resourcePage
             && $this->icon === $other->icon
             && $this->badge === $other->badge
             && $this->parent === $other->parent;
@@ -290,11 +302,27 @@ final class NavigationItem extends AbstractComponent
                     && $class::slug() === $this->resource,
             ));
 
-            if (count($matched) !== 1 || ! Gate::allows('viewAny', $matched[0]::model())) {
+            if (count($matched) !== 1) {
                 return null;
             }
 
-            $name = 'lavertia.'.$panelId.'.resources.'.$this->resource.'.list';
+            $resource = $matched[0];
+            $pages = ResourceRoutes::definitions($resource);
+            $definition = $pages[$this->resourcePage] ?? null;
+
+            // Only links that can generate a complete URL without a
+            // dynamic record are eligible for default navigation.
+            if ($definition === null || str_contains($definition['path'], '{')) {
+                return null;
+            }
+
+            $ability = $definition['action'] === 'create' ? 'create' : 'viewAny';
+
+            if (! Gate::allows($ability, $resource::model())) {
+                return null;
+            }
+
+            $name = 'lavertia.'.$panelId.'.resources.'.$this->resource.'.'.$this->resourcePage;
         } else {
             $name = 'lavertia.'.$panelId.'.'.str_replace('/', '.', $this->slug);
         }
