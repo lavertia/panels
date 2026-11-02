@@ -13,9 +13,10 @@ use Lavertia\Panels\Navigation\NavigationGroup;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Navigation\NavigationSlot;
 use Lavertia\Panels\Pages\Page;
-use Lavertia\Panels\Resources\Resource;
-use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Panels\Plugins\PanelPlugin;
+use Lavertia\Panels\Resources\Resource as LavertiaResource;
+use Lavertia\Panels\Resources\Resource as LavertiaResource;
+use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Panels\Themes\PanelTheme;
 use Lavertia\Panels\Themes\ThemeManifest;
 use Lavertia\Panels\Widgets\DashboardWidget;
@@ -116,7 +117,7 @@ final class Panel
     /** @var list<class-string<Page>> */
     private array $pages = [];
 
-    /** @var list<class-string<Resource>> */
+    /** @var list<class-string<LavertiaResource>> */
     private array $resources = [];
 
     /** @var list<array{in: string, for: string}> */
@@ -791,7 +792,7 @@ final class Panel
      * Register Eloquent Resources; route security and model queries stay in
      * Laravel instead of the React/Vue/Svelte presentation adapters.
      *
-     * @param  list<class-string<Resource>>  $resources
+     * @param  list<class-string<LavertiaResource>>  $resources
      */
     public function resources(array $resources): self
     {
@@ -821,7 +822,7 @@ final class Panel
         return $copy;
     }
 
-    /** @return list<class-string<Resource>> */
+    /** @return list<class-string<LavertiaResource>> */
     public function resourceClasses(): array
     {
         return $this->resources;
