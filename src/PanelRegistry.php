@@ -105,6 +105,10 @@ final class PanelRegistry
 
     public function panelForRoute(?string $routeName): ?string
     {
+        if (is_string($routeName) && str_starts_with($routeName, 'lavertia-auth.')) {
+            return null;
+        }
+
         if (is_string($routeName)
             && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1
             && isset($this->panels[$matches[1]])) {
