@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Lavertia\Panels\Components\PageHeader;
+use Lavertia\Panels\Components\Section;
+use Lavertia\Panels\Components\Stat;
+use Lavertia\Panels\Components\StatsGrid;
+use Lavertia\Panels\Components\Table;
+use Lavertia\Panels\Components\TextColumn;
+use Lavertia\Panels\Pages\Page;
+use Lavertia\Support\Contracts\Component;
+
+/**
+ * Read-only sample data for verifying a fresh Lavertia installation.
+ * No database mutations, private records, or external network requests.
+ */
+final class {{ class }} extends Page
+{
+    public static function slug(): string
+    {
+        return '{{ slug }}';
+    }
+
+    public static function title(): string
+    {
+        return '{{ title }}';
+    }
+
+    /** @return list<Component> */
+    protected function components(): array
+    {
+        return [
+            PageHeader::make('Overview')
+                ->description('Your PHP-first administration workspace is ready.'),
+
+            StatsGrid::make([
+                Stat::make('Laravel', '13.x')
+                    ->description('Backend framework')
+                    ->tone('primary'),
+                Stat::make('Inertia', '3.x')
+                    ->description('Server-driven navigation')
+                    ->tone('success'),
+                Stat::make('React', '19.x')
+                    ->description('Frontend adapter')
+                    ->tone('primary'),
+                Stat::make('Lavertia', 'Installed')
+                    ->description('Panel and component renderer')
+                    ->tone('success'),
+            ]),
+
+            Section::make('Explore tables')
+                ->description('Sample, browser-local records. Search and sort without changing the database.')
+                ->components([
+                    Table::make('examples')
+                        ->label('Example records')
+                        ->searchable()
+                        ->columns([
+                            TextColumn::make('name')->label('Name')->sortable()->searchable(),
+                            TextColumn::make('type')->label('Type')->sortable(),
+                            TextColumn::make('status')->label('Status')->badge([
+                                'Ready' => 'success',
+                                'Draft' => 'warning',
+                            ]),
+                        ])
+                        ->rows([
+                            ['name' => 'First dashboard', 'type' => 'Page', 'status' => 'Ready'],
+                            ['name' => 'Products catalogue', 'type' => 'Resource', 'status' => 'Draft'],
+                            ['name' => 'Orders table', 'type' => 'Table', 'status' => 'Ready'],
+                            ['name' => 'Contact form', 'type' => 'Form', 'status' => 'Draft'],
+                            ['name' => 'Sales summary', 'type' => 'Widget', 'status' => 'Ready'],
+                        ]),
+                ]),
+        ];
+    }
+}
