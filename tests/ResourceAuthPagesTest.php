@@ -122,6 +122,60 @@ final class ResourceAuthPagesTest extends TestCase
         $this->get('/demo/entries/0')->assertNotFound();
     }
 
+    public function test_same_page_class_can_have_multiple_named_routes_with_fixed_parameters(): void
+    {
+        $this->be(new GenericUser(['id' => 7]));
+        $this->withSession(['tenant_id' => 1])->withHeader('X-Inertia', 'true');
+
+        $this->get('/demo/entries/active?heading=untrusted')
+            ->assertOk()
+            ->assertJsonPath('props.lavertia.tree.components.0.props.title', 'Active entries');
+
+        $this->get('/demo/entries/archived')
+            ->assertOk()
+            ->assertJsonPath('props.lavertia.tree.components.0.props.title', 'Archived entries');
+
+        $this->get('/demo/entries/1/history/2026')
+            ->assertOk()
+            ->assertJsonPath('props.lavertia.tree.components.0.props.title', 'First tenant history 2026');
+
+        self::assertSame('/demo/entries/active', EntryResource::getUrl('active', [], 'demo'));
+        self::assertSame(
+            '/demo/entries/1/history/2026',
+            EntryResource::getUrl('history', ['record' => 1, 'year' => '2026'], 'demo'),
+        );
+
+        $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.active');
+        self::assertCount(2, $nav);
+        self::assertTrue($nav[1]['active']);
+    }
+
+    public function test_reused_page_keeps_policy_scope_for_record_aliases(): void
+    {
+        $this->be(new GenericUser(['id' => 7]));
+        $this->withSession(['tenant_id' => 1]);
+
+        $this->get('/demo/entries/2/history/2026')->assertNotFound();
+        $this->get('/demo/entries/1/history/2026?action=edit')->assertOk();
+    }
+
+    public function test_invalid_page_descriptors_cannot_shadow_security_or_routes(): void
+    {
+        $invalid = [
+            static fn () => EntryListPage::route('/{record?}')->action('list'),
+            static fn () => EntryListPage::route('/safe')->parameters(['record' => 2]),
+            static fn () => EntryListPage::route('/safe')->parameters(['heading' => new \stdClass]),
+            static fn () => EntryViewPage::route('/history')->action('view')->resolve('history'),
+            static fn () => EntryListPage::route('/{record}')->action('list')->resolve('active'),
+            static fn () => EntryListPage::route('/{year}')->action('list')->parameters(['year' => '2026'])->resolve('active'),
+        ];
+
+        foreach ($invalid as $bad) {
+            $this->expectException(InvalidArgumentException::class);
+            $bad();
+        }
+    }
+
     public function test_central_and_panel_auth_keep_noindex_without_admin_shell(): void
     {
         $this->withHeader('X-Inertia', 'true')
@@ -173,6 +227,7 @@ final class ResourceAuthPanelProvider extends PanelProvider
             ->resources([EntryResource::class])
             ->navigationItems([
                 NavigationItem::make('entries', 'Entries')->resource('entries'),
+                NavigationItem::make('active-entries', 'Active entries')->resource('entries', 'active'),
             ]);
     }
 }
@@ -211,15 +266,9 @@ final class EntryPolicy
 
 final class EntryResource extends Resource
 {
-    public static function slug(): string
-    {
-        return 'entries';
-    }
+    protected static ?string $slug = 'entries';
 
-    public static function model(): string
-    {
-        return EntryModel::class;
-    }
+    protected static ?string $model = EntryModel::class;
 
     public static function query(): Builder
     {
@@ -230,9 +279,18 @@ final class EntryResource extends Resource
     {
         return [
             'list' => EntryListPage::class,
+            'active' => EntryListPage::route('/active')
+                ->action('list')
+                ->parameters(['heading' => 'Active entries']),
+            'archived' => EntryListPage::route('/archived')
+                ->action('list')
+                ->parameters(['heading' => 'Archived entries']),
             'create' => EntryCreatePage::class,
             'view' => EntryViewPage::class,
             'edit' => EntryEditPage::class,
+            'history' => EntryViewPage::route('/{record}/history/{year}')
+                ->action('view')
+                ->parameters(['heading' => 'history']),
         ];
     }
 }
@@ -274,7 +332,7 @@ final class EntryListPage extends ResourcePage
 
     protected function components(): array
     {
-        return [Section::make('Entry listing')];
+        return [Section::make((string) $this->pageParameter('heading', 'Entry listing'))];
     }
 }
 
@@ -314,7 +372,8 @@ final class EntryViewPage extends CardPage implements ResourcePageContract
 
     protected function components(): array
     {
-        return [Section::make($this->record()->title)];
+        return [Section::make($this->record()->title
+            .($this->routeParameter('year') === null ? '' : ' history '.$this->routeParameter('year')))];
     }
 }
 
