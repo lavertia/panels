@@ -15,7 +15,6 @@ use Lavertia\Panels\Navigation\NavigationSlot;
 use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Plugins\PanelPlugin;
 use Lavertia\Panels\Resources\Resource as LavertiaResource;
-use Lavertia\Panels\Resources\Resource as LavertiaResource;
 use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Panels\Themes\PanelTheme;
 use Lavertia\Panels\Themes\ThemeManifest;
