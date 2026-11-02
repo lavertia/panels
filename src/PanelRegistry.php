@@ -109,6 +109,14 @@ final class PanelRegistry
             return $matches[1];
         }
 
+        // A standalone Page must never inherit the default Panel, its tenant
+        // navigation or privileged shell props through the host middleware.
+        $routeClass = request()->route()?->getActionName();
+
+        if (is_string($routeClass) && is_subclass_of($routeClass, Page::class)) {
+            return null;
+        }
+
         // Starter Kit routes (e.g. profile/settings) remain attached to the
         // default Panel when they do not belong to a Lavertia Page route.
         return isset($this->panels['admin'])
