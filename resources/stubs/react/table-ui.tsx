@@ -216,7 +216,7 @@ export function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item" disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn('flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-amber-500 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-slate-800', className)}>
-        <span aria-hidden="true" className="w-4 shrink-0">{checked ? '✓' : ''}</span>
+        <span aria-hidden="true" className="w-4 shrink-0">{checked ? <Icon name="check-circle" className="size-3.5" /> : null}</span>
         <span className="min-w-0 truncate">{children}</span>
     </button>;
 }
