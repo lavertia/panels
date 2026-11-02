@@ -135,7 +135,13 @@ abstract class Page
             throw new InvalidArgumentException('Invalid Page split ratio.');
         }
 
-        $seo = $this->seo();
+        $seo = [
+            'title' => static::title(),
+            'description' => null,
+            'robots' => 'noindex,nofollow',
+            'canonical' => null,
+            ...$this->seo(),
+        ];
 
         if (! is_string($seo['title'] ?? null) || trim($seo['title']) === ''
             || mb_strlen($seo['title']) > 160
