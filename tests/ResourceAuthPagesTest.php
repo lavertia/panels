@@ -157,6 +157,13 @@ final class ResourceAuthPagesTest extends TestCase
 
         $this->get('/demo/entries/2/history/2026')->assertNotFound();
         $this->get('/demo/entries/1/history/2026?action=edit')->assertOk();
+
+        // The class normally serves View, but this separate registration
+        // requires Update (edit) Policy, not the class's static view action.
+        $this->get('/demo/entries/1/review')->assertOk();
+        $this->withSession(['tenant_id' => 1, 'deny_update' => true])
+            ->get('/demo/entries/1/review')
+            ->assertForbidden();
     }
 
     public function test_invalid_page_descriptors_cannot_shadow_security_or_routes(): void
@@ -300,6 +307,9 @@ final class EntryResource extends Resource
             'history' => EntryViewPage::route('/{record}/history/{year}')
                 ->action('view')
                 ->parameters(['heading' => 'history']),
+            'review' => EntryViewPage::route('/{record}/review')
+                ->action('edit')
+                ->parameters(['heading' => 'review']),
         ];
     }
 }
