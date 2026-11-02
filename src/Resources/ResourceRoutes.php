@@ -83,8 +83,12 @@ final class ResourceRoutes
                     ->action($key);
             }
 
+            if (is_array($value)) {
+                $value = ResourcePageDefinition::fromArray($value);
+            }
+
             if (! $value instanceof ResourcePageDefinition) {
-                throw new InvalidArgumentException('Resource Page must be a Page class or ResourcePageDefinition.');
+                throw new InvalidArgumentException('Resource Page must be a Page class or valid registration definition.');
             }
 
             $definition = $value->resolve($key);
