@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\Resource as LavertiaResource;
 use ReflectionClass;
 
 final class ResourceRoutes
@@ -23,7 +24,7 @@ final class ResourceRoutes
         'view' => '{record}',
     ];
 
-    /** @param class-string<Resource> $resource */
+    /** @param class-string<LavertiaResource> $resource */
     public static function validate(string $resource): void
     {
         if (! is_subclass_of($resource, Resource::class)
@@ -65,8 +66,8 @@ final class ResourceRoutes
      * Register verified GET routes only. POST/PATCH/DELETE are owned by
      * the host's Form Requests, Policies and domain actions.
      *
-     * @param class-string<Resource> $resource
-     * @param list<string> $middleware
+     * @param  class-string<LavertiaResource>  $resource
+     * @param  list<string>  $middleware
      */
     public static function mount(string $panelId, string $prefix, array $middleware, string $resource): void
     {
