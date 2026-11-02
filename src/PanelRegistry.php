@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Lavertia\Panels;
 
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Lavertia\Panels\Http\Middleware\ResolveLocale;
 use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\Page;
+use Lavertia\Panels\Resources\ResourceRoutes;
 use Lavertia\Panels\Widgets\DashboardWidget;
 use Lavertia\Support\Contracts\Component;
 use ReflectionClass;
@@ -103,6 +105,10 @@ final class PanelRegistry
 
     public function panelForRoute(?string $routeName): ?string
     {
+        if (is_string($routeName) && str_starts_with($routeName, 'lavertia-auth.')) {
+            return null;
+        }
+
         if (is_string($routeName)
             && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1
             && isset($this->panels[$matches[1]])) {
@@ -527,7 +533,35 @@ final class PanelRegistry
                     ->pageClasses());
             }
 
-            $this->mountPages($id, $options, array_values(array_unique($pages)));
+            $pages = array_values(array_unique($pages));
+
+            // Page and Resource URLs share the Panel path; reject collisions
+            // before registering either kind of route.
+            foreach ($panel->resourceClasses() as $resource) {
+                $resourceSlug = $resource::slug();
+
+                foreach ($pages as $page) {
+                    $pageSlug = $page::slug();
+
+                    if ($pageSlug === $resourceSlug || str_starts_with($pageSlug, $resourceSlug.'/')) {
+                        throw new InvalidArgumentException('Resource path conflicts with Panel Page slug.');
+                    }
+                }
+            }
+
+            $this->mountPages($id, $options, $pages);
+
+            $middleware = $options['middleware'] ?? ['web', 'auth'];
+
+            if (! in_array(ResolveLocale::class, $middleware, true)) {
+                $middleware[] = ResolveLocale::class;
+            }
+
+            foreach ($panel->resourceClasses() as $resource) {
+                ResourceRoutes::mount($id, (string) ($options['path'] ?? $id), $middleware, $resource);
+            }
+
+            Route::getRoutes()->refreshNameLookups();
         }
     }
 
