@@ -43,7 +43,7 @@ final class {{ class }} extends Page
                 Stat::make('Inertia', '3.x')
                     ->description('Server-driven navigation')
                     ->tone('success'),
-                Stat::make('React', '19.x')
+                Stat::make('Frontend', '{{ stack }}')
                     ->description('Frontend adapter')
                     ->tone('primary'),
                 Stat::make('Lavertia', 'Installed')
