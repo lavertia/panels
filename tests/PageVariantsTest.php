@@ -98,6 +98,7 @@ final class PageVariantsTest extends TestCase
     {
         Route::get('standalone/invalid-seo', InvalidSeoPage::class);
 
+        $this->withoutExceptionHandling();
         $this->expectException(InvalidArgumentException::class);
 
         $this->withHeader('X-Inertia', 'true')->get('/standalone/invalid-seo');
