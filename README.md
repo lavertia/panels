@@ -557,3 +557,51 @@ MIT licensed for Lavertia-owned source ([LICENSE.md](LICENSE.md)). Report securi
 ### Canonical package integration
 
 The v0.2 Panels development code delegates form and table descriptors to the independent `lavertia/forms` and `lavertia/tables` packages and maintains backwards-compatible `Lavertia\\Panels\\Components` aliases. Use explicitly scoped Eloquent Builders and server-side authorization; the frontend never receives raw Eloquent queries or PHP callbacks. No stable package tag has been approved.
+
+## Standalone React layout (no Starter Kit)
+
+Lavertia's React installer now ships an independent Panel Shell when the host does **not** share `lavertiaSidebar`. The shell provides responsive Sidebar and Topbar, accessible collapse controls, and a mobile drawer. It uses an **opaque** color surface in both system themes, fixing the gray-on-white problem from dark mode on an otherwise blank Laravel project.
+
+The package still honors existing Starter Kit shells. `Page::__invoke()` serializes only server-validated Panel presentation metadata into the optional `lavertia.panel` prop; route authorization and navigation filtering remain server-side. Public/standalone Pages receive `panel: null`.
+
+The generated Dashboard includes PHP Stats, read-only example Table records and an authorized Dashboard navigation item. No sample user, credentials, database mutation or production guest panel is created. Re-running the command requires `--force` only if generated assets changed; do not use it before reviewing your local customizations.
+
+## Install in a blank Laravel React app (no Starter Kit)
+
+The `lavertia:install` command also supports Laravel 13's built-in
+`laravel new` → **No Starter Kit** → **React** scaffold.
+
+After adding the package through Composer and confirming that
+`@inertiajs/react`, Inertia Laravel v3 and the Laravel Vite entry
+points exist, run:
+
+```bash
+php artisan lavertia:install --stack=react --panel=admin --demo
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+npm run build
+php artisan route:list --path=admin
+```
+
+The installer copies the React renderer, component protocol, client actions
+and local form-state runtime. It generates `DashboardPage.php`, an
+`AdminPanelProvider`, adds the provider to `bootstrap/providers.php`,
+and writes both `lavertia/page.tsx` and `lavertia/standalone.tsx`.
+Existing React/Vite/Blade files are not replaced.
+
+**Security:** `--demo` adds middleware that only allows the preview
+while `APP_ENV=local`; outside local it returns 404. Without
+`--demo` the default panel uses Laravel's `auth` middleware, and the
+host application must provide session authentication and a login route.
+Never use a demo panel as a production authorization mechanism.
+
+The command can be safely re-run while generated files are unchanged.
+It refuses to overwrite modified files unless explicitly given `--force`.
+These commands are also available in the
+[standalone React example](https://github.com/lavertia/lavertia-react-clean/tree/feat/lavertia-installer).
+
+Until tagged Composer releases become available, set up VCS repositories
+or symlinked Composer path repositories for `lavertia/{panels,forms,tables,support}`
+before calling `composer require lavertia/panels`. See the example
+project's `scripts/install-lavertia.sh` for both supported approaches.

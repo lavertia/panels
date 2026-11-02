@@ -14,7 +14,7 @@ final class {{ class }} extends PanelProvider
         return $panel
             ->id('{{ id }}')
             ->path('{{ id }}')
-            ->brandName(config('app.name', 'Lavertia'))
+{{ middleware }}            ->brandName(config('app.name', 'Lavertia'))
             ->brandSubtitle('Administration')
             ->primaryColor('#f59e0b')
             ->sidebarVariant('inset')

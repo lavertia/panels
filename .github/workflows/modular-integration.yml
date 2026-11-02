@@ -120,7 +120,11 @@ jobs:
       - name: Install v0.3 adapters into Laravel Starter Kit
         run: |
           php artisan lavertia:install --stack=${{ matrix.stack }} --force
-          grep -q "Panel navigation" resources/js/pages/lavertia/page.*
+          if [ "${{ matrix.stack }}" = "react" ]; then
+            grep -q "Panel navigation" resources/js/components/lavertia/panel-shell.tsx
+          else
+            grep -q "Panel navigation" resources/js/pages/lavertia/page.*
+          fi
       - name: Type-check installed adapters
         run: npm run types:check
       - name: Build installed adapters

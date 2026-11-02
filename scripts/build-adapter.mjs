@@ -29,6 +29,10 @@ await mkdir(dirname(targetRenderer), { recursive: true });
 
 await copyFile(resolve(projectRoot, 'resources/stubs', stack, 'page.' + extension), targetPage);
 await copyFile(resolve(projectRoot, 'resources/stubs', stack, 'renderer.' + extension), targetRenderer);
+if (stack === 'react') {
+    await copyFile(resolve(projectRoot, 'resources/stubs/react/panel-shell.tsx'),
+        resolve(root, 'resources/js/components/lavertia/panel-shell.tsx'));
+}
 await copyFile(resolve(projectRoot, 'resources/stubs/shared/types.ts'), targetTypes);
 await copyFile(resolve(projectRoot, 'resources/stubs/shared/form-state.ts'), resolve(root, 'resources/js/components/lavertia/form-state.ts'));
 await copyFile(resolve(projectRoot, 'resources/stubs/shared/client-actions.ts'), resolve(root, 'resources/js/components/lavertia/client-actions.ts'));

@@ -42,6 +42,7 @@ final class PageVariantsTest extends TestCase
             ->get('/demo/card')
             ->assertOk()
             ->assertJsonPath('component', 'lavertia/page')
+            ->assertJsonPath('props.lavertia.panel.id', 'demo')
             ->assertJsonPath('props.lavertia.presentation.variant', 'card')
             ->assertJsonPath('props.lavertia.presentation.maxWidth', 'md')
             ->assertJsonPath('props.lavertia.seo.robots', 'noindex,nofollow')
@@ -54,6 +55,7 @@ final class PageVariantsTest extends TestCase
             ->get('/standalone/split')
             ->assertOk()
             ->assertJsonPath('component', 'lavertia/standalone')
+            ->assertJsonPath('props.lavertia.panel', null)
             ->assertJsonPath('props.lavertia.presentation.variant', 'split')
             ->assertJsonPath('props.lavertia.presentation.ratio', 'start-wide')
             ->assertJsonPath('props.lavertia.regions.left.components.0.props.title', 'Left column')
@@ -68,6 +70,7 @@ final class PageVariantsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('component', 'lavertia/standalone')
             ->assertJsonPath('props.lavertia.presentation.variant', 'flat')
+            ->assertJsonPath('props.lavertia.panel', null)
             ->assertJsonPath('props.lavertia.seo.title', 'Public article')
             ->assertJsonPath('props.lavertia.seo.robots', 'index,follow');
 
