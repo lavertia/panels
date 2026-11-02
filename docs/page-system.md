@@ -64,6 +64,18 @@ client-side JavaScript and metadata. Monitor SSR failures, preserve locale
 and direction in first paint, and later add sitemap/hreflang/OpenGraph and
 social metadata when public marketing sites become first-class.
 
+## Scaffolding commands
+
+Run these in the host application once the compatible Panels branch is installed:
+
+    php artisan lavertia:page Settings --panel=admin --presentation=card
+    php artisan lavertia:page Auth/Login --standalone --presentation=split
+    php artisan lavertia:page About --standalone --presentation=flat
+
+The command creates a PSR-4 PHP Page class from a corresponding stub.
+Standalone pages are placed under app/Lavertia/PublicPages and must be
+registered with explicit Laravel routes. The generator intentionally does
+not invent authentication mutation endpoints or make those routes public.
 ## Compatibility
 
 Existing Page subclasses still use components(), slug() and title()
