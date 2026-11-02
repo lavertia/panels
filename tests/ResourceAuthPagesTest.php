@@ -9,9 +9,9 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
-use Inertia\Response;
 use InvalidArgumentException;
 use Lavertia\Panels\Auth\AuthPageContract;
 use Lavertia\Panels\Auth\AuthPages;
@@ -91,7 +91,7 @@ final class ResourceAuthPagesTest extends TestCase
             ->assertJsonPath('props.lavertia.regions.left.components.0.props.title', 'Edit First tenant');
 
         self::assertSame('lavertia.demo.resources.entries.view', app('router')->getRoutes()
-            ->match(\Illuminate\Http\Request::create('/demo/entries/1', 'GET'))->getName());
+            ->match(Request::create('/demo/entries/1', 'GET'))->getName());
 
         $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.edit');
         self::assertCount(1, $nav);
