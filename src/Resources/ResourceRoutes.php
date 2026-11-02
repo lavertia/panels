@@ -24,7 +24,7 @@ final class ResourceRoutes
         'view' => '{record}',
     ];
 
-    /** @param class-string<LavertiaResource> $resource */
+    /** @param  class-string<LavertiaResource>  $resource */
     public static function validate(string $resource): void
     {
         if (! is_subclass_of($resource, Resource::class)
