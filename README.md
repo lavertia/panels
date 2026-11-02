@@ -605,3 +605,47 @@ Until tagged Composer releases become available, set up VCS repositories
 or symlinked Composer path repositories for `lavertia/{panels,forms,tables,support}`
 before calling `composer require lavertia/panels`. See the example
 project's `scripts/install-lavertia.sh` for both supported approaches.
+
+## P0-16: canonical React Tables adapter (development branch)
+
+The **same** PHP Table protocol now drives the production React renderer in
+`resources/stubs/react/table.tsx`. The old `TablePreview` implementation with a hard-coded
+five-row page size has been retired. `table-ui.tsx` provides portable, keyboard-usable
+controls without requiring Radix, shadcn or lucide-react in a clean Laravel application.
+
+The React Table is copied at install time to
+`resources/js/components/lavertia/table.tsx`, and the 28-example Playground
+uses the byte-identical renderer. The Playground CI compares the two files
+and fails on drift. PHP remains authoritative for table definitions, authorization,
+filter/sort allowlisting and Eloquent pagination.
+
+UI behavior deliberately follows *explicit* features:
+
+- Columns Manager is shown only when `columnManager()` is enabled **and**
+  at least one declared column is toggleable. Fixed columns can be reordered but
+  cannot be hidden via disabled checkboxes.
+- Search appears only when `searchable()` is enabled **and** one column is
+  `->searchable()`; snapshot search is restricted to those fields.
+- Selection and row actions are opt-in (no unused checkbox or action columns).
+- Snapshot pagination is omitted when the configured page can display all records;
+  server-side Eloquent mode uses the bounded PHP paginator and real totals.
+- Sort indicators, responsive horizontal scrolling, color tokens, RTL, light/dark,
+  and per-table query state are supported.
+
+### Update **only** generated frontend assets
+
+For an existing `lavertia-react-clean` installation using local Composer symlinks,
+first update the adjacent `panels` repository to this feature branch.
+Then, **without overwriting any PHP DashboardPage/PanelProvider customizations**:
+
+```bash
+php artisan lavertia:install --stack=react --assets-only --force
+php artisan config:clear
+php artisan view:clear
+npm run types:check
+npm run build
+```
+
+`--assets-only` never overwrites PHP pages, providers, or registrations.
+`--force` still overwrites changed **generated React files**: review them first.
+This is a development feature; PR #43 remains Draft pending release coordination.
