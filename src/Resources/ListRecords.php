@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Resources;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Lavertia\Panels\Components\Action;
 use Lavertia\Panels\Components\PageHeader;
 use Lavertia\Tables\Components\Table;
 
 /**
- * A resource list with optional getTabs(), typed Eloquent table and safe
- * default query/Policy. Override table() to configure columns, not authority.
+ * A Resource list with reusable getTabs(), scoped Eloquent table,
+ * Policy authorization, and optional header actions.
  */
 abstract class ListRecords extends ResourcePage
 {
@@ -28,6 +30,17 @@ abstract class ListRecords extends ResourcePage
         return static::title();
     }
 
+    /** @return list<Action> */
+    protected function getHeaderActions(): array
+    {
+        return [];
+    }
+
+    /** Per-list customization; always receives a scoped query. */
+    protected function modifyTableQuery(Builder $query): void
+    {
+    }
+
     protected function components(): array
     {
         $resource = static::resource();
@@ -38,9 +51,18 @@ abstract class ListRecords extends ResourcePage
             $header = $header->tabs($tabs);
         }
 
+        $actions = $this->getHeaderActions();
+
+        if ($actions !== []) {
+            $header = $header->actions($actions);
+        }
+
+        $query = $this->filteredResourceQuery();
+        $this->modifyTableQuery($query);
+
         $table = $this->table(Table::make($this->tableName()))
             ->eloquent(
-                $this->filteredResourceQuery(),
+                $query,
                 static fn (): bool => Gate::allows('viewAny', $resource::model()),
             );
 
