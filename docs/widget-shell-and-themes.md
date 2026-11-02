@@ -82,11 +82,12 @@ Only allowlisted CSS variables and six-digit colors are allowed. CSS and
 renderers remain in frontend-owned packages; no arbitrary HTML, scripts,
 classes, dynamic imports or plugin source are sent in component props.
 
-The bootstrap package template lives at
-`lavertia/playground/themes/default` pending extraction into
-a dedicated `lavertia/theme-default` repository. The current connected
-GitHub interface cannot create that remote repository automatically.
-Do not publish this as a separately hosted repository until that step is done.
+The initial theme now lives in the standalone repository
+[lavertia/theme_default](https://github.com/lavertia/theme_default).
+Its Composer package name is `lavertia/theme-default`; the PHP class
+`Lavertia\\ThemeDefault\\ClassicTheme` implements `PanelTheme`.
+The repository is currently private, and a tagged compatible Panels release
+and Packagist publication are separate release gates.
 
 Theme manifests are **color-token customization only in this slice**.
 Custom complete layouts, dark-specific token variants, themed component
