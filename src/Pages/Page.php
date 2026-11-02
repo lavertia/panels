@@ -46,9 +46,7 @@ abstract class Page
     }
 
     /** Runs after route middleware, before serialization, once per request. */
-    protected function mount(): void
-    {
-    }
+    protected function mount(): void {}
 
     /** Restrict a Page to a subset of its Panel's supported locales. */
     public static function locales(): ?array
