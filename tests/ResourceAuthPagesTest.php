@@ -94,7 +94,7 @@ final class ResourceAuthPagesTest extends TestCase
             ->match(Request::create('/demo/entries/1', 'GET'))->getName());
 
         $nav = app(PanelRegistry::class)->navigation('demo', 'lavertia.demo.resources.entries.edit');
-        self::assertCount(1, $nav);
+        self::assertCount(2, $nav);
         self::assertSame('/demo/entries', $nav[0]['url']);
         self::assertTrue($nav[0]['active']);
     }
@@ -170,10 +170,19 @@ final class ResourceAuthPagesTest extends TestCase
             static fn () => EntryListPage::route('/{year}')->action('list')->parameters(['year' => '2026'])->resolve('active'),
         ];
 
+        $rejected = 0;
+
         foreach ($invalid as $bad) {
-            $this->expectException(InvalidArgumentException::class);
-            $bad();
+            try {
+                $bad();
+                self::fail('Unsafe Resource Page definition was accepted.');
+            } catch (InvalidArgumentException) {
+                $rejected++;
+            }
         }
+
+        self::assertCount(6, $invalid);
+        self::assertSame(6, $rejected);
     }
 
     public function test_central_and_panel_auth_keep_noindex_without_admin_shell(): void
