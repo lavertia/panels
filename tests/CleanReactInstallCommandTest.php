@@ -57,11 +57,18 @@ final class CleanReactInstallCommandTest extends TestCase
 
         $this->assertFileExists($this->root.'/resources/js/pages/lavertia/page.tsx');
         $this->assertFileExists($this->root.'/resources/js/pages/lavertia/standalone.tsx');
+        $this->assertFileExists($this->root.'/resources/js/components/lavertia/panel-shell.tsx');
         $this->assertFileExists($this->root.'/resources/js/components/lavertia/form-state.ts');
         $this->assertFileExists($this->root.'/app/Lavertia/Pages/DashboardPage.php');
 
         $provider = (string) file_get_contents($this->root.'/app/Providers/Lavertia/AdminPanelProvider.php');
         self::assertStringContainsString("->id('admin')", $provider);
+        self::assertStringContainsString("NavigationItem::make('dashboard', 'Dashboard')", $provider);
+
+        $dashboard = (string) file_get_contents($this->root.'/app/Lavertia/Pages/DashboardPage.php');
+        self::assertStringContainsString('StatsGrid::make([', $dashboard);
+        self::assertStringContainsString("Table::make('examples')", $dashboard);
+        self::assertStringContainsString('Sample, browser-local records', $dashboard);
         self::assertStringNotContainsString('LavertiaLocalPreview', $provider);
 
         $bootstrap = (string) file_get_contents($this->root.'/bootstrap/providers.php');
@@ -106,6 +113,7 @@ final class CleanReactInstallCommandTest extends TestCase
             '--force' => true,
         ])->assertExitCode(0);
         self::assertStringContainsString('extends PanelProvider', (string) file_get_contents($providerPath));
+        self::assertStringContainsString('NavigationItem::make(', (string) file_get_contents($providerPath));
     }
 
     public function test_missing_host_or_invalid_panel_id_fails_without_writing_files(): void
