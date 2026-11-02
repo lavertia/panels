@@ -264,6 +264,14 @@ final class NavigationItem extends AbstractComponent
             return null;
         }
 
+        // Hiding the navigation link must match the Page's server-side
+        // authorization; the Page itself independently returns 403.
+        $pageClass = $route->getActionName();
+
+        if (! $pageClass::canView()) {
+            return null;
+        }
+
         // Only URLs backed by a verified route (and without required parameters).
         if ($route->parameterNames() !== []) {
             return null;
