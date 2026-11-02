@@ -70,6 +70,13 @@ final class InstallCommand extends Command
             [$root.'/'.$stack.'/page.'.$extension, resource_path('js/pages/lavertia/standalone.'.$extension)],
         ];
 
+        if ($stack === 'react') {
+            $assets[] = [
+                $root.'/react/panel-shell.tsx',
+                resource_path('js/components/lavertia/panel-shell.tsx'),
+            ];
+        }
+
         $planned = [];
 
         foreach ($assets as [$source, $destination]) {
@@ -86,10 +93,10 @@ final class InstallCommand extends Command
         $providerClass = 'App\\Providers\\Lavertia\\'.$class;
         $providerPath = app_path('Providers/Lavertia/'.$class.'.php');
         $providerStub = $root.'/php/panel-provider.stub';
-        $pageStub = $root.'/php/page.stub';
+        $dashboardStub = $root.'/php/dashboard-page.stub';
         $localMiddlewareStub = $root.'/php/local-preview-middleware.stub';
 
-        foreach ([$providerStub, $pageStub] as $stub) {
+        foreach ([$providerStub, $dashboardStub] as $stub) {
             if (! $files->isFile($stub)) {
                 $this->error('Missing Lavertia package asset: '.$stub);
 
@@ -107,17 +114,26 @@ final class InstallCommand extends Command
             ? "            ->middleware(['web', \\App\\Http\\Middleware\\LavertiaLocalPreview::class])\n"
             : '';
 
-        $planned[$providerPath] = str_replace(
+        $panelContent = str_replace(
             ['{{ class }}', '{{ id }}', '{{ middleware }}'],
             [$class, $panelId, $middleware],
             $files->get($providerStub),
+        );
+
+        // The clean installation ships an actual, allowlisted Dashboard link.
+        // Generic Panel generators intentionally do not assume Dashboard exists.
+        $planned[$providerPath] = str_replace(
+            '            ->discoverPages(',
+            "            ->navigationItems([\\Lavertia\\Panels\\Navigation\\NavigationItem::make('dashboard', 'Dashboard')->icon('layout-dashboard')])\n"
+                .'            ->discoverPages(',
+            $panelContent,
         );
 
         $dashboardPath = app_path('Lavertia/Pages/DashboardPage.php');
         $planned[$dashboardPath] = str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ slug }}', '{{ title }}'],
             ['App\\Lavertia\\Pages', 'DashboardPage', 'dashboard', 'Dashboard'],
-            $files->get($pageStub),
+            $files->get($dashboardStub),
         );
 
         if ($demo) {
