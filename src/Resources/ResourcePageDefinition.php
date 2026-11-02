@@ -44,7 +44,7 @@ final class ResourcePageDefinition
      * Property-friendly syntax: arrays are usable as PHP static defaults,
      * unlike objects/closures created at runtime in pages() methods.
      *
-     * @param array<string, mixed> $configuration
+     * @param  array<string, mixed>  $configuration
      */
     public static function fromArray(array $configuration): self
     {
@@ -129,7 +129,7 @@ final class ResourcePageDefinition
      * Fixed registration parameters, available through Page::pageParameter().
      * Never evaluated as executable code or used to bypass an Eloquent scope.
      *
-     * @param array<string, string|int|float|bool|null> $parameters
+     * @param  array<string, string|int|float|bool|null>  $parameters
      */
     public function parameters(array $parameters): self
     {
