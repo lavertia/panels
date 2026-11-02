@@ -75,6 +75,14 @@ final class InstallCommand extends Command
                 $root.'/react/panel-shell.tsx',
                 resource_path('js/components/lavertia/panel-shell.tsx'),
             ];
+            $assets[] = [
+                $root.'/react/table-ui.tsx',
+                resource_path('js/components/lavertia/table-ui.tsx'),
+            ];
+            $assets[] = [
+                $root.'/react/table.tsx',
+                resource_path('js/components/lavertia/table.tsx'),
+            ];
         }
 
         $planned = [];
