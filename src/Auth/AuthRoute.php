@@ -56,9 +56,18 @@ final class AuthRoute
 
         // Guest/auth handling cannot be implicit, since verify-email and 2FA
         // have different session states. Host may add Fortify-specific guards.
-        if (! in_array('guest', $middleware, true) && ! in_array('auth', $middleware, true)
-            && ! in_array('guest:web', $middleware, true)
-            && ! in_array('auth:web', $middleware, true)) {
+        $hasSessionGuard = false;
+
+        foreach ($middleware as $item) {
+            if ($item === 'guest' || $item === 'auth'
+                || str_starts_with($item, 'guest:') || str_starts_with($item, 'auth:')) {
+                $hasSessionGuard = true;
+
+                break;
+            }
+        }
+
+        if (! $hasSessionGuard) {
             throw new InvalidArgumentException('Auth Page must explicitly declare guest or auth middleware.');
         }
 
