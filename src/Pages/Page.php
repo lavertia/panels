@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
+use Lavertia\Panels\Auth\AuthPageContract;
 use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\Resources\ResourceContext;
@@ -161,6 +162,13 @@ abstract class Page
                 || ! str_starts_with($seo['canonical'], '/') || str_starts_with($seo['canonical'], '//')
                 || preg_match('/[\x00-\x20<>\\\\]/', $seo['canonical']) === 1))) {
             throw new InvalidArgumentException('Invalid Page SEO metadata.');
+        }
+
+        // Identity pages must remain noindex even if standalone and even if
+        // their visual Page subclass attempts to opt into public SEO.
+        if ($this instanceof AuthPageContract) {
+            $seo['robots'] = 'noindex,nofollow';
+            $seo['canonical'] = null;
         }
 
         // Never index Panel pages, regardless of a subclass's SEO settings.
