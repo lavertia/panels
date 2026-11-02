@@ -558,6 +558,14 @@ MIT licensed for Lavertia-owned source ([LICENSE.md](LICENSE.md)). Report securi
 
 The v0.2 Panels development code delegates form and table descriptors to the independent `lavertia/forms` and `lavertia/tables` packages and maintains backwards-compatible `Lavertia\\Panels\\Components` aliases. Use explicitly scoped Eloquent Builders and server-side authorization; the frontend never receives raw Eloquent queries or PHP callbacks. No stable package tag has been approved.
 
+## Standalone React layout (no Starter Kit)
+
+Lavertia's React installer now ships an independent Panel Shell when the host does **not** share `lavertiaSidebar`. The shell provides responsive Sidebar and Topbar, accessible collapse controls, and a mobile drawer. It uses an **opaque** color surface in both system themes, fixing the gray-on-white problem from dark mode on an otherwise blank Laravel project.
+
+The package still honors existing Starter Kit shells. `Page::__invoke()` serializes only server-validated Panel presentation metadata into the optional `lavertia.panel` prop; route authorization and navigation filtering remain server-side. Public/standalone Pages receive `panel: null`.
+
+The generated Dashboard includes PHP Stats, read-only example Table records and an authorized Dashboard navigation item. No sample user, credentials, database mutation or production guest panel is created. Re-running the command requires `--force` only if generated assets changed; do not use it before reviewing your local customizations.
+
 ## Install in a blank Laravel React app (no Starter Kit)
 
 The `lavertia:install` command also supports Laravel 13's built-in
