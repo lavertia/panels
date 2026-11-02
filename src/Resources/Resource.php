@@ -22,7 +22,7 @@ abstract class Resource
     /** @var class-string<Model>|null */
     protected static ?string $model = null;
 
-    /** @var array<string, class-string<Page>|ResourcePageDefinition> */
+    /** @var array<string, class-string<Page>|ResourcePageDefinition|array<string, mixed>> */
     protected static array $pages = [];
 
     /** @var class-string<ResourceQueryProvider>|null */
@@ -66,7 +66,7 @@ abstract class Resource
      * Reuse the same Page subclass under multiple keys using
      * Page::route('/...')->action('list')->parameters([...]).
      *
-     * @return array<string, class-string<Page>|ResourcePageDefinition>
+     * @return array<string, class-string<Page>|ResourcePageDefinition|array<string, mixed>>
      */
     public static function pages(): array
     {
