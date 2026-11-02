@@ -15,7 +15,7 @@ final class AuthPages
      * Central auth is independent of Panels, shells and tenant data.
      * Call from your host routes with the desired guest/auth middleware.
      *
-     * @param list<AuthRoute> $routes
+     * @param  list<AuthRoute>  $routes
      */
     public static function central(array $routes, string $prefix = 'identity'): void
     {
@@ -26,7 +26,7 @@ final class AuthPages
      * The Panel supplies locale/branding scope, but the auth route deliberately
      * does not inherit the Panel's default 'auth' middleware or sidebar.
      *
-     * @param list<AuthRoute> $routes
+     * @param  list<AuthRoute>  $routes
      */
     public static function forPanel(string $panelId, array $routes): void
     {
@@ -46,7 +46,7 @@ final class AuthPages
     }
 
     /**
-     * @param list<AuthRoute> $routes
+     * @param  list<AuthRoute>  $routes
      */
     public static function mount(array $routes, string $prefix, string $scope, ?string $panelId): void
     {
