@@ -566,10 +566,11 @@
             <span role="alert" class="text-xs text-rose-600">{clientActionError}</span>
         {/if}
     </span>
-{:else if node.type === 'action' && href?.startsWith('/')}
+{:else if node.type === 'action' && href?.startsWith('/') && node.props.openInNewTab !== true}
     <Link {href} class={actionClass}>{label}</Link>
 {:else if node.type === 'action' && href}
-    <a {href} rel="noopener noreferrer" class={actionClass}>{label}</a>
+    <a {href} target={node.props.openInNewTab === true ? '_blank' : undefined}
+        rel="noopener noreferrer" class={actionClass}>{label}</a>
 {:else if node.type === 'action'}
     <span class="text-sm text-gray-500">{label}</span>
 {:else if node.type === 'text-column'}
