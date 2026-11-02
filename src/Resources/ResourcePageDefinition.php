@@ -167,10 +167,11 @@ final class ResourcePageDefinition
         ];
 
         $path = $this->path ?? $standard[$key] ?? null;
-        $action = $this->ability ?? (isset($standard[$key]) ? $key : null);
+        $action = $this->ability
+            ?? (isset($standard[$key]) ? $key : $this->page::resourceAction());
 
-        if ($path === null || $action === null) {
-            throw new InvalidArgumentException('Custom Resource Page routes require route() and action().');
+        if ($path === null || ! in_array($action, ['list', 'create', 'view', 'edit'], true)) {
+            throw new InvalidArgumentException('Resource Page requires a route and supported policy action.');
         }
 
         // Explicitly validate even the default paths.
