@@ -118,6 +118,35 @@ final class CleanReactInstallCommandTest extends TestCase
         self::assertStringContainsString('NavigationItem::make(', (string) file_get_contents($providerPath));
     }
 
+    public function test_assets_only_upgrade_preserves_customized_php_and_requires_explicit_force(): void
+    {
+        $this->artisan('lavertia:install', ['--stack' => 'react', '--demo' => true])
+            ->assertExitCode(0);
+
+        $providerPath = $this->root.'/app/Providers/Lavertia/AdminPanelProvider.php';
+        $pagePath = $this->root.'/app/Lavertia/Pages/DashboardPage.php';
+        $tablePath = $this->root.'/resources/js/components/lavertia/table.tsx';
+        $providersPath = $this->root.'/bootstrap/providers.php';
+
+        file_put_contents($providerPath, '<?php // Custom PanelProvider');
+        file_put_contents($pagePath, '<?php // Custom dashboard');
+        file_put_contents($tablePath, '// Custom Table source');
+        $originalBootstrap = file_get_contents($providersPath);
+
+        $this->artisan('lavertia:install', ['--stack' => 'react', '--assets-only' => true])
+            ->assertExitCode(1);
+        self::assertSame('// Custom Table source', file_get_contents($tablePath));
+
+        $this->artisan('lavertia:install', [
+            '--stack' => 'react', '--assets-only' => true, '--force' => true,
+        ])->assertExitCode(0);
+
+        self::assertSame('<?php // Custom PanelProvider', file_get_contents($providerPath));
+        self::assertSame('<?php // Custom dashboard', file_get_contents($pagePath));
+        self::assertSame($originalBootstrap, file_get_contents($providersPath));
+        self::assertStringContainsString('export function LavertiaTable', (string) file_get_contents($tablePath));
+    }
+
     public function test_missing_host_or_invalid_panel_id_fails_without_writing_files(): void
     {
         (new Filesystem)->delete($this->root.'/resources/js/app.tsx');
