@@ -219,6 +219,10 @@ abstract class Page
                 'direction' => LocaleContext::direction($locale),
                 'tree' => $this->tree(),
                 'navigation' => $navigation,
+                // Presentation metadata is server-validated. The React app may
+                // render a standalone Panel Shell without a Starter Kit, while
+                // existing Starter Kits still own their original shell.
+                'panel' => $panelId === null ? null : app(PanelRegistry::class)->appearance($panelId),
                 'presentation' => $presentation,
                 'regions' => $this->regions(),
                 'seo' => [
