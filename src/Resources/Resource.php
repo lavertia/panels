@@ -6,6 +6,7 @@ namespace Lavertia\Panels\Resources;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Lavertia\Panels\Pages\Page;
 
 /**
  * Business Resources own model scope, authorization policy and Page mapping.
@@ -31,7 +32,7 @@ abstract class Resource
      * Map list/create/view/edit to Pages implementing ResourcePageContract.
      * The host owns POST/PUT/PATCH/DELETE routes and input validation.
      *
-     * @return array<string, class-string<\Lavertia\Panels\Pages\Page>>
+     * @return array<string, class-string<Page>>
      */
     abstract public static function pages(): array;
 }
