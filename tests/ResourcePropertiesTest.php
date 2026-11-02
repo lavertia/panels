@@ -7,7 +7,6 @@ namespace Lavertia\Panels\Tests;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
-use Lavertia\Panels\Pages\Page;
 use Lavertia\Panels\Resources\Resource;
 use Lavertia\Panels\Resources\ResourcePage;
 use Lavertia\Panels\Resources\ResourceQueryProvider;
@@ -175,7 +174,6 @@ final class CollidingPropertyListPage extends ResourcePage
         return [];
     }
 }
-
 
 final class InvalidArrayResource extends Resource
 {
