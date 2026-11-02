@@ -10,6 +10,8 @@ use Inertia\Response;
 use InvalidArgumentException;
 use Lavertia\Panels\Localization\LocaleContext;
 use Lavertia\Panels\PanelRegistry;
+use Lavertia\Panels\Resources\ResourceContext;
+use Lavertia\Panels\Resources\ResourcePageContract;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -104,6 +106,12 @@ abstract class Page
     final public function __invoke(): Response
     {
         abort_unless(static::canView(), 403);
+
+        // Resource authorization precedes mount/components/serialization;
+        // subclasses cannot bypass this even with a different presentation.
+        if ($this instanceof ResourcePageContract) {
+            ResourceContext::authorize($this);
+        }
 
         // Mounted state is available to components, regions and dynamic SEO.
         $this->mount();
