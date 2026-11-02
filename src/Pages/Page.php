@@ -125,6 +125,16 @@ abstract class Page
             throw new InvalidArgumentException('Unsupported Page presentation configuration.');
         }
 
+        if (isset($presentation['padding'])
+            && ! in_array($presentation['padding'], ['compact', 'normal', 'spacious'], true)) {
+            throw new InvalidArgumentException('Invalid Page card padding.');
+        }
+
+        if (isset($presentation['ratio'])
+            && ! in_array($presentation['ratio'], ['balanced', 'start-wide', 'end-wide'], true)) {
+            throw new InvalidArgumentException('Invalid Page split ratio.');
+        }
+
         $seo = $this->seo();
 
         if (! is_string($seo['title'] ?? null) || trim($seo['title']) === ''
