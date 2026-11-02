@@ -14,6 +14,7 @@ final class InstallCommand extends Command
                             {--stack=react : Frontend adapter: react, vue or svelte}
                             {--panel=admin : Panel identifier (and URL prefix)}
                             {--demo : Create a locally accessible dashboard, blocked outside local environment}
+                            {--assets-only : Update frontend adapter files without changing PHP pages or PanelProvider}
                             {--force : Replace previously generated Lavertia files}';
 
     protected $description = 'Install Lavertia in a Laravel Inertia application, with or without a Starter Kit.';
@@ -24,6 +25,7 @@ final class InstallCommand extends Command
         $panelId = trim((string) $this->option('panel'));
         $demo = (bool) $this->option('demo');
         $force = (bool) $this->option('force');
+        $assetsOnly = (bool) $this->option('assets-only');
 
         if (! in_array($stack, ['react', 'vue', 'svelte'], true)) {
             $this->error('Use --stack=react, --stack=vue or --stack=svelte.');
@@ -75,6 +77,14 @@ final class InstallCommand extends Command
                 $root.'/react/panel-shell.tsx',
                 resource_path('js/components/lavertia/panel-shell.tsx'),
             ];
+            $assets[] = [
+                $root.'/react/table-ui.tsx',
+                resource_path('js/components/lavertia/table-ui.tsx'),
+            ];
+            $assets[] = [
+                $root.'/react/table.tsx',
+                resource_path('js/components/lavertia/table.tsx'),
+            ];
         }
 
         $planned = [];
@@ -89,75 +99,77 @@ final class InstallCommand extends Command
             $planned[$destination] = $files->get($source);
         }
 
-        $class = Str::studly($panelId).'PanelProvider';
-        $providerClass = 'App\\Providers\\Lavertia\\'.$class;
-        $providerPath = app_path('Providers/Lavertia/'.$class.'.php');
-        $providerStub = $root.'/php/panel-provider.stub';
-        $dashboardStub = $root.'/php/dashboard-page.stub';
-        $localMiddlewareStub = $root.'/php/local-preview-middleware.stub';
+        if (! $assetsOnly) {
+            $class = Str::studly($panelId).'PanelProvider';
+            $providerClass = 'App\\Providers\\Lavertia\\'.$class;
+            $providerPath = app_path('Providers/Lavertia/'.$class.'.php');
+            $providerStub = $root.'/php/panel-provider.stub';
+            $dashboardStub = $root.'/php/dashboard-page.stub';
+            $localMiddlewareStub = $root.'/php/local-preview-middleware.stub';
 
-        foreach ([$providerStub, $dashboardStub] as $stub) {
-            if (! $files->isFile($stub)) {
-                $this->error('Missing Lavertia package asset: '.$stub);
+            foreach ([$providerStub, $dashboardStub] as $stub) {
+                if (! $files->isFile($stub)) {
+                    $this->error('Missing Lavertia package asset: '.$stub);
+
+                    return self::FAILURE;
+                }
+            }
+
+            if ($demo && ! $files->isFile($localMiddlewareStub)) {
+                $this->error('Missing Lavertia package asset: '.$localMiddlewareStub);
 
                 return self::FAILURE;
             }
-        }
 
-        if ($demo && ! $files->isFile($localMiddlewareStub)) {
-            $this->error('Missing Lavertia package asset: '.$localMiddlewareStub);
+            $middleware = $demo
+                ? "            ->middleware(['web', \\App\\Http\\Middleware\\LavertiaLocalPreview::class])\n"
+                : '';
 
-            return self::FAILURE;
-        }
-
-        $middleware = $demo
-            ? "            ->middleware(['web', \\App\\Http\\Middleware\\LavertiaLocalPreview::class])\n"
-            : '';
-
-        $panelContent = str_replace(
-            ['{{ class }}', '{{ id }}', '{{ middleware }}'],
-            [$class, $panelId, $middleware],
-            $files->get($providerStub),
-        );
-
-        // The clean installation ships an actual, allowlisted Dashboard link.
-        // Generic Panel generators intentionally do not assume Dashboard exists.
-        $planned[$providerPath] = str_replace(
-            '            ->discoverPages(',
-            "            ->navigationItems([\\Lavertia\\Panels\\Navigation\\NavigationItem::make('dashboard', 'Dashboard')->icon('layout-dashboard')])\n"
-                .'            ->discoverPages(',
-            $panelContent,
-        );
-
-        $dashboardPath = app_path('Lavertia/Pages/DashboardPage.php');
-        $planned[$dashboardPath] = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ slug }}', '{{ title }}', '{{ stack }}'],
-            ['App\\Lavertia\\Pages', 'DashboardPage', 'dashboard', 'Dashboard', ucfirst($stack)],
-            $files->get($dashboardStub),
-        );
-
-        if ($demo) {
-            $planned[app_path('Http/Middleware/LavertiaLocalPreview.php')] = $files->get($localMiddlewareStub);
-        }
-
-        $providerContents = $files->get($bootstrap);
-        $registration = $providerClass.'::class';
-
-        if (! str_contains($providerContents, $registration)) {
-            $updated = preg_replace(
-                '/\R\];[ \t]*\R?\z/',
-                "    {$registration},\n];\n",
-                $providerContents,
-                1,
+            $panelContent = str_replace(
+                ['{{ class }}', '{{ id }}', '{{ middleware }}'],
+                [$class, $panelId, $middleware],
+                $files->get($providerStub),
             );
 
-            if ($updated === null || $updated === $providerContents) {
-                $this->error('Cannot safely register the PanelProvider in bootstrap/providers.php.');
+            // The clean installation ships an actual, allowlisted Dashboard link.
+            // Generic Panel generators intentionally do not assume Dashboard exists.
+            $planned[$providerPath] = str_replace(
+                '            ->discoverPages(',
+                "            ->navigationItems([\\Lavertia\\Panels\\Navigation\\NavigationItem::make('dashboard', 'Dashboard')->icon('layout-dashboard')])\n"
+                    .'            ->discoverPages(',
+                $panelContent,
+            );
 
-                return self::FAILURE;
+            $dashboardPath = app_path('Lavertia/Pages/DashboardPage.php');
+            $planned[$dashboardPath] = str_replace(
+                ['{{ namespace }}', '{{ class }}', '{{ slug }}', '{{ title }}', '{{ stack }}'],
+                ['App\\Lavertia\\Pages', 'DashboardPage', 'dashboard', 'Dashboard', ucfirst($stack)],
+                $files->get($dashboardStub),
+            );
+
+            if ($demo) {
+                $planned[app_path('Http/Middleware/LavertiaLocalPreview.php')] = $files->get($localMiddlewareStub);
             }
 
-            $planned[$bootstrap] = $updated;
+            $providerContents = $files->get($bootstrap);
+            $registration = $providerClass.'::class';
+
+            if (! str_contains($providerContents, $registration)) {
+                $updated = preg_replace(
+                    '/\R\];[ \t]*\R?\z/',
+                    "    {$registration},\n];\n",
+                    $providerContents,
+                    1,
+                );
+
+                if ($updated === null || $updated === $providerContents) {
+                    $this->error('Cannot safely register the PanelProvider in bootstrap/providers.php.');
+
+                    return self::FAILURE;
+                }
+
+                $planned[$bootstrap] = $updated;
+            }
         }
 
         // Validate all destinations before changing any file. Re-running the
@@ -188,12 +200,14 @@ final class InstallCommand extends Command
         }
 
         $this->newLine();
-        $this->info('Lavertia '.$stack.' installed. Panel: /'.$panelId.'/dashboard');
+        $this->info($assetsOnly
+            ? 'Lavertia '.$stack.' frontend assets updated; PHP pages and PanelProvider preserved.'
+            : 'Lavertia '.$stack.' installed. Panel: /'.$panelId.'/dashboard');
         $this->line('Next: php artisan config:clear && php artisan route:clear && php artisan view:clear && npm run build');
 
-        if ($demo) {
+        if (! $assetsOnly && $demo) {
             $this->warn('Demo route is accessible ONLY in APP_ENV=local. Never remove its environment guard.');
-        } else {
+        } elseif (! $assetsOnly) {
             $this->comment('Admin uses Laravel auth middleware. Configure a login route before accessing it.');
         }
 
