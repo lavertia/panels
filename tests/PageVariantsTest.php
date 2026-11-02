@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Lavertia\Panels\Tests;
 
-use InvalidArgumentException;
 use Illuminate\Support\Facades\Route;
+use InvalidArgumentException;
 use Lavertia\Panels\Components\Section;
 use Lavertia\Panels\Navigation\NavigationItem;
 use Lavertia\Panels\Pages\CardPage;
@@ -84,15 +84,22 @@ final class PageVariantsTest extends TestCase
         self::assertSame([], array_filter($links, static fn (array $link): bool => $link['slug'] === 'secret'));
     }
 
-    public function test_invalid_page_presentation_and_seo_are_rejected(): void
+    public function test_invalid_page_presentation_is_rejected(): void
     {
-        foreach ([InvalidPresentationPage::class, InvalidSeoPage::class] as $class) {
-            Route::get('standalone/invalid-'.$class::slug(), $class);
+        Route::get('standalone/invalid-presentation', InvalidPresentationPage::class);
 
-            $this->expectException(InvalidArgumentException::class);
-            $this->withHeader('X-Inertia', 'true')
-                ->get('/standalone/invalid-'.$class::slug());
-        }
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->withHeader('X-Inertia', 'true')->get('/standalone/invalid-presentation');
+    }
+
+    public function test_invalid_page_seo_is_rejected(): void
+    {
+        Route::get('standalone/invalid-seo', InvalidSeoPage::class);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->withHeader('X-Inertia', 'true')->get('/standalone/invalid-seo');
     }
 }
 
