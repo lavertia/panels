@@ -36,3 +36,9 @@ The installer overwrites generated page, renderer and types files only with `--f
 Theme variables are scoped to the Lavertia page; component structural classes still use the host Starter Kit's Tailwind CSS and light/dark mode. On Tailwind 4, external package source classes may need `@source` in `resources/css/app.css` for development: the adapter packages contain static Tailwind utilities under `node_modules` and are not guaranteed to be scanned automatically.
 
 These alpha Git dependencies are not released npm packages. Pin Git commits for reproducibility before production. No claim of successful production integration is made until cross-stack CI and full Starter Kit smoke tests pass.
+
+## React UI Kit prototype (P1)
+
+The React runtime now exports separate Form, Table, Field and Action renderers, plus `DefaultPageShell`. `UiKitDefinition.shell` lets an application supply an entirely different Page shell without rewriting PHP schemas. `lavertia/react-ui/packages/ui-shadcn` is a **self-contained, private pre-release npm package** built from host-provided shadcn primitives; it contains a Kit factory and partial working renderers. See [its README](https://github.com/lavertia/react-ui/tree/main/packages/ui-shadcn).
+
+The dedicated repository does not yet exist; track its extraction in [Issue #47](https://github.com/lavertia/panels/issues/47). Do not advertise the prototype as a complete UI Kit, a public npm release or a cross-framework solution. It is optional; existing users of default React, Vue and Svelte adapters remain unaffected.

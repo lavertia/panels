@@ -26,9 +26,10 @@
 - [x] Allow application Theme fallback for standalone Pages.
 - [ ] Cross-repository Laravel Starter Kit E2E visual QA.
 
-### P1 — UI ownership and production-ready default Kit
-- [ ] Split monolithic renderer into proper field/table/shell components.
-- [ ] Create `ui-shadcn` with complete manifests and a polished default experience.
+### P1 — UI ownership and production-ready default Kit (in progress)
+- [x] Split React's monolithic renderer into separate Form, Table, Field, Action and Page Shell modules (lavertia/react-ui PR #3).
+- [x] Stage an independent-build portable Shadcn React Kit prototype (Shell, Card, TextInput, PageHeader) with SSR/RTL/theme tests (lavertia/react-ui PR #4).
+- [ ] Extract prototype into dedicated `lavertia/ui-shadcn` repository, finish all core renderers and UX acceptance tests (issue #47).
 - [ ] Add interactive installer `--ui` and stable lock/pin behavior.
 - [ ] Test Page standalone, Marketing, Auth and Dashboard under the default Kit.
 - [ ] Make Page not depend on the Panels Composer package (likely package extraction with deprecation adapter).
