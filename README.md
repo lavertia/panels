@@ -4,6 +4,15 @@
 
 Define pages and nested PHP components once and render them with React 19, Vue 3 or Svelte 5 using a single versioned JSON component protocol. Each adapter is designed for an **existing official Laravel Inertia Starter Kit**. Lavertia does not replace authentication, middleware, application layouts or Vite.
 
+## UI ownership and themes
+
+- [@lavertia/ui](https://github.com/lavertia/ui): shared component protocol, table helpers and validated CSS theme tokens.
+- [@lavertia/react-ui](https://github.com/lavertia/react-ui), [@lavertia/vue-ui](https://github.com/lavertia/vue-ui), [@lavertia/svelte-ui](https://github.com/lavertia/svelte-ui): **production** UI markup and interactions for each stack.
+- [lavertia/theme_default](https://github.com/lavertia/theme_default): optional Composer theme provider; configure its `ClassicTheme::class` per Panel.
+- The `playground` repo demonstrates and tests the above packages. It never defines the canonical UI.
+
+Theme classes implement `Lavertia\\Panels\\Themes\\PanelTheme` and return allowlisted hexadecimal semantic tokens. The active Panel injects `lavertia.theme` into Inertia props. Each UI package applies those tokens on a scoped root so themes change without rebuilding or copying component markup.
+
 ## Requirements
 
 - PHP 8.3+, Laravel 12 or 13, `inertiajs/inertia-laravel:^3.0`
@@ -17,11 +26,13 @@ Repositories are public, but this remains an experimental, untagged version. Use
 ```bash
 composer require lavertia/panels:^0.1
 php artisan lavertia:install --stack=react
-# Or --stack=vue or --stack=svelte
+npm install github:lavertia/react-ui#main
+# Or --stack=vue + github:lavertia/vue-ui#main
+# Or --stack=svelte + github:lavertia/svelte-ui#main
 php artisan vendor:publish --tag=lavertia-config
 ```
 
-The command creates three files without overwriting your existing application: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
+The command installs only **thin adapter shims**; the production UI is owned by the corresponding npm package, never by the playground. It creates: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
@@ -33,6 +44,7 @@ Add your Page class to `config/lavertia.php`:
         'path' => 'admin',
         'middleware' => ['web', 'auth'],
         'pages' => [App\Lavertia\Pages\DashboardPage::class],
+        'theme' => \Lavertia\ThemeDefault\ClassicTheme::class, // optional, composer require lavertia/theme-default
     ],
 ],
 ```
