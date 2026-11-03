@@ -68,11 +68,12 @@ final class InstallCommand extends Command
         };
 
         $root = dirname(__DIR__, 2).'/resources/stubs';
+        $pageStub = $root.'/'.$stack.'/'.($ui === 'shadcn' ? 'page-shadcn.tsx' : 'page.'.$extension);
+
         $assets = [
             $root.'/shared/types.ts' => resource_path('js/components/lavertia/types.ts'),
             $root.'/'.$stack.'/renderer.'.$extension => resource_path('js/components/lavertia/renderer.'.$extension),
-            $root.'/'.$stack.'/'.($ui === 'shadcn' ? 'page-shadcn.tsx' : 'page.'.$extension)
-                => resource_path('js/pages/lavertia/page.'.$extension),
+            $pageStub => resource_path('js/pages/lavertia/page.'.$extension),
         ];
 
         foreach ($assets as $source => $destination) {
