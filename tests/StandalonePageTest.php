@@ -12,6 +12,14 @@ use Orchestra\Testbench\TestCase;
 
 final class StandalonePageTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Web middleware encrypts cookies even for unauthenticated standalone Pages.
+        config()->set('app.key', str_repeat('a', 32));
+    }
+
     public function test_page_renders_through_inertia_without_any_panel(): void
     {
         config()->set('lavertia.ui.kit', 'shadcn');
