@@ -81,7 +81,7 @@ final class InstallUiKitTest extends TestCase
 
         self::assertStringContainsString('createShadcnKit', $page);
         self::assertStringContainsString('TableHeader', $page);
-        self::assertStringContainsString("@/components/ui/table", $page);
+        self::assertStringContainsString('@/components/ui/table', $page);
         self::assertStringContainsString("'kit' => 'shadcn'", $config);
         self::assertStringContainsString('@lavertia/ui-shadcn/dist', $css);
         self::assertStringContainsString('@lavertia/react-ui/dist', $css);
