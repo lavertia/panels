@@ -29,8 +29,10 @@
 ### P1 — UI ownership and production-ready default Kit (in progress)
 - [x] Split React's monolithic renderer into separate Form, Table, Field, Action and Page Shell modules (lavertia/react-ui PR #3).
 - [x] Stage an independent-build portable Shadcn React Kit prototype (Shell, Card, TextInput, PageHeader) with SSR/RTL/theme tests (lavertia/react-ui PR #4).
-- [ ] Extract prototype into dedicated `lavertia/ui-shadcn` repository, finish all core renderers and UX acceptance tests (issue #47).
-- [ ] Add interactive installer `--ui` and stable lock/pin behavior.
+- [x] Implement Shadcn Form, Textarea, Checkbox, Select and Action renderers using a shared Inertia hook (React UI PRs #5–#7).
+- [ ] Extract prototype into dedicated `lavertia/ui-shadcn` repository, finish Shadcn Table/Dialog/advanced field renderers and UX acceptance tests (issue #47).
+- [x] Add opt-in alpha `--ui=shadcn` React installer with safe dependency/config checks and Testbench coverage (Panels PR #49).
+- [ ] Finish interactive install wizard, native kit package distribution, immutable version pins and full Starter Kit E2E QA.
 - [ ] Test Page standalone, Marketing, Auth and Dashboard under the default Kit.
 - [ ] Make Page not depend on the Panels Composer package (likely package extraction with deprecation adapter).
 
