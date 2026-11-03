@@ -28,6 +28,9 @@ Theme classes implement `Lavertia\\Panels\\Themes\\PanelTheme` and return allowl
 
 ## Install into a Starter Kit
 
+**Experimental Shadcn choice (React only):** once the portable prototype package is installed locally and your app owns the `card`, `input`, `label`, `textarea`, `checkbox`, and `button` shadcn primitives, run `php artisan lavertia:install --stack=react --ui=shadcn`. This scaffolds a host-owned registry wrapper and safely selects `lavertia.ui.kit = shadcn` without overwriting custom configuration. See [P1 UI installer guide](docs/SHADCN_INSTALL.md) for prerequisites. This alpha path does not yet auto-install npm packages.
+
+
 Repositories are public, but this remains an experimental, untagged version. Use local Composer path repositories for Support and Panels until package releases are approved; a Packagist install is not yet promised.
 
 ```bash
