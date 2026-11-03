@@ -16,5 +16,16 @@ final class StarterKitAssetsTest extends TestCase
         }
 
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/types.ts');
+        self::assertStringContainsString(
+            '@lavertia/ui',
+            file_get_contents(__DIR__.'/../resources/stubs/shared/types.ts'),
+        );
+
+        // Composer only provides tiny wiring; framework packages own all UI.
+        foreach (['react' => 'tsx', 'vue' => 'vue', 'svelte' => 'svelte'] as $stack => $extension) {
+            $source = file_get_contents(__DIR__.'/../resources/stubs/'.$stack.'/renderer.'.$extension);
+            self::assertStringContainsString('@lavertia/'.$stack.'-ui', $source);
+            self::assertLessThan(1500, strlen($source));
+        }
     }
 }

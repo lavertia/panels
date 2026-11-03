@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Lavertia\Panels\PanelRegistry;
+use Lavertia\Panels\Themes\ThemeResolver;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -39,10 +40,12 @@ abstract class Page
 
         $routeName = request()->route()?->getName();
         $navigation = [];
+        $panelId = null;
 
         if (is_string($routeName)
             && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1) {
-            $navigation = app(PanelRegistry::class)->navigation($matches[1], $routeName);
+            $panelId = $matches[1];
+            $navigation = app(PanelRegistry::class)->navigation($panelId, $routeName);
         }
 
         return Inertia::render('lavertia/page', [
@@ -53,6 +56,7 @@ abstract class Page
                 'direction' => in_array($locale, ['ar', 'fa', 'he', 'ur'], true) ? 'rtl' : 'ltr',
                 'tree' => $this->tree(),
                 'navigation' => $navigation,
+                'theme' => app(ThemeResolver::class)->forPanel($panelId),
             ],
         ]);
     }

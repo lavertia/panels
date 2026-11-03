@@ -13,7 +13,7 @@ final class InstallCommand extends Command
                             {--stack= : react, vue or svelte}
                             {--force : Overwrite existing Lavertia frontend files}';
 
-    protected $description = 'Install the Lavertia renderer into an existing Laravel Inertia Starter Kit.';
+    protected $description = 'Install thin Lavertia frontend shims for its framework-owned UI package.';
 
     public function handle(Filesystem $files): int
     {
@@ -64,9 +64,24 @@ final class InstallCommand extends Command
             $this->line('Installed: '.$destination);
         }
 
-        $this->info('Lavertia '.$stack.' components installed.');
+        // Tailwind CSS 4 ignores node_modules by default. Register only the
+        // selected UI package, leaving the host's design system untouched.
+        $cssPath = resource_path('css/app.css');
+        $source = '@source "../../node_modules/@lavertia/'.$stack.'-ui/dist";';
+
+        if ($files->isFile($cssPath)) {
+            if (! str_contains($files->get($cssPath), $source)) {
+                $files->append($cssPath, PHP_EOL.$source.PHP_EOL);
+                $this->line('Registered Tailwind UI source in: '.$cssPath);
+            }
+        } else {
+            $this->warn('Tailwind CSS entry not found. Add '.$source.' to resources/css/app.css.');
+        }
+
+        $this->info('Lavertia '.$stack.' frontend shims installed.');
+        $this->comment('Required UI runtime (development): npm install github:lavertia/'.$stack.'-ui#main');
         $this->comment('Publish config: php artisan vendor:publish --tag=lavertia-config');
-        $this->comment('Add your Page classes to config/lavertia.php and run npm run build.');
+        $this->comment('Register Pages and optional theme class in config/lavertia.php, then run npm run build.');
 
         return self::SUCCESS;
     }

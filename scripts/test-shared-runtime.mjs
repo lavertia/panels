@@ -1,18 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import ts from 'typescript';
-
-// Execute the exact TypeScript utility module shipped to all three adapters.
-// The module must stay frontend-neutral and contain no browser-only top-level imports.
-const source = readFileSync(resolve('resources/stubs/shared/types.ts'), 'utf8');
-const compiled = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-    reportDiagnostics: true,
-});
-
-assert.deepEqual(compiled.diagnostics, []);
-const runtime = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputText).toString('base64'));
+// Exercise the actual shared package consumed by React, Vue and Svelte.
+import * as runtime from '@lavertia/ui';
 
 const table = {
     type: 'table',
@@ -76,4 +64,9 @@ assert.equal(runtime.translate('ar', 'submit'), 'حفظ التغييرات');
 assert.equal(runtime.translate('fr', 'saved'), 'Modifications enregistrées.');
 assert.equal(runtime.translate('unsupported', 'submit'), 'Save changes');
 
-console.log('Lavertia shared adapter runtime checks passed.');
+assert.deepEqual(runtime.themeVariables({
+    id: 'custom',
+    tokens: { primary: '#112233', ring: 'url(javascript:bad())' },
+}), { '--lvt-primary': '#112233' });
+
+console.log('Lavertia shared UI package runtime checks passed.');

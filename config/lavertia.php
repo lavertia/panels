@@ -12,6 +12,7 @@ return [
      *         'path' => 'admin',
      *         'middleware' => ['web', 'auth', \Lavertia\Panels\Http\Middleware\ResolveLocale::class],
      *         'pages' => [App\Lavertia\Pages\DashboardPage::class],
+     *         'theme' => \Lavertia\ThemeDefault\ClassicTheme::class, // optional Composer package
      *         'navigation' => [['slug' => 'dashboard', 'label' => 'Dashboard']],
      *         'dashboard_widgets' => [],
      *         'discover_widgets' => [],
@@ -26,6 +27,7 @@ return [
             'path' => 'admin',
             'middleware' => ['web', 'auth', ResolveLocale::class],
             'pages' => [],
+            'theme' => null,
             'discover_pages' => [],
             'navigation' => [],
             'dashboard_widgets' => [],
