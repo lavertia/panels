@@ -31,6 +31,14 @@ final class ThemeResolutionTest extends TestCase
         self::assertSame('default', app(ThemeResolver::class)->forPanel('other')['id']);
     }
 
+    public function test_standalone_pages_inherit_the_application_theme(): void
+    {
+        config()->set('lavertia.ui.theme', ValidFixtureTheme::class);
+
+        self::assertSame('test-theme', app(ThemeResolver::class)->forPanel(null)['id']);
+        self::assertSame('test-theme', app(ThemeResolver::class)->forPanel('admin')['id']);
+    }
+
     public function test_invalid_theme_class_is_rejected(): void
     {
         config()->set('lavertia.panels.admin.theme', \stdClass::class);

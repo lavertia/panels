@@ -1,5 +1,10 @@
 # Lavertia Panels
 
+> **Project direction:** Lavertia is evolving toward a **Page-first, UI-agnostic Laravel application framework**, not an Admin Panel requirement. This repository currently hosts the transitional Page implementation; the full independent Core split is planned.
+>
+> **Architecture sources:** [Founder vision](docs/VISION.md) · [100 original answers](docs/VISION_100_ANSWERS.md) · [UI/Pages architecture](docs/ARCHITECTURE_UI.md) · [Feature roadmap](docs/FEATURE_ROADMAP.md) · [Decision log](docs/DECISIONS.md).
+
+
 **PHP-first composable Inertia panels for Laravel 12 / 13.**
 
 Define pages and nested PHP components once and render them with React 19, Vue 3 or Svelte 5 using a single versioned JSON component protocol. Each adapter is designed for an **existing official Laravel Inertia Starter Kit**. Lavertia does not replace authentication, middleware, application layouts or Vite.
