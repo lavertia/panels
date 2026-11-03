@@ -30,9 +30,13 @@
 - [x] Split React's monolithic renderer into separate Form, Table, Field, Action and Page Shell modules (lavertia/react-ui PR #3).
 - [x] Stage an independent-build portable Shadcn React Kit prototype (Shell, Card, TextInput, PageHeader) with SSR/RTL/theme tests (lavertia/react-ui PR #4).
 - [x] Implement Shadcn Form, Textarea, Checkbox, Select and Action renderers using a shared Inertia hook (React UI PRs #5–#7).
-- [ ] Extract prototype into dedicated `lavertia/ui-shadcn` repository, finish Shadcn Table/Dialog/advanced field renderers and UX acceptance tests (issue #47).
+- [x] Migrate Shadcn Kit to canonical `lavertia/ui-shadcn` repo with dedicated typecheck, SSR and package CI (ui-shadcn PR #1).
+- [x] Split shared snapshot/Eloquent table state from default rendering (react-ui PR #8).
+- [x] Implement a native Shadcn Table via host primitives, reusable state and SSR tests (ui-shadcn PR #2).
+- [ ] Finish Dialog, advanced Tables, fields and real browser/visual/a11y QA (issue #47).
 - [x] Add opt-in alpha `--ui=shadcn` React installer with safe dependency/config checks and Testbench coverage (Panels PR #49).
-- [ ] Finish interactive install wizard, native kit package distribution, immutable version pins and full Starter Kit E2E QA.
+- [x] Update alpha React installer to the official Shadcn Kit and require native Table primitives (Panels PR #51).
+- [ ] Finish interactive install wizard, published package distribution, immutable release tags and full Starter Kit E2E QA.
 - [ ] Test Page standalone, Marketing, Auth and Dashboard under the default Kit.
 - [ ] Make Page not depend on the Panels Composer package (likely package extraction with deprecation adapter).
 

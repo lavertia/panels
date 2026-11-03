@@ -2,7 +2,7 @@
 
 > **Project direction:** Lavertia is evolving toward a **Page-first, UI-agnostic Laravel application framework**, not an Admin Panel requirement. This repository currently hosts the transitional Page implementation; the full independent Core split is planned.
 >
-> **P1 implementation:** React renderers are now separated into feature modules and UI Kits can replace the Page Shell. An experimental, independently-buildable Shadcn adapter is staged at [@lavertia/ui-shadcn prototype](https://github.com/lavertia/react-ui/tree/main/packages/ui-shadcn); [extraction/coverage tracking](https://github.com/lavertia/panels/issues/47). This is not yet a complete/released Kit.
+> **P1 implementation:** React renderers are now separated into feature modules and UI Kits can replace the Page Shell. The official [Shadcn UI Kit](https://github.com/lavertia/ui-shadcn) now lives in its own repository with React Forms, Actions and native Table; [remaining features](https://github.com/lavertia/panels/issues/47). This is not yet a complete/released Kit.
 >
 > **Architecture sources:** [Founder vision](docs/VISION.md) · [100 original answers](docs/VISION_100_ANSWERS.md) · [UI/Pages architecture](docs/ARCHITECTURE_UI.md) · [Feature roadmap](docs/FEATURE_ROADMAP.md) · [Decision log](docs/DECISIONS.md).
 
@@ -28,7 +28,7 @@ Theme classes implement `Lavertia\\Panels\\Themes\\PanelTheme` and return allowl
 
 ## Install into a Starter Kit
 
-**Experimental Shadcn choice (React only):** once the portable prototype package is installed locally and your app owns the `card`, `input`, `label`, `textarea`, `checkbox`, and `button` shadcn primitives, run `php artisan lavertia:install --stack=react --ui=shadcn`. This scaffolds a host-owned registry wrapper and safely selects `lavertia.ui.kit = shadcn` without overwriting custom configuration. See [P1 UI installer guide](docs/SHADCN_INSTALL.md) for prerequisites. This alpha path does not yet auto-install npm packages.
+**Experimental Shadcn choice (React only):** once `github:lavertia/ui-shadcn#main` is installed and your app owns the `card`, `input`, `label`, `textarea`, `checkbox`, `button` and `table` shadcn primitives, run `php artisan lavertia:install --stack=react --ui=shadcn`. This scaffolds a host-owned registry wrapper and safely selects `lavertia.ui.kit = shadcn` without overwriting custom configuration. See [P1 UI installer guide](docs/SHADCN_INSTALL.md) for prerequisites. This alpha path does not yet auto-install npm packages.
 
 
 Repositories are public, but this remains an experimental, untagged version. Use local Composer path repositories for Support and Panels until package releases are approved; a Packagist install is not yet promised.

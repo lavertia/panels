@@ -66,7 +66,7 @@ final class InstallUiKitTest extends TestCase
         $files->ensureDirectoryExists(base_path('node_modules/@lavertia/ui-shadcn'));
         $files->put(base_path('node_modules/@lavertia/ui-shadcn/package.json'), '{}');
 
-        foreach (['input', 'label', 'textarea', 'checkbox', 'button', 'card'] as $primitive) {
+        foreach (['input', 'label', 'textarea', 'checkbox', 'button', 'card', 'table'] as $primitive) {
             $path = resource_path('js/components/ui/'.$primitive.'.tsx');
             $files->ensureDirectoryExists(dirname($path));
             $files->put($path, 'export const Stub = true;');
@@ -80,9 +80,30 @@ final class InstallUiKitTest extends TestCase
         $css = file_get_contents(resource_path('css/app.css'));
 
         self::assertStringContainsString('createShadcnKit', $page);
+        self::assertStringContainsString('TableHeader', $page);
+        self::assertStringContainsString('@/components/ui/table', $page);
         self::assertStringContainsString("'kit' => 'shadcn'", $config);
         self::assertStringContainsString('@lavertia/ui-shadcn/dist', $css);
         self::assertStringContainsString('@lavertia/react-ui/dist', $css);
+    }
+
+    public function test_missing_table_primitive_rejects_install_without_writing_partial_files(): void
+    {
+        $files = new Filesystem;
+        $files->ensureDirectoryExists(base_path('node_modules/@lavertia/ui-shadcn'));
+        $files->put(base_path('node_modules/@lavertia/ui-shadcn/package.json'), '{}');
+
+        foreach (['input', 'label', 'textarea', 'checkbox', 'button', 'card'] as $primitive) {
+            $path = resource_path('js/components/ui/'.$primitive.'.tsx');
+            $files->ensureDirectoryExists(dirname($path));
+            $files->put($path, 'export const Stub = true;');
+        }
+
+        $this->artisan('lavertia:install', ['--stack' => 'react', '--ui' => 'shadcn'])
+            ->assertExitCode(1);
+
+        self::assertFileDoesNotExist(resource_path('js/pages/lavertia/page.tsx'));
+        self::assertFileDoesNotExist(config_path('lavertia.php'));
     }
 
     public function test_custom_config_does_not_get_overwritten(): void
@@ -94,7 +115,7 @@ final class InstallUiKitTest extends TestCase
         $files->ensureDirectoryExists(base_path('node_modules/@lavertia/ui-shadcn'));
         $files->put(base_path('node_modules/@lavertia/ui-shadcn/package.json'), '{}');
 
-        foreach (['input', 'label', 'textarea', 'checkbox', 'button', 'card'] as $primitive) {
+        foreach (['input', 'label', 'textarea', 'checkbox', 'button', 'card', 'table'] as $primitive) {
             $path = resource_path('js/components/ui/'.$primitive.'.tsx');
             $files->ensureDirectoryExists(dirname($path));
             $files->put($path, 'export const Stub = true;');

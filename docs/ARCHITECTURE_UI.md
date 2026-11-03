@@ -90,7 +90,7 @@ export default function Page({ lavertia }: { lavertia: LavertiaPayload }) {
 }
 ```
 
-The example assumes `MyCard`, `RatingInput`, `CustomInput` are implemented locally and the selected Kit ID is registered. It does **not** install an official Shadcn UI Kit by itself. A `fallback: 'error'` kit rejects missing renderers at runtime instead of silently displaying a different UI. App override > Kit mapping > namespaced plugin component > documented built-in fallback.
+The example assumes `MyCard`, `RatingInput`, `CustomInput` are implemented locally and the selected Kit ID is registered. The official **optional** Shadcn Kit is maintained in [lavertia/ui-shadcn](https://github.com/lavertia/ui-shadcn) and is integrated through the host application's `createShadcnKit()` registry. A `fallback: 'error'` kit rejects missing renderers at runtime instead of silently displaying a different UI. App override > Kit mapping > namespaced plugin component > documented built-in fallback.
 
 ### Theme vs UI Kit
 
@@ -98,7 +98,7 @@ Changing validated CSS tokens in an already-loaded Theme can be instant. Switchi
 
 ### Cross-framework requirement
 
-The UI identity is shared in `@lavertia/ui`. React has the first implementation of Registry, including replaceable Page Shells; Vue and Svelte will implement the same capability as separate tasks. A portable shadcn React Kit prototype lives temporarily at `lavertia/react-ui/packages/ui-shadcn` until the dedicated repository is created (see issue #47). The prototype only covers Shell, Cards, PageHeaders and TextInputs; it explicitly falls back to the default renderer for other component types. Do not report them as compatible until adapter integration tests pass.
+The UI identity is shared in `@lavertia/ui`. React has the first implementation of Registry, including replaceable Page Shells; Vue and Svelte will implement the same capability as separate tasks. A standalone Shadcn React Kit lives at [lavertia/ui-shadcn](https://github.com/lavertia/ui-shadcn) and implements Page Shell, Cards, PageHeader, standard Form fields, Actions and optional native Table via host-provided primitives. Table query/filter/pagination state is shared with React UI through the CSS-free `@lavertia/react-ui/table-state` export; unimplemented components fall back to the default renderer. Do not report them as compatible until adapter integration tests pass.
 
 ### Security and performance constraints
 

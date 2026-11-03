@@ -49,12 +49,13 @@ final class InstallCommand extends Command
                 resource_path('js/components/ui/textarea.tsx'),
                 resource_path('js/components/ui/checkbox.tsx'),
                 resource_path('js/components/ui/button.tsx'),
+                resource_path('js/components/ui/table.tsx'),
             ];
 
             foreach ($requirements as $requirement) {
                 if (! $files->isFile($requirement)) {
                     $this->error('Shadcn prerequisite missing: '.$requirement);
-                    $this->comment('Install the portable @lavertia/ui-shadcn package and run: npx shadcn@latest add card input label textarea checkbox button');
+                    $this->comment('Install github:lavertia/ui-shadcn#main, then run: npx shadcn@latest add card input label textarea checkbox button table');
 
                     return self::FAILURE;
                 }
@@ -166,7 +167,7 @@ final class InstallCommand extends Command
         if ($ui === 'default') {
             $this->comment('Publish config: php artisan vendor:publish --tag=lavertia-config');
         } else {
-            $this->comment('Experimental Shadcn Kit selected. Keep @lavertia/ui-shadcn and React UI on compatible development revisions.');
+            $this->comment('Shadcn Kit selected. Official source: https://github.com/lavertia/ui-shadcn. Keep runtime and Kit versions compatible.');
         }
         $this->comment('Register Pages and optional theme class in config/lavertia.php, then run npm run build.');
 
