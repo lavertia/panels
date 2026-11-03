@@ -22,6 +22,8 @@ final class ThemeResolver
     {
         $class = $panelId !== null ? config('lavertia.panels.'.$panelId.'.theme') : null;
 
+        $class ??= config('lavertia.ui.theme');
+
         if ($class === null) {
             return ['id' => 'default', 'tokens' => self::DEFAULT_TOKENS];
         }

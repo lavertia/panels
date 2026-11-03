@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Lavertia\Panels\PanelRegistry;
 use Lavertia\Panels\Themes\ThemeResolver;
+use Lavertia\Panels\Themes\UiKitResolver;
 use Lavertia\Support\Components\Column;
 use Lavertia\Support\Contracts\Component;
 use Lavertia\Support\Serialization\ComponentProtocol;
@@ -28,6 +29,12 @@ abstract class Page
         return Str::headline(class_basename(static::class));
     }
 
+    /** Override the configured UI Kit for this Page only; null inherits. */
+    protected static function uiKit(): ?string
+    {
+        return null;
+    }
+
     /** @return array<string, mixed> */
     final public function tree(): array
     {
@@ -43,7 +50,8 @@ abstract class Page
         $panelId = null;
 
         if (is_string($routeName)
-            && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1) {
+            && preg_match('/^lavertia\.([a-z][a-z0-9_-]*)\./', $routeName, $matches) === 1
+            && is_array(config('lavertia.panels.'.$matches[1]))) {
             $panelId = $matches[1];
             $navigation = app(PanelRegistry::class)->navigation($panelId, $routeName);
         }
@@ -57,6 +65,7 @@ abstract class Page
                 'tree' => $this->tree(),
                 'navigation' => $navigation,
                 'theme' => app(ThemeResolver::class)->forPanel($panelId),
+                'uiKit' => app(UiKitResolver::class)->forPanel($panelId, static::uiKit()),
             ],
         ]);
     }
