@@ -54,3 +54,23 @@ To return to the default Kit: change `ui.kit` to `default` in `config/lavertia.p
 ## Remaining limitations
 
 Native Table provides search, sorting, filtering, column visibility/reordering and pagination. Advanced actions, bulk selection, shadcn Dialog, richer field adapters, final a11y/browser visual QA and automatic dependency installation remain incomplete.
+
+## UI Kit interaction laboratory
+
+The official [ui-shadcn repository](https://github.com/lavertia/ui-shadcn) contains a lightweight Vite + React integration fixture for checking the Kit in a real browser without setting up a full Laravel application:
+
+```bash
+git clone https://github.com/lavertia/ui-shadcn.git
+cd ui-shadcn
+npm install
+npm run dev:browser
+```
+
+Open `http://127.0.0.1:4173` to inspect the Form and Table test fixture. To run its desktop/mobile Chromium interaction assertions:
+
+```bash
+npx playwright install chromium
+npm run test:browser
+```
+
+**Scope:** The fixture supplies host-like primitives and sample serialized component data, not the actual Laravel Starter Kit, backend policies or production CSS theme. It verifies client interactions, FormData, RTL and Table state, while Laravel route/tenant isolation, production shadcn visual polish and accessibility across Radix/Base UI remain separate release gates.
