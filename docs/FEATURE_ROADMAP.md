@@ -36,6 +36,10 @@
 - [ ] Finish Dialog, advanced Tables, fields and real browser/visual/a11y QA (issue #47).
 - [x] Add opt-in alpha `--ui=shadcn` React installer with safe dependency/config checks and Testbench coverage (Panels PR #49).
 - [x] Update alpha React installer to the official Shadcn Kit and require native Table primitives (Panels PR #51).
+- [x] Pass shadcn npm-packed isolated consumer/registry tests (ui-shadcn PR #3).
+- [x] Improve responsive Shadcn mobile navigation, safe links and localized labels (ui-shadcn PR #6).
+- [x] Pass Chromium desktop/mobile functional tests for fields, filters, sorting, pagination and first-render RTL (ui-shadcn PR #5).
+- [ ] Browser-proof switching the exact same PHP Component Tree between default and Shadcn UI (ui-shadcn PR #7, pending CI/merge).
 - [ ] Finish interactive install wizard, published package distribution, immutable release tags and full Starter Kit E2E QA.
 - [ ] Test Page standalone, Marketing, Auth and Dashboard under the default Kit.
 - [ ] Make Page not depend on the Panels Composer package (likely package extraction with deprecation adapter).
