@@ -77,7 +77,7 @@ final class InvalidFixtureTheme implements PanelTheme
     public function tokens(): array
     {
         return [
-            ... (new ValidFixtureTheme)->tokens(),
+            ...(new ValidFixtureTheme)->tokens(),
             'primary' => 'url(javascript:alert(1))',
         ];
     }
