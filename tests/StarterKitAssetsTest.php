@@ -15,6 +15,7 @@ final class StarterKitAssetsTest extends TestCase
             self::assertFileExists(__DIR__.'/../resources/stubs/'.$stack.'/page.'.$extension);
         }
 
+        self::assertFileExists(__DIR__.'/../resources/stubs/react/page-shadcn.tsx');
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/types.ts');
         self::assertStringContainsString(
             '@lavertia/ui',
