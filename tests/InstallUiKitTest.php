@@ -5,11 +5,18 @@ declare(strict_types=1);
 namespace Lavertia\Panels\Tests;
 
 use Illuminate\Filesystem\Filesystem;
+use Lavertia\Panels\PanelsServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 final class InstallUiKitTest extends TestCase
 {
     private string $workspace;
+
+    /** @return array<class-string> */
+    protected function getPackageProviders($app): array
+    {
+        return [PanelsServiceProvider::class];
+    }
 
     protected function setUp(): void
     {
