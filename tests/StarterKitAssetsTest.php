@@ -17,7 +17,7 @@ final class StarterKitAssetsTest extends TestCase
 
         self::assertFileExists(__DIR__.'/../resources/stubs/shared/types.ts');
         self::assertStringContainsString(
-            "@lavertia/ui",
+            '@lavertia/ui',
             file_get_contents(__DIR__.'/../resources/stubs/shared/types.ts'),
         );
 
