@@ -64,6 +64,20 @@ final class InstallCommand extends Command
             $this->line('Installed: '.$destination);
         }
 
+        // Tailwind CSS 4 ignores node_modules by default. Register only the
+        // selected UI package, leaving the host's design system untouched.
+        $cssPath = resource_path('css/app.css');
+        $source = '@source "../../node_modules/@lavertia/'.$stack.'-ui/dist";';
+
+        if ($files->isFile($cssPath)) {
+            if (! str_contains($files->get($cssPath), $source)) {
+                $files->append($cssPath, PHP_EOL.$source.PHP_EOL);
+                $this->line('Registered Tailwind UI source in: '.$cssPath);
+            }
+        } else {
+            $this->warn('Tailwind CSS entry not found. Add '.$source.' to resources/css/app.css.');
+        }
+
         $this->info('Lavertia '.$stack.' frontend shims installed.');
         $this->comment('Required UI runtime (development): npm install github:lavertia/'.$stack.'-ui#main');
         $this->comment('Publish config: php artisan vendor:publish --tag=lavertia-config');

@@ -32,7 +32,7 @@ npm install github:lavertia/react-ui#main
 php artisan vendor:publish --tag=lavertia-config
 ```
 
-The command installs only **thin adapter shims**; the production UI is owned by the corresponding npm package, never by the playground. It creates: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
+The command installs only **thin adapter shims** and registers a scoped Tailwind 4 \`@source\` directive in \`resources/css/app.css\`; the production UI is owned by the corresponding npm package, never by the playground. It creates: `resources/js/pages/lavertia/page.{tsx,vue,svelte}`, `resources/js/components/lavertia/renderer.{tsx,vue,svelte}` and `resources/js/components/lavertia/types.ts`. Use `--force` only when deliberately replacing previously generated Lavertia files.
 
 Ensure the app's existing Inertia page resolver includes `resources/js/pages/**/*` and uses the corresponding stack. No changes are needed to Laravel Fortify/WorkOS authentication or the existing Inertia root view. To reuse your Starter Kit app layout, wrap the generated page with your existing layout according to that kit.
 
