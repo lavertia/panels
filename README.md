@@ -2,6 +2,8 @@
 
 > **Project direction:** Lavertia is evolving toward a **Page-first, UI-agnostic Laravel application framework**, not an Admin Panel requirement. This repository currently hosts the transitional Page implementation; the full independent Core split is planned.
 >
+> **P1 implementation:** React renderers are now separated into feature modules and UI Kits can replace the Page Shell. An experimental, independently-buildable Shadcn adapter is staged at [@lavertia/ui-shadcn prototype](https://github.com/lavertia/react-ui/tree/main/packages/ui-shadcn); [extraction/coverage tracking](https://github.com/lavertia/panels/issues/47). This is not yet a complete/released Kit.
+>
 > **Architecture sources:** [Founder vision](docs/VISION.md) · [100 original answers](docs/VISION_100_ANSWERS.md) · [UI/Pages architecture](docs/ARCHITECTURE_UI.md) · [Feature roadmap](docs/FEATURE_ROADMAP.md) · [Decision log](docs/DECISIONS.md).
 
 

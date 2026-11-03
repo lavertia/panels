@@ -98,7 +98,7 @@ Changing validated CSS tokens in an already-loaded Theme can be instant. Switchi
 
 ### Cross-framework requirement
 
-The UI identity is shared in `@lavertia/ui`. React has the first implementation of Registry; Vue and Svelte will implement the same capability as separate tasks. Do not report them as compatible until adapter integration tests pass.
+The UI identity is shared in `@lavertia/ui`. React has the first implementation of Registry, including replaceable Page Shells; Vue and Svelte will implement the same capability as separate tasks. A portable shadcn React Kit prototype lives temporarily at `lavertia/react-ui/packages/ui-shadcn` until the dedicated repository is created (see issue #47). The prototype only covers Shell, Cards, PageHeaders and TextInputs; it explicitly falls back to the default renderer for other component types. Do not report them as compatible until adapter integration tests pass.
 
 ### Security and performance constraints
 
