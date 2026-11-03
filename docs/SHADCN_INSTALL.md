@@ -1,24 +1,26 @@
-# Experimental Shadcn UI Kit installation (React only)
+# Lavertia Shadcn UI Kit — experimental React installation
 
-The Shadcn UI Kit prototype currently lives at `lavertia/react-ui/packages/ui-shadcn`, **not** in a published npm registry or in a standalone `lavertia/ui-shadcn` repository. This is developer-preview tooling. The built-in `default` UI remains the stable installation route.
+**Canonical package:** [lavertia/ui-shadcn](https://github.com/lavertia/ui-shadcn). The former `lavertia/react-ui/packages/ui-shadcn` staging directory has been retired. The Kit is not yet released on npm; GitHub installations remain a **developer preview**.
 
-## Before installation
+Lavertia Core and PHP components have no dependency on Shadcn. ReactUI provides the default renderers and shared logic, while the Shadcn Kit supplies the Page Shell, Forms, Actions, and native Table markup.
 
-Start with an official Laravel React/Inertia Starter Kit and install the Lavertia PHP packages per the project README. Ensure your host already has shadcn configured and the needed primitives:
+## Prerequisites
 
-```bash
-npm install github:lavertia/react-ui#main
-npx shadcn@latest add card input label textarea checkbox button
-```
+Start with an existing official Laravel React/Inertia Starter Kit, Laravel 12/13 and the Lavertia PHP packages.
 
-Clone the React UI repository next to your Laravel app and install the local staging kit:
+Install the UI protocol, React runtime and optional Shadcn Kit from GitHub:
 
 ```bash
-git clone https://github.com/lavertia/react-ui.git ../lavertia-react-ui
-npm install ../lavertia-react-ui/packages/ui-shadcn
+npm install github:lavertia/ui#main github:lavertia/react-ui#main github:lavertia/ui-shadcn#main
 ```
 
-The local kit package has its own TypeScript build and tests; its `prepare` script builds its `dist` folder. This is deliberately not a reproducible production deployment until versioned distribution is ready.
+Make sure shadcn is initialized in the Laravel application. **Do not rerun init on a configured Starter Kit.** Add any missing primitives:
+
+```bash
+npx shadcn@latest add card input label textarea checkbox button table
+```
+
+The shadcn components remain open-code files owned by the Laravel application. The package uses the application's existing `@/components/ui` alias, CSS variables, Tailwind and component variant styles.
 
 ## Configure with one command
 
@@ -27,15 +29,28 @@ php artisan lavertia:install --stack=react --ui=shadcn
 npm run build
 ```
 
-The installer checks the package and six host-owned primitives, writes thin shims and a registry wrapper, selects `ui.kit='shadcn'` in `config/lavertia.php`, and adds Tailwind v4 `@source` directives if `resources/css/app.css` exists. **No remote code is installed or executed by Artisan.** It never overwrites custom PHP config it cannot update safely.
+The installer validates `node_modules/@lavertia/ui-shadcn` and **seven host component files** (`card`, `input`, `label`, `textarea`, `checkbox`, `button`, `table`). It copies a thin React page wrapper to register the Shadcn Kit, sets `lavertia.ui.kit = shadcn` in `config/lavertia.php`, and adds Tailwind v4 `@source` entries.
 
-If you need shadcn with Vue or Svelte, use `--ui=default` until framework-specific compatible Kits are implemented. The installer rejects unsupported combinations.
+No dependencies or remote code are installed by Artisan. The installer refuses to overwrite existing page shims without `--force`, and never replaces unrelated PHP configuration when a safe match cannot be found.
 
-Re-running without `--force` never overwrites an existing Lavertia page. Use `--force` only after backing up application customizations. To revert your frontend to the default renderer, re-run `php artisan lavertia:install --stack=react --ui=default --force`, then set `ui.kit` to `default` explicitly in `config/lavertia.php`. No UI package is silently removed.
+If your app only needs some Shadcn components, you may register the Kit **manually** with a subset of primitives; its Table component is optional in the JS API and falls back to the built-in renderer when missing. The standard installer intentionally uses all seven components to give a consistent experience.
 
-## Known limitations
+## Runtime boundaries
 
-- The current Shadcn adapter has Forms and Actions but still reuses the default renderer for Tables and some advanced widgets.
-- Selected kit needs an actual registered runtime; a PHP config value alone cannot install JavaScript.
-- Shadcn open-code components and their import paths remain owned by the Laravel application.
-- True immutable package releases, dependency installation prompts, fully interactive setup, RTL visual tests and frontend end-to-end verification remain milestones.
+- **Page-first:** a PHP Page may render without any Lavertia Panel.
+- **Theme vs Kit:** Theme tokens control semantic colors; UI Kit controls actual markup and interaction styles.
+- **Laravel authority:** Eloquent filters and pagination run on the server in `eloquent` mode. Forms use Inertia and Laravel server validation; frontend action visibility does not grant permission.
+- **React only:** Vue and Svelte have separate renderers. Attempting `--stack=vue --ui=shadcn` fails with an actionable error.
+- **RTL:** `lang` and `dir` come from the initial PHP/Inertia response.
+
+## Upgrades and rollback
+
+Do not re-run `lavertia:install` with `--force` on a customized page wrapper without backing up those changes.
+
+For reproducible builds, **commit `package-lock.json`** (Git-installed SHAs are recorded in it) and avoid silent dependency updates. Immutable published version pins and a complete Laravel Starter Kit E2E test matrix are still milestones.
+
+To return to the default Kit: change `ui.kit` to `default` in `config/lavertia.php` and use the default React page adapter. The command `--ui=default --force` replaces generated frontend shims but does **not** reset your PHP config automatically.
+
+## Remaining limitations
+
+Native Table provides search, sorting, filtering, column visibility/reordering and pagination. Advanced actions, bulk selection, shadcn Dialog, richer field adapters, final a11y/browser visual QA and automatic dependency installation remain incomplete.

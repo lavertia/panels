@@ -1,6 +1,6 @@
 # Lavertia frontend extraction (alpha)
 
-The **only owners of UI rendering** are `lavertia/react-ui`, `lavertia/vue-ui`, and `lavertia/svelte-ui`. `lavertia/ui` owns frontend-neutral protocol types, table utilities and safe theme CSS. The `playground` is a consumer and must not be treated as a library source. Panels retains *thin* per-stack install shims solely for official Laravel Inertia Starter Kit integration.
+The **default renderer owners** are `lavertia/react-ui`, `lavertia/vue-ui`, and `lavertia/svelte-ui`. Independent UI Kits, such as `lavertia/ui-shadcn`, own their own presentation without changing the shared protocol. `lavertia/ui` owns frontend-neutral protocol types, table utilities and safe theme CSS. The `playground` is a consumer and must not be treated as a library source. Panels retains *thin* per-stack install shims solely for official Laravel Inertia Starter Kit integration.
 
 ## Installation
 
@@ -37,8 +37,8 @@ Theme variables are scoped to the Lavertia page; component structural classes st
 
 These alpha Git dependencies are not released npm packages. Pin Git commits for reproducibility before production. No claim of successful production integration is made until cross-stack CI and full Starter Kit smoke tests pass.
 
-## React UI Kit prototype (P1)
+## Official React UI Kit (P1 developer preview)
 
-The React runtime now exports separate Form, Table, Field and Action renderers, plus `DefaultPageShell`. `UiKitDefinition.shell` lets an application supply an entirely different Page shell without rewriting PHP schemas. `lavertia/react-ui/packages/ui-shadcn` is a **self-contained, private pre-release npm package** built from host-provided shadcn primitives; it contains a Kit factory and partial working renderers. See [its README](https://github.com/lavertia/react-ui/tree/main/packages/ui-shadcn).
+The React runtime now exports separate Form, Table, Field and Action renderers, plus `DefaultPageShell`. `UiKitDefinition.shell` lets an application supply an entirely different Page shell without rewriting PHP schemas. [lavertia/ui-shadcn](https://github.com/lavertia/ui-shadcn) is the **canonical standalone React UI Kit repository**, migrated from the temporary staging directory. It contains its own npm manifest, independent CI, host-supplied shadcn components, and working Page Shell, Form, Action and Table renderer implementations. Read [the Shadcn installer guide](SHADCN_INSTALL.md).
 
-The dedicated repository does not yet exist; track its extraction in [Issue #47](https://github.com/lavertia/panels/issues/47). Do not advertise the prototype as a complete UI Kit, a public npm release or a cross-framework solution. It is optional; existing users of default React, Vue and Svelte adapters remain unaffected.
+The dedicated repository now exists. [Issue #47](https://github.com/lavertia/panels/issues/47) tracks Dialog/advanced components, versioned releases and real-app visual testing. Do not advertise the developer preview as a finished UI Kit, a published npm release or a cross-framework solution. It is optional; existing users of default React, Vue and Svelte adapters remain unaffected.

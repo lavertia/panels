@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 const registry = createUiRegistry().registerKit(createShadcnKit({
     Input,
@@ -18,6 +19,12 @@ const registry = createUiRegistry().registerKit(createShadcnKit({
     Button,
     Card,
     CardContent,
+    Table,
+    TableHeader,
+    TableBody,
+    TableRow,
+    TableHead,
+    TableCell,
 }));
 
 export default function LavertiaShadcnPage({ lavertia }: { lavertia: LavertiaPayload }) {
